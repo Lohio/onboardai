@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Bot } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bot, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 // ─────────────────────────────────────────────
@@ -39,6 +39,27 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     M3: false,
     M4: false,
   })
+  const [empleadoNombre, setEmpleadoNombre] = useState('')
+  const [empleadoPuesto, setEmpleadoPuesto] = useState('')
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuAbierto(false)
+      }
+    }
+    if (menuAbierto) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuAbierto])
+
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+  }, [router])
 
   useEffect(() => {
     async function cargarProgreso() {
@@ -51,6 +72,18 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       if (!user) {
         router.push('/auth/login')
         return
+      }
+
+      // Datos del empleado para el avatar
+      const { data: usuarioData } = await supabase
+        .from('usuarios')
+        .select('nombre, puesto')
+        .eq('id', user.id)
+        .single()
+
+      if (usuarioData) {
+        setEmpleadoNombre(usuarioData.nombre ?? '')
+        setEmpleadoPuesto(usuarioData.puesto ?? '')
       }
 
       // M1: el usuario existe y llegó aquí → siempre completado
@@ -165,6 +198,60 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             <span className="text-[11px] font-mono text-white/40 tabular-nums w-7 text-right">
               {progreso}%
             </span>
+          </div>
+
+          {/* Avatar + dropdown */}
+          <div ref={menuRef} className="relative flex-shrink-0">
+            <button
+              onClick={() => setMenuAbierto(prev => !prev)}
+              className="w-7 h-7 rounded-full bg-indigo-600/25 border border-indigo-500/25
+                flex items-center justify-center hover:bg-indigo-600/40 hover:border-indigo-500/50
+                transition-colors duration-150 cursor-pointer"
+              aria-label="Menú de usuario"
+            >
+              <span className="text-indigo-300 text-[11px] font-semibold">
+                {empleadoNombre
+                  ? empleadoNombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+                  : 'U'}
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {menuAbierto && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  className="absolute right-0 top-full mt-2 w-48 z-50
+                    rounded-xl border border-white/[0.08] bg-[#0f1f3d]/95 backdrop-blur-xl
+                    shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
+                >
+                  {/* Info del usuario */}
+                  <div className="px-3 py-3 border-b border-white/[0.06]">
+                    <p className="text-xs font-medium text-white/80 truncate">
+                      {empleadoNombre || 'Empleado'}
+                    </p>
+                    <p className="text-[11px] text-white/35 mt-0.5 truncate">
+                      {empleadoPuesto || 'Empleado'}
+                    </p>
+                  </div>
+
+                  {/* Cerrar sesión */}
+                  <div className="p-1.5">
+                    <button
+                      onClick={() => { setMenuAbierto(false); handleLogout() }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
+                        text-red-400/80 hover:text-red-400 hover:bg-red-500/10
+                        transition-colors duration-150 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
