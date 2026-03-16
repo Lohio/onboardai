@@ -361,8 +361,6 @@ function ObjetivoItem({ objetivo, isLast }: { objetivo: ObjetivoRol; isLast: boo
 // ─────────────────────────────────────────────
 
 export default function RolPage() {
-  const supabase = createClient()
-
   const [puesto, setPuesto] = useState<string>('')
   const [autonomia, setAutonomia] = useState<DecisionAutonomia[]>([])
   const [herramientas, setHerramientas] = useState<HerramientaRol[]>([])
@@ -382,6 +380,7 @@ export default function RolPage() {
     setLoading(true)
     setError(null)
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No autenticado')
 
@@ -448,7 +447,7 @@ export default function RolPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
@@ -456,6 +455,7 @@ export default function RolPage() {
   const toggleTarea = useCallback(async (id: string, completada: boolean) => {
     if (togglingIds.has(id)) return
 
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -506,7 +506,7 @@ export default function RolPage() {
     } finally {
       setTogglingIds(prev => { const s = new Set(prev); s.delete(id); return s })
     }
-  }, [supabase, togglingIds])
+  }, [togglingIds])
 
   // ── Render ──────────────────────────────────
 
