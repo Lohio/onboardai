@@ -389,10 +389,11 @@ export default function RolPage() {
         .select('empresa_id')
         .eq('id', user.id)
         .single()
-      if (uErr || !usuario) throw uErr ?? new Error('Usuario no encontrado')
+      if (uErr || !usuario) throw new Error(uErr?.message ?? 'Usuario no encontrado')
 
       const eid = usuario.empresa_id
 
+      // Cada query es independiente — si una tabla aún no existe, las demás igual cargan
       const [conocimientoRes, herramientasRes, tareasRes, objetivosRes] = await Promise.all([
         supabase
           .from('conocimiento')
@@ -421,10 +422,14 @@ export default function RolPage() {
           .order('semana'),
       ])
 
-      if (conocimientoRes.error) throw conocimientoRes.error
-      if (herramientasRes.error) throw herramientasRes.error
-      if (tareasRes.error) throw tareasRes.error
-      if (objetivosRes.error) throw objetivosRes.error
+      // Loguear errores individuales sin bloquear toda la vista
+      if (conocimientoRes.error) console.warn('[M3] conocimiento:', conocimientoRes.error.message)
+      if (herramientasRes.error) console.warn('[M3] herramientas_rol:', herramientasRes.error.message)
+      if (tareasRes.error) console.warn('[M3] tareas_onboarding:', tareasRes.error.message)
+      if (objetivosRes.error) console.warn('[M3] objetivos_rol:', objetivosRes.error.message)
+
+      // Si la query crítica (usuarios) falló, lanzar error
+      // Las demás muestran empty state en lugar de bloquear la página
 
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')

@@ -174,7 +174,7 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
   return (
     <motion.div variants={cardVariants}>
       <Link
-        href={`/admin/empleado/${empleado.id}`}
+        href={`/admin/empleados/${empleado.id}`}
         className="glass-card rounded-xl p-4 flex flex-col gap-3 block
           hover:border-white/[0.12] transition-colors duration-150 group"
       >

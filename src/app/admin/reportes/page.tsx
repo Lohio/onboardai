@@ -523,7 +523,7 @@ export default function ReportesPage() {
             label="30 días"
             meta={25}
             empleados={por30d}
-            onNavigate={id => router.push(`/admin/empleado/${id}`)}
+            onNavigate={id => router.push(`/admin/empleados/${id}`)}
             iconColor="text-teal-400"
           />
         </motion.div>
@@ -534,7 +534,7 @@ export default function ReportesPage() {
             label="60 días"
             meta={60}
             empleados={por60d}
-            onNavigate={id => router.push(`/admin/empleado/${id}`)}
+            onNavigate={id => router.push(`/admin/empleados/${id}`)}
             iconColor="text-amber-400"
           />
         </motion.div>
@@ -545,7 +545,7 @@ export default function ReportesPage() {
             label="90 días"
             meta={90}
             empleados={por90d}
-            onNavigate={id => router.push(`/admin/empleado/${id}`)}
+            onNavigate={id => router.push(`/admin/empleados/${id}`)}
             iconColor="text-indigo-400"
           />
         </motion.div>
@@ -579,7 +579,7 @@ export default function ReportesPage() {
                   <EmpleadoReporteCard
                     key={emp.id}
                     emp={emp}
-                    onClick={() => router.push(`/admin/empleado/${emp.id}`)}
+                    onClick={() => router.push(`/admin/empleados/${emp.id}`)}
                   />
                 ))}
               </motion.div>
