@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Users, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Users, Clock, CheckCircle2, AlertTriangle, MessageSquare, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
@@ -586,6 +587,25 @@ export default function ReportesPage() {
           </div>
         </motion.div>
       )}
+
+      {/* ── Enlace a encuestas de pulso ── */}
+      <motion.div variants={itemVariants}>
+        <Link href="/admin/reportes/encuestas" className="block">
+          <div className="glass-card rounded-xl p-4 flex items-center gap-4
+            hover:border-white/[0.12] hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white/80">Encuestas de pulso</p>
+              <p className="text-xs text-white/35 mt-0.5">
+                Feedback automático en días 7, 30 y 60 del onboarding
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/25 flex-shrink-0" />
+          </div>
+        </Link>
+      </motion.div>
 
       {/* ── Empty state global ── */}
       {totalEmpleados === 0 && (

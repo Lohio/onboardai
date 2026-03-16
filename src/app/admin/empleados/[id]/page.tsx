@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, Save, BookOpen, Wrench, MessageSquare,
   RotateCcw, CheckCircle2, Circle, Clock, AlertCircle,
+  CalendarDays, Zap,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -27,15 +28,17 @@ interface EmpleadoFull {
   puesto: string | null
   area: string | null
   fecha_ingreso: string | null
-  modalidad_trabajo: string | null
+  modalidad: string | null
   manager_id: string | null
   buddy_id: string | null
-  sobre_mi: string | null
+  bio: string | null
   rol: UserRole
   contacto_it_nombre: string | null
   contacto_it_email: string | null
   contacto_rrhh_nombre: string | null
   contacto_rrhh_email: string | null
+  preboarding_activo: boolean
+  fecha_acceso_preboarding: string | null
 }
 
 interface FormData {
@@ -43,10 +46,10 @@ interface FormData {
   puesto: string
   area: string
   fecha_ingreso: string
-  modalidad_trabajo: string
+  modalidad: string
   manager_id: string
   buddy_id: string
-  sobre_mi: string
+  bio: string
   rol: UserRole
   contacto_it_nombre: string
   contacto_it_email: string
@@ -71,6 +74,7 @@ interface AlertaRow {
 interface ColaboradorRow {
   id: string
   nombre: string
+  email: string
 }
 
 // ─────────────────────────────────────────────
@@ -136,6 +140,7 @@ export default function EmpleadoDetallePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [togglingPreboarding, setTogglingPreboarding] = useState(false)
   const [empleado, setEmpleado] = useState<EmpleadoFull | null>(null)
   const [rolAdmin, setRolAdmin] = useState<UserRole>('admin')
   const [form, setForm] = useState<FormData | null>(null)
@@ -168,7 +173,11 @@ export default function EmpleadoDetallePage() {
       // Datos del empleado
       const { data: empData, error: empError } = await supabase
         .from('usuarios')
-        .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, manager_id, buddy_id, sobre_mi, rol, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
+        .select(`id, nombre, email, puesto, area, fecha_ingreso,
+          modalidad, manager_id, buddy_id, bio, rol,
+          contacto_it_nombre, contacto_it_email,
+          contacto_rrhh_nombre, contacto_rrhh_email,
+          preboarding_activo, fecha_acceso_preboarding`)
         .eq('id', id)
         .single()
 
@@ -197,10 +206,10 @@ export default function EmpleadoDetallePage() {
         puesto: empData.puesto ?? '',
         area: empData.area ?? '',
         fecha_ingreso: empData.fecha_ingreso ?? '',
-        modalidad_trabajo: empData.modalidad_trabajo ?? '',
+        modalidad: empData.modalidad ?? '',
         manager_id: empData.manager_id ?? '',
         buddy_id: empData.buddy_id ?? '',
-        sobre_mi: empData.sobre_mi ?? '',
+        bio: empData.bio ?? '',
         rol: (empData.rol ?? 'empleado') as UserRole,
         contacto_it_nombre: empData.contacto_it_nombre ?? '',
         contacto_it_email: empData.contacto_it_email ?? '',
@@ -273,10 +282,10 @@ export default function EmpleadoDetallePage() {
 
       setAlertas((alertaRows ?? []) as AlertaRow[])
 
-      // Colaboradores para selects de manager/buddy
+      // Colaboradores para selects de manager/buddy (con email para mostrar "Nombre — email")
       const { data: colabRows } = await supabase
         .from('usuarios')
-        .select('id, nombre')
+        .select('id, nombre, email')
         .eq('empresa_id', adminData.empresa_id)
         .neq('id', id)
         .neq('rol', 'dev')
@@ -319,15 +328,15 @@ export default function EmpleadoDetallePage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre: form.nombre.trim() || null,
-          puesto: form.puesto.trim() || null,
-          area: form.area.trim() || null,
-          fecha_ingreso: form.fecha_ingreso || null,
-          modalidad_trabajo: form.modalidad_trabajo || null,
-          manager_id: form.manager_id || null,
-          buddy_id: form.buddy_id || null,
-          sobre_mi: form.sobre_mi.trim() || null,
-          rol: form.rol,
+          nombre:               form.nombre.trim() || null,
+          puesto:               form.puesto.trim() || null,
+          area:                 form.area.trim() || null,
+          fecha_ingreso:        form.fecha_ingreso || null,
+          modalidad:            form.modalidad || null,
+          manager_id:           form.manager_id || null,
+          buddy_id:             form.buddy_id || null,
+          bio:                  form.bio.trim() || null,
+          rol:                  form.rol,
           contacto_it_nombre:   form.contacto_it_nombre.trim() || null,
           contacto_it_email:    form.contacto_it_email.trim() || null,
           contacto_rrhh_nombre: form.contacto_rrhh_nombre.trim() || null,
@@ -352,6 +361,52 @@ export default function EmpleadoDetallePage() {
 
   function setField(key: keyof FormData, value: string) {
     setForm(prev => prev ? { ...prev, [key]: value } : prev)
+  }
+
+  // ── Toggle pre-boarding ──────────────────────
+  async function togglePreboarding() {
+    if (!empleado || togglingPreboarding) return
+
+    const nuevoEstado = !empleado.preboarding_activo
+    setTogglingPreboarding(true)
+    try {
+      // Activa via API (que también envía el email de bienvenida)
+      // Desactiva directamente vía Supabase
+      if (nuevoEstado) {
+        const res = await fetch('/api/admin/preboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuarioId: empleado.id }),
+        })
+        const data = await res.json() as { error?: string }
+        if (!res.ok) { toast.error(data.error ?? 'Error al activar pre-boarding'); return }
+        toast.success('Pre-boarding activado — email enviado al empleado')
+      } else {
+        const supabase = createClient()
+        const { error } = await supabase
+          .from('usuarios')
+          .update({ preboarding_activo: false })
+          .eq('id', empleado.id)
+        if (error) { toast.error('Error al desactivar pre-boarding'); return }
+        toast.success('Pre-boarding desactivado')
+      }
+
+      // Actualizar estado local
+      setEmpleado(prev => prev
+        ? {
+            ...prev,
+            preboarding_activo: nuevoEstado,
+            fecha_acceso_preboarding: nuevoEstado
+              ? new Date().toISOString()
+              : prev.fecha_acceso_preboarding,
+          }
+        : prev,
+      )
+    } catch {
+      toast.error('Error de conexión')
+    } finally {
+      setTogglingPreboarding(false)
+    }
   }
 
   // ── Loading ──
@@ -480,8 +535,8 @@ export default function EmpleadoDetallePage() {
             <div>
               <label className="block text-xs font-medium text-white/45 mb-1.5">Modalidad</label>
               <select
-                value={form.modalidad_trabajo}
-                onChange={e => setField('modalidad_trabajo', e.target.value)}
+                value={form.modalidad}
+                onChange={e => setField('modalidad', e.target.value)}
                 className={inputCls() + ' appearance-none cursor-pointer'}
               >
                 <option value="" className="bg-[#0f1f3d]">Sin definir</option>
@@ -492,92 +547,104 @@ export default function EmpleadoDetallePage() {
             </div>
           </div>
 
-          {/* Manager + Buddy */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-white/45 mb-1.5">Manager</label>
-              <select
-                value={form.manager_id}
-                onChange={e => setField('manager_id', e.target.value)}
-                className={inputCls() + ' appearance-none cursor-pointer'}
-              >
-                <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
-                {colaboradores.map(c => (
-                  <option key={c.id} value={c.id} className="bg-[#0f1f3d]">{c.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-white/45 mb-1.5">Buddy</label>
-              <select
-                value={form.buddy_id}
-                onChange={e => setField('buddy_id', e.target.value)}
-                className={inputCls() + ' appearance-none cursor-pointer'}
-              >
-                <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
-                {colaboradores.map(c => (
-                  <option key={c.id} value={c.id} className="bg-[#0f1f3d]">{c.nombre}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Contacto IT */}
+          {/* ── Separador sección: Contactos clave ── */}
           <div className="pt-1">
-            <p className="text-xs font-medium text-sky-400/70 mb-3 flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400/60" />
-              Contacto IT
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-sm font-semibold text-white/70 whitespace-nowrap">Contactos clave</h3>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
+
+            {/* Manager + Buddy */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-medium text-white/45 mb-1.5">Nombre</label>
-                <input
-                  type="text"
-                  value={form.contacto_it_nombre}
-                  onChange={e => setField('contacto_it_nombre', e.target.value)}
-                  className={inputCls()}
-                  placeholder="Carlos Pérez"
-                />
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Manager</label>
+                <select
+                  value={form.manager_id}
+                  onChange={e => setField('manager_id', e.target.value)}
+                  className={inputCls() + ' appearance-none cursor-pointer'}
+                >
+                  <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
+                  {colaboradores.map(c => (
+                    <option key={c.id} value={c.id} className="bg-[#0f1f3d]">
+                      {c.nombre} — {c.email}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-white/45 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={form.contacto_it_email}
-                  onChange={e => setField('contacto_it_email', e.target.value)}
-                  className={inputCls()}
-                  placeholder="it@empresa.com"
-                />
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Buddy</label>
+                <select
+                  value={form.buddy_id}
+                  onChange={e => setField('buddy_id', e.target.value)}
+                  className={inputCls() + ' appearance-none cursor-pointer'}
+                >
+                  <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
+                  {colaboradores.map(c => (
+                    <option key={c.id} value={c.id} className="bg-[#0f1f3d]">
+                      {c.nombre} — {c.email}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          </div>
 
-          {/* Contacto RRHH */}
-          <div>
-            <p className="text-xs font-medium text-amber-400/70 mb-3 flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/60" />
-              Contacto RRHH
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-white/45 mb-1.5">Nombre</label>
-                <input
-                  type="text"
-                  value={form.contacto_rrhh_nombre}
-                  onChange={e => setField('contacto_rrhh_nombre', e.target.value)}
-                  className={inputCls()}
-                  placeholder="María López"
-                />
+            {/* Contacto IT */}
+            <div className="mb-4">
+              <p className="text-xs font-medium text-sky-400/80 mb-2.5 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400/70" />
+                Contacto IT
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Nombre</label>
+                  <input
+                    type="text"
+                    value={form.contacto_it_nombre}
+                    onChange={e => setField('contacto_it_nombre', e.target.value)}
+                    className={inputCls()}
+                    placeholder="Nombre del contacto IT"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={form.contacto_it_email}
+                    onChange={e => setField('contacto_it_email', e.target.value)}
+                    className={inputCls()}
+                    placeholder="it@empresa.com"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-white/45 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={form.contacto_rrhh_email}
-                  onChange={e => setField('contacto_rrhh_email', e.target.value)}
-                  className={inputCls()}
-                  placeholder="rrhh@empresa.com"
-                />
+            </div>
+
+            {/* Contacto RRHH */}
+            <div>
+              <p className="text-xs font-medium text-amber-400/80 mb-2.5 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70" />
+                Contacto RRHH
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Nombre</label>
+                  <input
+                    type="text"
+                    value={form.contacto_rrhh_nombre}
+                    onChange={e => setField('contacto_rrhh_nombre', e.target.value)}
+                    className={inputCls()}
+                    placeholder="Nombre del contacto RRHH"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={form.contacto_rrhh_email}
+                    onChange={e => setField('contacto_rrhh_email', e.target.value)}
+                    className={inputCls()}
+                    placeholder="rrhh@empresa.com"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -603,12 +670,12 @@ export default function EmpleadoDetallePage() {
             </div>
           )}
 
-          {/* Sobre mí */}
+          {/* Bio */}
           <div>
             <label className="block text-xs font-medium text-white/45 mb-1.5">Sobre el empleado</label>
             <textarea
-              value={form.sobre_mi}
-              onChange={e => setField('sobre_mi', e.target.value)}
+              value={form.bio}
+              onChange={e => setField('bio', e.target.value)}
               rows={3}
               className="w-full px-3 py-2.5 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
                 text-white/85 placeholder:text-white/20 outline-none resize-none
@@ -627,6 +694,54 @@ export default function EmpleadoDetallePage() {
 
         {/* ── Panel derecho ── */}
         <div className="lg:col-span-2 space-y-5">
+
+          {/* Pre-boarding — visible solo cuando fecha_ingreso > hoy */}
+          {empleado.fecha_ingreso && new Date(empleado.fecha_ingreso) > new Date() && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              className="glass-card rounded-xl p-5"
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-indigo-400" />
+                  <h2 className="text-sm font-semibold text-white/70">Pre-boarding</h2>
+                </div>
+                {empleado.preboarding_activo && (
+                  <Badge variant="success">Activo</Badge>
+                )}
+              </div>
+
+              {empleado.preboarding_activo ? (
+                <div className="mb-3 space-y-1">
+                  <p className="text-xs text-white/55">
+                    El empleado puede acceder a M1 y M2 antes de su ingreso oficial.
+                  </p>
+                  {empleado.fecha_acceso_preboarding && (
+                    <p className="text-[11px] text-white/30">
+                      Activado el {formatFecha(empleado.fecha_acceso_preboarding)}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-white/35 mb-3">
+                  El empleado no tiene acceso aún. Activá el pre-boarding para que explore la cultura antes de su ingreso.
+                </p>
+              )}
+
+              <Button
+                variant={empleado.preboarding_activo ? 'ghost' : 'primary'}
+                size="sm"
+                loading={togglingPreboarding}
+                onClick={togglePreboarding}
+                className="w-full"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {empleado.preboarding_activo ? 'Desactivar pre-boarding' : 'Activar pre-boarding'}
+              </Button>
+            </motion.div>
+          )}
 
           {/* Progreso por módulo */}
           <motion.div

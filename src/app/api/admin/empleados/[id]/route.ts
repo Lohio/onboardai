@@ -68,7 +68,9 @@ export async function PATCH(
     // Construir objeto de actualización solo con campos permitidos
     const camposPermitidos = [
       'nombre', 'puesto', 'area', 'fecha_ingreso',
-      'modalidad_trabajo', 'manager_id', 'buddy_id', 'sobre_mi',
+      'modalidad', 'manager_id', 'buddy_id', 'bio',
+      'contacto_it_nombre', 'contacto_it_email',
+      'contacto_rrhh_nombre', 'contacto_rrhh_email',
     ]
     const updateData: Record<string, unknown> = {}
     for (const campo of camposPermitidos) {
@@ -84,7 +86,10 @@ export async function PATCH(
       .from('usuarios')
       .update(updateData)
       .eq('id', id)
-      .select('id, nombre, email, puesto, area, rol, fecha_ingreso, modalidad_trabajo, manager_id, buddy_id, sobre_mi')
+      .select(`id, nombre, email, puesto, area, rol, fecha_ingreso,
+        modalidad, manager_id, buddy_id, bio,
+        contacto_it_nombre, contacto_it_email,
+        contacto_rrhh_nombre, contacto_rrhh_email`)
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

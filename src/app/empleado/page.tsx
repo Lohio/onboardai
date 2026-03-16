@@ -10,6 +10,7 @@ import {
 import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { EncuestaPulsoModal, type EncuestaPendiente } from '@/components/empleado/EncuestaPulsoModal'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -18,6 +19,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 interface DatosHome {
   nombre: string
   fechaIngreso: string | null
+  preboarding: boolean
   progresoModulos: Record<string, number> // modulo → bloques completados
   totalBloquesCultura: number
   proximaTarea: string | null
@@ -90,6 +92,42 @@ function diasDesdeIngreso(fecha: string | null): number {
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
 
+/** Días hasta la fecha de ingreso (para el banner de pre-boarding) */
+function diasHastaIngreso(fecha: string): number {
+  const diff = new Date(fecha).getTime() - Date.now()
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
+
+// ─────────────────────────────────────────────
+// Banner Pre-boarding
+// ─────────────────────────────────────────────
+
+function BannerPreboarding({ fechaIngreso }: { fechaIngreso: string }) {
+  const dias = diasHastaIngreso(fechaIngreso)
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+      className="rounded-xl border border-indigo-500/20 bg-indigo-600/10 px-4 py-3.5"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center mt-0.5">
+          <CalendarDays className="w-4 h-4 text-indigo-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-indigo-200">
+            Tu onboarding oficial empieza en {dias} {dias === 1 ? 'día' : 'días'} — ¡Bienvenido/a!
+          </p>
+          <p className="text-xs text-indigo-300/60 mt-0.5">
+            Mientras tanto, podés explorar la cultura de la empresa y conocer a tu equipo
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 function saludo(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Buenos días'
@@ -127,6 +165,7 @@ export default function EmpleadoHomePage() {
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [datos, setDatos] = useState<DatosHome | null>(null)
+  const [encuestaPendiente, setEncuestaPendiente] = useState<EncuestaPendiente | null>(null)
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -140,7 +179,7 @@ export default function EmpleadoHomePage() {
       const [usuarioRes, progresoRes, tareasRes] = await Promise.all([
         supabase
           .from('usuarios')
-          .select('nombre, fecha_ingreso, empresa_id')
+          .select('nombre, fecha_ingreso, empresa_id, preboarding_activo')
           .eq('id', user.id)
           .single(),
         supabase
@@ -180,13 +219,41 @@ export default function EmpleadoHomePage() {
 
       const proximaTarea = tareasRes.data?.[0]?.titulo ?? null
 
+      // Detectar modo pre-boarding: bandera activa y fecha ingreso aún no llegó
+      const enPreboarding =
+        usuario?.preboarding_activo === true &&
+        !!usuario?.fecha_ingreso &&
+        new Date(usuario.fecha_ingreso) > new Date()
+
       setDatos({
         nombre: usuario?.nombre ?? '',
         fechaIngreso: usuario?.fecha_ingreso ?? null,
+        preboarding: enPreboarding,
         progresoModulos,
         totalBloquesCultura,
         proximaTarea,
       })
+
+      // Verificar encuestas de pulso solo si NO está en pre-boarding
+      if (!enPreboarding && user) {
+        const diasOnboarding = Math.max(
+          1,
+          Math.ceil((Date.now() - new Date(usuario?.fecha_ingreso ?? Date.now()).getTime()) / (1000 * 60 * 60 * 24)),
+        )
+        try {
+          const res = await fetch('/api/empleado/encuesta-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuarioId: user.id, diasOnboarding }),
+          })
+          if (res.ok) {
+            const json = await res.json() as { encuesta: EncuestaPendiente | null }
+            if (json.encuesta) setEncuestaPendiente(json.encuesta)
+          }
+        } catch {
+          // Silenciar — no bloquea el home
+        }
+      }
     } catch (err) {
       console.error('Error cargando home empleado:', err)
       setHasError(true)
@@ -212,6 +279,7 @@ export default function EmpleadoHomePage() {
   if (!datos) return null
 
   const dias = diasDesdeIngreso(datos.fechaIngreso)
+  const enPreboarding = datos.preboarding
 
   // Progreso por módulo (M1 siempre completo, M2 cultura, M3 rol, M4 asistente)
   const m1 = true
@@ -222,14 +290,33 @@ export default function EmpleadoHomePage() {
   const completados = estadoModulos.filter(Boolean).length
   const progresoPct = Math.round((completados / 4) * 100)
 
-  // Determinar si un módulo está desbloqueado (secuencial)
-  function isUnlocked(idx: number) {
+  // Determinar si un módulo está desbloqueado (secuencial).
+  // En pre-boarding, M3 y M4 siempre bloqueados independientemente del progreso.
+  function isUnlocked(idx: number): boolean {
+    if (enPreboarding && (idx === 2 || idx === 3)) return false
     if (idx === 0) return true
     return estadoModulos[idx - 1]
   }
 
+  /** Tooltip de bloqueo por pre-boarding */
+  function motivoBloqueo(idx: number): string | null {
+    if (enPreboarding && (idx === 2 || idx === 3)) {
+      return 'Disponible desde el día de tu ingreso'
+    }
+    return null
+  }
+
   return (
     <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
+      {/* Modal de encuesta de pulso */}
+      {encuestaPendiente && (
+        <EncuestaPulsoModal
+          encuesta={encuestaPendiente}
+          onClose={() => setEncuestaPendiente(null)}
+          onCompletada={() => setEncuestaPendiente(null)}
+        />
+      )}
+
       <div className="max-w-2xl mx-auto">
         <motion.div
           variants={containerVariants}
@@ -237,6 +324,11 @@ export default function EmpleadoHomePage() {
           animate="show"
           className="space-y-6"
         >
+          {/* ── Banner pre-boarding ── */}
+          {enPreboarding && datos.fechaIngreso && (
+            <BannerPreboarding fechaIngreso={datos.fechaIngreso} />
+          )}
+
           {/* ── Saludo ── */}
           <motion.div variants={cardVariants}>
             <h1 className="text-2xl font-semibold text-white">
@@ -244,7 +336,10 @@ export default function EmpleadoHomePage() {
             </h1>
             <div className="flex items-center gap-1.5 mt-1 text-sm text-white/40">
               <CalendarDays className="w-3.5 h-3.5" />
-              <span>Día {dias} de onboarding</span>
+              {enPreboarding
+                ? <span>Pre-boarding activo</span>
+                : <span>Día {dias} de onboarding</span>
+              }
             </div>
           </motion.div>
 
@@ -275,9 +370,11 @@ export default function EmpleadoHomePage() {
               {MODULOS.map((mod, idx) => {
                 const completado = estadoModulos[idx]
                 const desbloqueado = isUnlocked(idx)
+                const tooltipPreboarding = motivoBloqueo(idx)
 
                 const content = (
                   <div
+                    title={tooltipPreboarding ?? undefined}
                     className={`glass-card rounded-xl p-4 flex flex-col gap-3 h-full
                       transition-all duration-200
                       ${desbloqueado
@@ -315,16 +412,17 @@ export default function EmpleadoHomePage() {
                       </p>
                     </div>
 
-                    {/* CTA */}
-                    {desbloqueado && !completado && (
+                    {/* CTA o estado de bloqueo */}
+                    {tooltipPreboarding ? (
+                      <p className="text-[11px] text-white/25 mt-auto">{tooltipPreboarding}</p>
+                    ) : desbloqueado && !completado ? (
                       <div className="flex items-center gap-1 text-[11px] text-indigo-400 mt-auto">
                         <span>Continuar</span>
                         <ArrowRight className="w-3 h-3" />
                       </div>
-                    )}
-                    {completado && (
+                    ) : completado ? (
                       <p className="text-[11px] text-teal-400/60 mt-auto">Completado</p>
-                    )}
+                    ) : null}
                   </div>
                 )
 

@@ -9,6 +9,13 @@ import type { UserRole } from '@/types'
 /** Cookie que cachea el rol para evitar una query a Supabase por cada request */
 const COOKIE_ROL = 'onboard_rol'
 
+/**
+ * Cookie que indica si el empleado está en modo pre-boarding.
+ * Valor: "1" si preboarding_activo=true y fecha_ingreso > hoy.
+ * Leída por el layout del empleado sin necesidad de una query extra.
+ */
+const COOKIE_PREBOARDING = 'onboard_preboarding'
+
 /** Duración del caché de rol: 5 minutos en segundos */
 const COOKIE_ROL_MAX_AGE = 60 * 5
 
@@ -87,7 +94,7 @@ export async function middleware(request: NextRequest) {
     try {
       const { data: perfil, error } = await supabase
         .from('usuarios')
-        .select('rol')
+        .select('rol, preboarding_activo, fecha_ingreso')
         .eq('id', user.id)
         .single()
 
@@ -115,6 +122,21 @@ export async function middleware(request: NextRequest) {
       // Cachear el rol en cookie httpOnly de corta duración (5 min)
       supabaseResponse.cookies.set(COOKIE_ROL, rol, {
         httpOnly: true,
+        sameSite: 'strict',
+        maxAge: COOKIE_ROL_MAX_AGE,
+        path: '/',
+      })
+
+      // Cachear estado pre-boarding: activo si la bandera está encendida
+      // y fecha_ingreso todavía no llegó. El frontend lo lee para mostrar
+      // el banner y bloquear M3/M4 sin una query adicional.
+      const enPreboarding =
+        perfil.preboarding_activo === true &&
+        !!perfil.fecha_ingreso &&
+        new Date(perfil.fecha_ingreso) > new Date()
+
+      supabaseResponse.cookies.set(COOKIE_PREBOARDING, enPreboarding ? '1' : '0', {
+        httpOnly: false, // legible desde el cliente (no contiene datos sensibles)
         sameSite: 'strict',
         maxAge: COOKIE_ROL_MAX_AGE,
         path: '/',

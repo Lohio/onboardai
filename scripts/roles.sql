@@ -507,6 +507,73 @@ CREATE POLICY "objetivos_dev_all" ON objetivos_rol
   FOR ALL USING (get_my_rol() = 'dev') WITH CHECK (get_my_rol() = 'dev');
 
 
+-- ══════════════════════════════════════════════════════════════
+-- 12. PRE-BOARDING
+--     preboarding_activo = true permite que el empleado acceda
+--     antes de su fecha_ingreso oficial.
+--     El modo finaliza automáticamente cuando fecha_ingreso <= hoy.
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS preboarding_activo         boolean    NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS fecha_acceso_preboarding   timestamptz;
+
+
+-- ══════════════════════════════════════════════════════════════
+-- 13. ENCUESTAS DE PULSO
+--     Encuestas cortas automáticas en días 7, 30 y 60
+-- ══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS encuestas_pulso (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id      uuid REFERENCES empresas(id)  ON DELETE CASCADE,
+  usuario_id      uuid REFERENCES usuarios(id)  ON DELETE CASCADE,
+  dia_onboarding  integer     NOT NULL,  -- 7, 30 o 60
+  pregunta_1      text        NOT NULL,
+  respuesta_1     integer     CHECK (respuesta_1 BETWEEN 1 AND 5),
+  pregunta_2      text        NOT NULL,
+  respuesta_2     integer     CHECK (respuesta_2 BETWEEN 1 AND 5),
+  pregunta_3      text        NOT NULL,
+  respuesta_3     integer     CHECK (respuesta_3 BETWEEN 1 AND 5),
+  comentario      text,
+  completada      boolean     NOT NULL DEFAULT false,
+  created_at      timestamptz DEFAULT now(),
+  respondida_at   timestamptz
+);
+
+ALTER TABLE encuestas_pulso ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "encuestas_empleado_select" ON encuestas_pulso;
+DROP POLICY IF EXISTS "encuestas_empleado_update" ON encuestas_pulso;
+DROP POLICY IF EXISTS "encuestas_admin_select"    ON encuestas_pulso;
+DROP POLICY IF EXISTS "encuestas_dev_all"         ON encuestas_pulso;
+
+-- Empleado: ve y responde sus propias encuestas
+CREATE POLICY "encuestas_empleado_select" ON encuestas_pulso
+  FOR SELECT USING (usuario_id = auth.uid());
+
+CREATE POLICY "encuestas_empleado_update" ON encuestas_pulso
+  FOR UPDATE
+  USING (usuario_id = auth.uid())
+  WITH CHECK (usuario_id = auth.uid());
+
+-- La creación de encuestas la hace el servidor (sin RLS INSERT para empleado).
+-- La API route usa el cliente con cookie de sesión del admin/sistema.
+
+-- Admin: lectura de todas las encuestas de su empresa
+CREATE POLICY "encuestas_admin_select" ON encuestas_pulso
+  FOR SELECT USING (
+    get_my_rol() IN ('admin', 'dev')
+    AND empresa_id = get_my_empresa_id()
+  );
+
+-- Dev: acceso total
+CREATE POLICY "encuestas_dev_all" ON encuestas_pulso
+  FOR ALL
+  USING (get_my_rol() = 'dev')
+  WITH CHECK (get_my_rol() = 'dev');
+
+
 -- ─────────────────────────────────────────────────────────────
 -- Fin del script
 -- ─────────────────────────────────────────────────────────────

@@ -72,6 +72,7 @@ M5 - Dashboard admin: progreso en tiempo real, alertas, reportes 30/60/90
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ANTHROPIC_API_KEY=
+RESEND_API_KEY=          # Opcional: envío de emails (resend.com). Sin esta key los emails se loguean en consola.
 
 ## Arquitectura implementada (estado actual)
 

@@ -1,0 +1,223 @@
+import { NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase'
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function formatFechaES(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function buildEmailHtml({
+  nombreEmpleado,
+  nombreEmpresa,
+  fechaIngreso,
+  loginUrl,
+}: {
+  nombreEmpleado: string
+  nombreEmpresa: string
+  fechaIngreso: string
+  loginUrl: string
+}): string {
+  const fechaFormateada = formatFechaES(fechaIngreso)
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso a OnboardAI</title>
+</head>
+<body style="margin:0;padding:0;background:#040810;font-family:'Inter',Arial,sans-serif;color:#e8eaf0;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table width="100%" style="max-width:520px;background:#0f1f3d;border-radius:16px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;" cellpadding="0" cellspacing="0">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 32px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);">OnboardAI</p>
+              <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">
+                ¡Tu onboarding en ${nombreEmpresa} está listo!
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px 32px;">
+              <p style="margin:0 0 16px;font-size:15px;color:rgba(255,255,255,0.75);line-height:1.6;">
+                Hola <strong style="color:#ffffff;">${nombreEmpleado}</strong>,
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;color:rgba(255,255,255,0.65);line-height:1.6;">
+                Tu acceso a <strong style="color:#ffffff;">OnboardAI</strong> ya está activado. Podés ingresar ahora y explorar la cultura de <strong>${nombreEmpresa}</strong> y conocer a tu equipo antes de tu primer día oficial.
+              </p>
+
+              <!-- CTA -->
+              <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 28px;">
+                <tr>
+                  <td>
+                    <a href="${loginUrl}" style="display:inline-block;padding:12px 28px;background:#3B4FD8;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;">
+                      Ingresar a OnboardAI →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Info ingreso -->
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:rgba(59,79,216,0.08);border:1px solid rgba(59,79,216,0.2);border-radius:10px;margin:0 0 24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);">Tu primer día oficial</p>
+                    <p style="margin:0;font-size:15px;font-weight:600;color:#8d9bf5;">${fechaFormateada}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.5);line-height:1.6;">
+                Mientras tanto podés explorar la cultura de la empresa y conocer a tu equipo. El resto de los módulos estarán disponibles desde el día de tu ingreso.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.25);line-height:1.5;">
+                El equipo de <strong style="color:rgba(255,255,255,0.4);">${nombreEmpresa}</strong>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`.trim()
+}
+
+// ─────────────────────────────────────────────
+// POST /api/admin/preboarding
+// Activa preboarding_activo y envía email al empleado
+// ─────────────────────────────────────────────
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createServerSupabaseClient()
+
+    // Verificar sesión y rol del caller
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+    const { data: admin } = await supabase
+      .from('usuarios')
+      .select('empresa_id, rol')
+      .eq('id', user.id)
+      .single()
+
+    if (!admin || !['admin', 'dev'].includes(admin.rol)) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+    }
+
+    // Parsear body
+    const body = await request.json() as { usuarioId?: string }
+    if (!body.usuarioId) {
+      return NextResponse.json({ error: 'usuarioId requerido' }, { status: 400 })
+    }
+
+    // Obtener datos del empleado y su empresa
+    const { data: empleado } = await supabase
+      .from('usuarios')
+      .select('id, nombre, email, empresa_id, fecha_ingreso')
+      .eq('id', body.usuarioId)
+      .single()
+
+    if (!empleado) {
+      return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 })
+    }
+
+    // Admin solo puede activar preboarding en empleados de su empresa
+    if (admin.rol !== 'dev' && empleado.empresa_id !== admin.empresa_id) {
+      return NextResponse.json({ error: 'Sin acceso a este empleado' }, { status: 403 })
+    }
+
+    // Obtener nombre de la empresa
+    const { data: empresa } = await supabase
+      .from('empresas')
+      .select('nombre')
+      .eq('id', empleado.empresa_id)
+      .single()
+
+    const nombreEmpresa = empresa?.nombre ?? 'la empresa'
+
+    // Activar preboarding en la base de datos
+    const ahora = new Date().toISOString()
+    const { error: updateError } = await supabase
+      .from('usuarios')
+      .update({
+        preboarding_activo: true,
+        fecha_acceso_preboarding: ahora,
+      })
+      .eq('id', empleado.id)
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+
+    // Construir URL de login (usar dominio de la request en prod, localhost en dev)
+    const origin = request.headers.get('origin') ?? 'http://localhost:3000'
+    const loginUrl = `${origin}/auth/login`
+
+    // Construir email
+    const emailHtml = buildEmailHtml({
+      nombreEmpleado: empleado.nombre,
+      nombreEmpresa,
+      fechaIngreso: empleado.fecha_ingreso ?? ahora,
+      loginUrl,
+    })
+
+    const asunto = `¡Tu onboarding en ${nombreEmpresa} está listo!`
+
+    // Enviar email vía Resend (si hay API key) o loguear en consola
+    const resendKey = process.env.RESEND_API_KEY
+    if (resendKey) {
+      try {
+        const { Resend } = await import('resend')
+        const resend = new Resend(resendKey)
+
+        const { error: emailError } = await resend.emails.send({
+          from: `${nombreEmpresa} <onboarding@resend.dev>`,
+          to: [empleado.email],
+          subject: asunto,
+          html: emailHtml,
+        })
+
+        if (emailError) {
+          console.error('[preboarding] Error al enviar email vía Resend:', emailError)
+          // No falla el endpoint — el preboarding ya fue activado
+        }
+      } catch (err) {
+        console.error('[preboarding] Error al inicializar Resend:', err)
+      }
+    } else {
+      // Sin RESEND_API_KEY: loguear el email en consola para desarrollo
+      console.log('[preboarding] RESEND_API_KEY no configurada. Email que se enviaría:')
+      console.log(`  Para: ${empleado.email}`)
+      console.log(`  Asunto: ${asunto}`)
+      console.log(`  Login URL: ${loginUrl}`)
+    }
+
+    return NextResponse.json({ ok: true, preboarding_activo: true })
+  } catch (err) {
+    console.error('[preboarding] Error interno:', err)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}

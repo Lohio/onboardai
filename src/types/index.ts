@@ -100,6 +100,23 @@ export interface DecisionAutonomia {
   nivel: 'solo' | 'consultar' | 'escalar'
 }
 
+export interface EncuestaPulso {
+  id: string
+  empresa_id: string
+  usuario_id: string
+  dia_onboarding: number
+  pregunta_1: string
+  pregunta_2: string
+  pregunta_3: string
+  respuesta_1?: number | null
+  respuesta_2?: number | null
+  respuesta_3?: number | null
+  comentario?: string | null
+  completada: boolean
+  created_at: string
+  respondida_at?: string | null
+}
+
 export interface AdminEmpleadoConProgreso {
   id: string
   nombre: string
