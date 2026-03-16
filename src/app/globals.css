@@ -174,6 +174,12 @@ body {
   animation: fadeIn 0.4s ease-out both;
 }
 
+/* Fade-in de página al navegar — CSS puro, sin transform, para no
+   crear un containing block que confine los modales position:fixed */
+.animate-page-in {
+  animation: fadeIn 0.22s ease-in-out both;
+}
+
 .animate-slideUp {
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
