@@ -418,9 +418,9 @@ export default function EmpleadosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-white">Empleados</h1>
+          <h1 className="text-lg font-semibold text-white/90">Empleados</h1>
           <p className="text-sm text-white/40 mt-0.5">
             {loading ? '—' : `${empleados.length} ${empleados.length === 1 ? 'empleado' : 'empleados'}`}
           </p>
@@ -429,6 +429,7 @@ export default function EmpleadosPage() {
           variant="primary"
           size="sm"
           onClick={() => setModalAbierto(true)}
+          className="flex-shrink-0 mt-0.5"
         >
           <UserPlus className="w-3.5 h-3.5" />
           Nuevo empleado
