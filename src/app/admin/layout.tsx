@@ -473,7 +473,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onMenuClick={() => setSidebarAbierto(true)}
           onLogout={handleLogout}
         />
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        {/* El overflow va en el div hijo, no en el contenedor raíz —
+            así los elementos position:fixed de las páginas hijas (modales, drawers)
+            se posicionan contra el viewport y no quedan confinados. */}
+        <main className="flex-1 min-h-0">
+          <div className="h-full overflow-y-auto p-4 sm:p-6">
+            {children}
+          </div>
+        </main>
       </div>
 
       {/* ── Sidebar mobile (drawer) ── */}

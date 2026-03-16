@@ -519,12 +519,12 @@ export default function PerfilPage() {
                       </AnimatePresence>
                     </div>
 
-                    {editandoSobreMi ? (
+                    {editandoBio ? (
                       <textarea
                         autoFocus
-                        value={sobreMi}
-                        onChange={e => setSobreMi(e.target.value)}
-                        onBlur={handleSobreMiBlur}
+                        value={bio}
+                        onChange={e => setBio(e.target.value)}
+                        onBlur={handleBioBlur}
                         rows={3}
                         placeholder="Contá algo sobre vos..."
                         className={cn(
@@ -536,14 +536,14 @@ export default function PerfilPage() {
                       />
                     ) : (
                       <p
-                        onClick={() => setEditandoSobreMi(true)}
+                        onClick={() => setEditandoBio(true)}
                         className={cn(
                           'text-sm cursor-text rounded-lg p-2 -ml-2',
                           'hover:bg-white/[0.03] transition-colors duration-150',
-                          sobreMi ? 'text-white/70' : 'text-white/25 italic',
+                          bio ? 'text-white/70' : 'text-white/25 italic',
                         )}
                       >
-                        {sobreMi || 'Contá algo sobre vos...'}
+                        {bio || 'Contá algo sobre vos...'}
                       </p>
                     )}
                   </div>

@@ -57,6 +57,49 @@ export interface ProgresoModulo {
   completado_at?: string
 }
 
+export interface TareaOnboarding {
+  id: string
+  empresa_id: string
+  usuario_id: string
+  semana: number
+  orden: number
+  titulo: string
+  completada: boolean
+  completada_at?: string
+  created_at: string
+}
+
+export interface GuiaHerramienta {
+  titulo: string
+  pasos: string[]
+}
+
+export interface HerramientaRol {
+  id: string
+  empresa_id: string
+  nombre: string
+  url?: string
+  icono?: string
+  guia?: GuiaHerramienta[]
+  orden: number
+  created_at: string
+}
+
+export interface ObjetivoRol {
+  id: string
+  empresa_id: string
+  semana: number
+  titulo: string
+  descripcion?: string
+  estado: 'pendiente' | 'en_progreso' | 'completado'
+  created_at: string
+}
+
+export interface DecisionAutonomia {
+  decision: string
+  nivel: 'solo' | 'consultar' | 'escalar'
+}
+
 export interface AdminEmpleadoConProgreso {
   id: string
   nombre: string

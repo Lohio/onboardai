@@ -431,6 +431,82 @@ ALTER TABLE empresas
   CHECK (herramienta_contacto IN ('email', 'teams', 'slack', 'whatsapp', 'meet'));
 
 
+-- ══════════════════════════════════════════════════════════════
+-- 11. TABLAS: M3 — Rol y Herramientas
+-- ══════════════════════════════════════════════════════════════
+
+-- Tareas de onboarding por semana
+CREATE TABLE IF NOT EXISTS tareas_onboarding (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  empresa_id  uuid NOT NULL,
+  usuario_id  uuid REFERENCES usuarios(id) ON DELETE CASCADE,
+  semana      int  NOT NULL CHECK (semana BETWEEN 1 AND 4),
+  orden       int  NOT NULL DEFAULT 0,
+  titulo      text NOT NULL,
+  completada  boolean DEFAULT false,
+  completada_at timestamptz,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- Herramientas del rol con guía en JSONB
+CREATE TABLE IF NOT EXISTS herramientas_rol (
+  id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  empresa_id uuid NOT NULL,
+  nombre     text NOT NULL,
+  url        text,
+  icono      text,
+  guia       jsonb,
+  orden      int  DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Objetivos del mes por semana (solo lectura para empleado)
+CREATE TABLE IF NOT EXISTS objetivos_rol (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  empresa_id  uuid NOT NULL,
+  semana      int  NOT NULL CHECK (semana BETWEEN 1 AND 4),
+  titulo      text NOT NULL,
+  descripcion text,
+  estado      text DEFAULT 'pendiente'
+    CHECK (estado IN ('pendiente', 'en_progreso', 'completado')),
+  created_at  timestamptz DEFAULT now()
+);
+
+-- RLS: herramientas_rol
+ALTER TABLE herramientas_rol ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "herramientas_empleado_select" ON herramientas_rol;
+DROP POLICY IF EXISTS "herramientas_admin_all"       ON herramientas_rol;
+DROP POLICY IF EXISTS "herramientas_dev_all"         ON herramientas_rol;
+
+CREATE POLICY "herramientas_empleado_select" ON herramientas_rol
+  FOR SELECT USING (empresa_id = get_my_empresa_id());
+
+CREATE POLICY "herramientas_admin_all" ON herramientas_rol
+  FOR ALL USING (get_my_rol() = 'admin' AND empresa_id = get_my_empresa_id())
+  WITH CHECK (get_my_rol() = 'admin' AND empresa_id = get_my_empresa_id());
+
+CREATE POLICY "herramientas_dev_all" ON herramientas_rol
+  FOR ALL USING (get_my_rol() = 'dev') WITH CHECK (get_my_rol() = 'dev');
+
+-- RLS: objetivos_rol
+ALTER TABLE objetivos_rol ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "objetivos_empleado_select" ON objetivos_rol;
+DROP POLICY IF EXISTS "objetivos_admin_all"       ON objetivos_rol;
+DROP POLICY IF EXISTS "objetivos_dev_all"         ON objetivos_rol;
+
+CREATE POLICY "objetivos_empleado_select" ON objetivos_rol
+  FOR SELECT USING (empresa_id = get_my_empresa_id());
+
+CREATE POLICY "objetivos_admin_all" ON objetivos_rol
+  FOR ALL USING (get_my_rol() = 'admin' AND empresa_id = get_my_empresa_id())
+  WITH CHECK (get_my_rol() = 'admin' AND empresa_id = get_my_empresa_id());
+
+CREATE POLICY "objetivos_dev_all" ON objetivos_rol
+  FOR ALL USING (get_my_rol() = 'dev') WITH CHECK (get_my_rol() = 'dev');
+
+
 -- ─────────────────────────────────────────────────────────────
 -- Fin del script
 -- ─────────────────────────────────────────────────────────────
