@@ -114,8 +114,8 @@ const navItems: NavItemDef[] = [
     disabled: false,
   },
   {
-    label: 'Equipo',
-    href: '/admin/equipo',
+    label: 'Empleados',
+    href: '/admin/empleados',
     icon: <Users className="w-4 h-4" />,
     disabled: false,
   },

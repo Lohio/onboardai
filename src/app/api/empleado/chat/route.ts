@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { anthropic } from '@/lib/claude'
+import { streamChat, logMensaje } from '@/lib/claude'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient()
 
-    // Auth
+    // ── Auth ──────────────────────────────────────────────────────
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Mensaje vacío' }, { status: 400 })
     }
 
-    // Datos del empleado
+    // ── Datos del empleado ────────────────────────────────────────
     const { data: usuario } = await supabase
       .from('usuarios')
       .select('nombre, puesto, empresa_id')
@@ -28,29 +28,22 @@ export async function POST(request: Request) {
 
     if (!usuario) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
 
-    // Conocimiento de la empresa como contexto
-    const { data: conocimientos } = await supabase
-      .from('conocimiento')
-      .select('modulo, bloque, titulo, contenido')
-      .eq('empresa_id', usuario.empresa_id)
+    const { empresa_id: empresaId } = usuario
 
-    const contextoEmpresa = (conocimientos ?? [])
-      .map(k => `## ${k.titulo}\n${k.contenido}`)
-      .join('\n\n')
-
-    // Historial de la conversación
+    // ── Gestión de conversación ───────────────────────────────────
     let historial: { role: 'user' | 'assistant'; content: string }[] = []
     let convId = conversacionId
 
     if (convId) {
-      const { data: mensajes } = await supabase
+      // Cargar historial existente (últimas 20 interacciones)
+      const { data: mensajesHistorial } = await supabase
         .from('mensajes_ia')
         .select('rol, contenido')
         .eq('conversacion_id', convId)
         .order('created_at', { ascending: true })
         .limit(20)
 
-      historial = (mensajes ?? []).map(m => ({
+      historial = (mensajesHistorial ?? []).map(m => ({
         role: m.rol as 'user' | 'assistant',
         content: m.contenido,
       }))
@@ -58,13 +51,13 @@ export async function POST(request: Request) {
       // Crear nueva conversación
       const { data: nuevaConv } = await supabase
         .from('conversaciones_ia')
-        .insert({ usuario_id: user.id, empresa_id: usuario.empresa_id })
+        .insert({ usuario_id: user.id, empresa_id: empresaId })
         .select('id')
         .single()
       convId = nuevaConv?.id ?? null
     }
 
-    // Guardar mensaje del usuario
+    // Guardar mensaje del usuario en el historial persistente
     if (convId) {
       await supabase.from('mensajes_ia').insert({
         conversacion_id: convId,
@@ -73,66 +66,71 @@ export async function POST(request: Request) {
       })
     }
 
-    // System prompt con conocimiento de la empresa
-    const systemPrompt = `Sos el asistente de onboarding de la empresa. Tu rol es ayudar a ${usuario.nombre}${usuario.puesto ? ` (${usuario.puesto})` : ''} a integrarse a la empresa respondiendo sus preguntas sobre cultura, procesos, herramientas y su rol.
+    // Log de auditoría (mensajes_chat) — fire and forget
+    logMensaje({ usuarioId: user.id, empresaId, rol: 'user', contenido: mensaje })
 
-Respondé siempre en español, de forma clara y concisa. Si la pregunta no está cubierta en el conocimiento disponible, decilo honestamente.
-
-# Conocimiento de la empresa
-
-${contextoEmpresa || 'No hay contenido cargado aún. Indicá al empleado que consulte con su manager.'}`
-
-    // Streaming con Claude
-    const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [
-        ...historial,
-        { role: 'user', content: mensaje },
-      ],
-    })
-
-    // ReadableStream para el cliente
+    // ── Streaming ────────────────────────────────────────────────
+    // Se usa streamChat que internamente llama buildSystemPrompt
+    // y lee model/max_tokens de app_config.
     let respuestaCompleta = ''
+
     const readable = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder()
-        for await (const event of stream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            const chunk = event.delta.text
-            respuestaCompleta += chunk
-            controller.enqueue(encoder.encode(chunk))
-          }
-        }
 
-        // Guardar respuesta del asistente
-        if (convId && respuestaCompleta) {
-          await supabase.from('mensajes_ia').insert({
-            conversacion_id: convId,
-            rol: 'assistant',
-            contenido: respuestaCompleta,
+        try {
+          await streamChat({
+            empresaId,
+            mensajes: [
+              ...historial,
+              { role: 'user', content: mensaje },
+            ],
+            onChunk: (text) => {
+              respuestaCompleta += text
+              controller.enqueue(encoder.encode(text))
+            },
+            onDone: () => {
+              // streamChat resuelve acá; el trabajo post-stream
+              // se hace después del await en el bloque de abajo
+            },
           })
 
-          // Marcar progreso M4
-          await supabase.from('progreso_modulos').upsert({
-            usuario_id: user.id,
-            modulo: 'asistente',
-            bloque: 'chat',
-            completado: true,
-            completado_at: new Date().toISOString(),
-          }, { onConflict: 'usuario_id,modulo,bloque' })
-        }
+          // ── Trabajo post-stream ───────────────────────────────
+          if (convId && respuestaCompleta) {
+            // Persistir respuesta del asistente
+            await supabase.from('mensajes_ia').insert({
+              conversacion_id: convId,
+              rol: 'assistant',
+              contenido: respuestaCompleta,
+            })
 
-        // Enviar conversacionId al final (separador |--|)
-        if (convId) {
-          controller.enqueue(encoder.encode(`|--|${convId}`))
-        }
+            // Marcar progreso M4 — primer uso del asistente
+            await supabase.from('progreso_modulos').upsert({
+              usuario_id: user.id,
+              modulo: 'asistente',
+              bloque: 'chat',
+              completado: true,
+              completado_at: new Date().toISOString(),
+            }, { onConflict: 'usuario_id,modulo,bloque' })
 
-        controller.close()
+            // Log de auditoría de la respuesta
+            logMensaje({
+              usuarioId: user.id,
+              empresaId,
+              rol: 'assistant',
+              contenido: respuestaCompleta,
+            })
+          }
+
+          // Enviar conversacionId al final del stream (parseado por el cliente)
+          if (convId) {
+            controller.enqueue(encoder.encode(`|--|${convId}`))
+          }
+        } catch (err) {
+          console.error('Error durante streaming de chat:', err)
+        } finally {
+          controller.close()
+        }
       },
     })
 

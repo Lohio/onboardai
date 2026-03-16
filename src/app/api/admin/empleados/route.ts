@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (!admin || admin.rol !== 'admin') {
+    if (!admin || !['admin', 'dev'].includes(admin.rol)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       manager_id?: string
       buddy_id?: string
       sobre_mi?: string
+      rol?: 'empleado' | 'admin'
     }
 
     const { email, password, nombre } = body
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         empresa_id: admin.empresa_id,
         nombre: nombre.trim(),
         email: email.trim().toLowerCase(),
-        rol: 'empleado',
+        rol: body.rol ?? 'empleado',
         puesto: body.puesto?.trim() || null,
         area: body.area?.trim() || null,
         fecha_ingreso: body.fecha_ingreso || null,

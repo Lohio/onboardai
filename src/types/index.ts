@@ -1,9 +1,12 @@
+// Roles disponibles en el sistema
+export type UserRole = 'empleado' | 'admin' | 'dev'
+
 export interface Usuario {
   id: string
   empresa_id: string
   nombre: string
   email: string
-  rol: 'empleado' | 'admin'
+  rol: UserRole
   foto_url?: string
   puesto?: string
   area?: string
