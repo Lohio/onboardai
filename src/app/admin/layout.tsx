@@ -142,7 +142,7 @@ const navItems: NavItemDef[] = [
     label: 'Configuración',
     href: '/admin/configuracion',
     icon: <Settings className="w-4 h-4" />,
-    disabled: true,
+    disabled: false,
   },
 ]
 

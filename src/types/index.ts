@@ -13,8 +13,12 @@ export interface Usuario {
   fecha_ingreso?: string
   manager_id?: string
   buddy_id?: string
-  modalidad_trabajo?: 'presencial' | 'remoto' | 'hibrido'
-  sobre_mi?: string
+  modalidad?: 'presencial' | 'remoto' | 'hibrido'
+  bio?: string
+  contacto_it_nombre?: string
+  contacto_it_email?: string
+  contacto_rrhh_nombre?: string
+  contacto_rrhh_email?: string
   created_at: string
 }
 

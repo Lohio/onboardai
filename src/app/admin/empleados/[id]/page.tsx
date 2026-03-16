@@ -32,6 +32,10 @@ interface EmpleadoFull {
   buddy_id: string | null
   sobre_mi: string | null
   rol: UserRole
+  contacto_it_nombre: string | null
+  contacto_it_email: string | null
+  contacto_rrhh_nombre: string | null
+  contacto_rrhh_email: string | null
 }
 
 interface FormData {
@@ -44,6 +48,10 @@ interface FormData {
   buddy_id: string
   sobre_mi: string
   rol: UserRole
+  contacto_it_nombre: string
+  contacto_it_email: string
+  contacto_rrhh_nombre: string
+  contacto_rrhh_email: string
 }
 
 interface ProgresoModulo {
@@ -160,7 +168,7 @@ export default function EmpleadoDetallePage() {
       // Datos del empleado
       const { data: empData, error: empError } = await supabase
         .from('usuarios')
-        .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, manager_id, buddy_id, sobre_mi, rol')
+        .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, manager_id, buddy_id, sobre_mi, rol, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
         .eq('id', id)
         .single()
 
@@ -194,6 +202,10 @@ export default function EmpleadoDetallePage() {
         buddy_id: empData.buddy_id ?? '',
         sobre_mi: empData.sobre_mi ?? '',
         rol: (empData.rol ?? 'empleado') as UserRole,
+        contacto_it_nombre: empData.contacto_it_nombre ?? '',
+        contacto_it_email: empData.contacto_it_email ?? '',
+        contacto_rrhh_nombre: empData.contacto_rrhh_nombre ?? '',
+        contacto_rrhh_email: empData.contacto_rrhh_email ?? '',
       })
 
       // Progreso de módulos: bloques totales por módulo desde conocimiento
@@ -316,6 +328,10 @@ export default function EmpleadoDetallePage() {
           buddy_id: form.buddy_id || null,
           sobre_mi: form.sobre_mi.trim() || null,
           rol: form.rol,
+          contacto_it_nombre:   form.contacto_it_nombre.trim() || null,
+          contacto_it_email:    form.contacto_it_email.trim() || null,
+          contacto_rrhh_nombre: form.contacto_rrhh_nombre.trim() || null,
+          contacto_rrhh_email:  form.contacto_rrhh_email.trim() || null,
         }),
       })
 
@@ -503,6 +519,66 @@ export default function EmpleadoDetallePage() {
                   <option key={c.id} value={c.id} className="bg-[#0f1f3d]">{c.nombre}</option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Contacto IT */}
+          <div className="pt-1">
+            <p className="text-xs font-medium text-sky-400/70 mb-3 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400/60" />
+              Contacto IT
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Nombre</label>
+                <input
+                  type="text"
+                  value={form.contacto_it_nombre}
+                  onChange={e => setField('contacto_it_nombre', e.target.value)}
+                  className={inputCls()}
+                  placeholder="Carlos Pérez"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={form.contacto_it_email}
+                  onChange={e => setField('contacto_it_email', e.target.value)}
+                  className={inputCls()}
+                  placeholder="it@empresa.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contacto RRHH */}
+          <div>
+            <p className="text-xs font-medium text-amber-400/70 mb-3 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+              Contacto RRHH
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Nombre</label>
+                <input
+                  type="text"
+                  value={form.contacto_rrhh_nombre}
+                  onChange={e => setField('contacto_rrhh_nombre', e.target.value)}
+                  className={inputCls()}
+                  placeholder="María López"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/45 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={form.contacto_rrhh_email}
+                  onChange={e => setField('contacto_rrhh_email', e.target.value)}
+                  className={inputCls()}
+                  placeholder="rrhh@empresa.com"
+                />
+              </div>
             </div>
           </div>
 

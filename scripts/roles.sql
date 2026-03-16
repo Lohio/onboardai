@@ -376,6 +376,61 @@ CREATE POLICY "mensajes_dev_all" ON mensajes_chat
   WITH CHECK (get_my_rol() = 'dev');
 
 
+-- ══════════════════════════════════════════════════════════════
+-- 9. TABLA: empresas
+--    Cualquier usuario autenticado puede leer su propia empresa.
+--    Solo admin/dev pueden actualizar.
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE empresas ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "empresas_select"       ON empresas;
+DROP POLICY IF EXISTS "empresas_admin_update" ON empresas;
+DROP POLICY IF EXISTS "empresas_dev_all"      ON empresas;
+
+-- Todos los roles: leen su propia empresa
+CREATE POLICY "empresas_select" ON empresas
+  FOR SELECT USING (id = get_my_empresa_id());
+
+-- Admin: puede actualizar datos de su empresa
+CREATE POLICY "empresas_admin_update" ON empresas
+  FOR UPDATE
+  USING  (get_my_rol() IN ('admin', 'dev') AND id = get_my_empresa_id())
+  WITH CHECK (get_my_rol() IN ('admin', 'dev') AND id = get_my_empresa_id());
+
+-- Dev: acceso total
+CREATE POLICY "empresas_dev_all" ON empresas
+  FOR ALL
+  USING  (get_my_rol() = 'dev')
+  WITH CHECK (get_my_rol() = 'dev');
+
+
+-- ══════════════════════════════════════════════════════════════
+-- 10. MIGRACIONES: columnas del perfil de empleado
+-- ══════════════════════════════════════════════════════════════
+
+-- Modalidad de trabajo (columna canónica: modalidad)
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS modalidad TEXT
+  CHECK (modalidad IN ('presencial', 'hibrido', 'remoto'));
+
+-- Biografía / descripción personal editable por el empleado
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS bio TEXT;
+
+-- Contactos IT y RRHH por empleado (cada empleado puede tener sus propios contactos asignados)
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS contacto_it_nombre   TEXT,
+  ADD COLUMN IF NOT EXISTS contacto_it_email    TEXT,
+  ADD COLUMN IF NOT EXISTS contacto_rrhh_nombre TEXT,
+  ADD COLUMN IF NOT EXISTS contacto_rrhh_email  TEXT;
+
+-- Herramienta de comunicación configurada por empresa
+ALTER TABLE empresas
+  ADD COLUMN IF NOT EXISTS herramienta_contacto TEXT NOT NULL DEFAULT 'email'
+  CHECK (herramienta_contacto IN ('email', 'teams', 'slack', 'whatsapp', 'meet'));
+
+
 -- ─────────────────────────────────────────────────────────────
 -- Fin del script
 -- ─────────────────────────────────────────────────────────────

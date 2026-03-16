@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera, Mail, ExternalLink, Copy, Check,
   MessageSquare, FileText, Code, Globe,
-  Shield, Users, Briefcase,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -13,6 +12,8 @@ import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
+import { ContactoCard } from '@/components/empleado/ContactoCard'
+import type { HerramientaContacto } from '@/lib/contacto'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
 
 // ─────────────────────────────────────────────
@@ -68,6 +69,13 @@ function modalidadLabel(m: string): string {
   if (m === 'remoto') return 'Remoto'
   if (m === 'hibrido') return 'Híbrido'
   return m
+}
+
+function modalidadVariant(m: string): 'info' | 'default' | 'success' {
+  if (m === 'presencial') return 'info'
+  if (m === 'hibrido') return 'default'
+  if (m === 'remoto') return 'success'
+  return 'default'
 }
 
 function relacionLabel(r: MiembroEquipo['relacion']): string {
@@ -220,72 +228,6 @@ function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
 }
 
 // ─────────────────────────────────────────────
-// Card de contacto clave
-// ─────────────────────────────────────────────
-
-function ContactCard({
-  icon,
-  iconColor,
-  nombre,
-  rol,
-  email,
-}: {
-  icon: React.ReactNode
-  iconColor: string
-  nombre: string
-  rol: string
-  email?: string
-}) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = async () => {
-    if (!email) return
-    try {
-      await navigator.clipboard.writeText(email)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error('No se pudo copiar')
-    }
-  }
-
-  return (
-    <div className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-3 flex flex-col gap-2 min-h-[110px]">
-      <div className={cn('w-8 h-8 rounded-md flex items-center justify-center', iconColor)}>
-        {icon}
-      </div>
-
-      <div className="flex-1">
-        <p className="text-sm font-medium text-white/80 leading-tight truncate">{nombre}</p>
-        <p className="text-xs text-white/35 mt-0.5">{rol}</p>
-      </div>
-
-      {email ? (
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-white/30 hover:text-indigo-300 transition-colors duration-150"
-          title="Copiar email"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3 h-3 text-teal-400" />
-              <span className="text-teal-400">Copiado</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3 h-3" />
-              Copiar email
-            </>
-          )}
-        </button>
-      ) : (
-        <span className="text-xs text-white/20 italic">Por definir</span>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
 // Página principal
 // ─────────────────────────────────────────────
 
@@ -295,8 +237,10 @@ export default function PerfilPage() {
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([])
   const [accesos, setAccesos] = useState<Acceso[]>([])
 
-  const [editandoSobreMi, setEditandoSobreMi] = useState(false)
-  const [sobreMi, setSobreMi] = useState('')
+  const [herramientaContacto, setHerramientaContacto] = useState<HerramientaContacto>('email')
+
+  const [editandoBio, setEditandoBio] = useState(false)
+  const [bio, setBio] = useState('')
   const [savedFeedback, setSavedFeedback] = useState(false)
   const [hasError, setHasError] = useState(false)
 
@@ -314,7 +258,11 @@ export default function PerfilPage() {
 
       // 2, 3, 5 en paralelo
       const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
-        supabase.from('usuarios').select('*').eq('id', user.id).single(),
+        supabase
+          .from('usuarios')
+          .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
+          .eq('id', user.id)
+          .single(),
         supabase
           .from('equipo_relaciones')
           .select('relacion, miembro_id')
@@ -328,7 +276,17 @@ export default function PerfilPage() {
 
       if (perfilRes.data) {
         setPerfil(perfilRes.data as Usuario)
-        setSobreMi(perfilRes.data.sobre_mi ?? '')
+        setBio(perfilRes.data.bio ?? '')
+
+        // Herramienta de contacto de la empresa
+        const empresaRes = await supabase
+          .from('empresas')
+          .select('herramienta_contacto')
+          .eq('id', perfilRes.data.empresa_id)
+          .single()
+        if (empresaRes.data?.herramienta_contacto) {
+          setHerramientaContacto(empresaRes.data.herramienta_contacto as HerramientaContacto)
+        }
       }
 
       if (accesosRes.data) {
@@ -382,16 +340,16 @@ export default function PerfilPage() {
     cargarDatos()
   }, [cargarDatos])
 
-  // Guardar "sobre mí" al perder foco
-  const handleSobreMiBlur = async () => {
-    setEditandoSobreMi(false)
+  // Guardar bio al perder foco
+  const handleBioBlur = async () => {
+    setEditandoBio(false)
     if (!perfil) return
 
     try {
       const supabase = createClient()
       const { error } = await supabase
         .from('usuarios')
-        .update({ sobre_mi: sobreMi })
+        .update({ bio })
         .eq('id', perfil.id)
 
       if (error) throw error
@@ -515,8 +473,10 @@ export default function PerfilPage() {
                   )}
 
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {perfil.modalidad_trabajo && (
-                      <Badge variant="info">{modalidadLabel(perfil.modalidad_trabajo)}</Badge>
+                    {perfil.modalidad && (
+                      <Badge variant={modalidadVariant(perfil.modalidad)}>
+                        {modalidadLabel(perfil.modalidad)}
+                      </Badge>
                     )}
                     {perfil.fecha_ingreso && (
                       <span className="text-xs text-white/35">
@@ -712,33 +672,29 @@ export default function PerfilPage() {
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <ContactCard
-                  icon={<Briefcase className="w-4 h-4" />}
-                  iconColor="text-indigo-400 bg-indigo-600/15"
-                  nombre={manager?.nombre ?? 'Por definir'}
-                  rol="Manager"
+                <ContactoCard
+                  tipo="manager"
+                  nombre={manager?.nombre}
                   email={manager?.email}
+                  herramienta={herramientaContacto}
                 />
-                <ContactCard
-                  icon={<Users className="w-4 h-4" />}
-                  iconColor="text-teal-400 bg-teal-600/15"
-                  nombre={buddy?.nombre ?? 'Por definir'}
-                  rol="Buddy"
+                <ContactoCard
+                  tipo="buddy"
+                  nombre={buddy?.nombre}
                   email={buddy?.email}
+                  herramienta={herramientaContacto}
                 />
-                <ContactCard
-                  icon={<Code className="w-4 h-4" />}
-                  iconColor="text-sky-400 bg-sky-600/15"
-                  nombre="Por definir"
-                  rol="IT"
-                  email={undefined}
+                <ContactoCard
+                  tipo="it"
+                  nombre={perfil.contacto_it_nombre}
+                  email={perfil.contacto_it_email}
+                  herramienta={herramientaContacto}
                 />
-                <ContactCard
-                  icon={<Shield className="w-4 h-4" />}
-                  iconColor="text-amber-400 bg-amber-600/15"
-                  nombre="Por definir"
-                  rol="RRHH"
-                  email={undefined}
+                <ContactoCard
+                  tipo="rrhh"
+                  nombre={perfil.contacto_rrhh_nombre}
+                  email={perfil.contacto_rrhh_email}
+                  herramienta={herramientaContacto}
                 />
               </div>
             </Card>
