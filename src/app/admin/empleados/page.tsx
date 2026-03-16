@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   UserPlus, Search, Filter, Pencil, RotateCcw, Trash2,
   Calendar, Briefcase, MapPin, Users, AlertTriangle,
+  ArrowLeft, Mail, Monitor,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -30,28 +31,20 @@ interface EmpleadoConProgreso {
   fecha_ingreso: string | null
   modalidad_trabajo: string | null
   rol: UserRole
-  progreso: number // 0-100
+  progreso: number
 }
 
 // ─────────────────────────────────────────────
-// Animaciones
+// Constantes
 // ─────────────────────────────────────────────
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
-}
+/** Cuántos empleados mostrar por carga */
+const PAGE_SIZE = 50
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 16 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 280, damping: 24 },
-  },
+const MODALIDAD_LABEL: Record<string, string> = {
+  presencial: 'Presencial',
+  remoto:     'Remoto',
+  hibrido:    'Híbrido',
 }
 
 // ─────────────────────────────────────────────
@@ -64,227 +57,289 @@ function getInitials(nombre: string): string {
 
 function formatFecha(d?: string | null): string {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('es-AR', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
 }
 
-const MODALIDAD_LABEL: Record<string, string> = {
-  presencial: 'Presencial',
-  remoto: 'Remoto',
-  hibrido: 'Híbrido',
+function semaforoColor(progreso: number): string {
+  if (progreso > 70) return 'bg-teal-500'
+  if (progreso >= 30) return 'bg-amber-500'
+  return 'bg-red-500'
 }
 
 // ─────────────────────────────────────────────
-// Skeleton card
+// Skeleton de la lista
 // ─────────────────────────────────────────────
 
-function SkeletonCard() {
+function SkeletonLista() {
   return (
-    <div className="glass-card rounded-xl p-5 animate-pulse">
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-white/[0.06] flex-shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-3.5 bg-white/[0.06] rounded w-36" />
-          <div className="h-2.5 bg-white/[0.04] rounded w-24" />
+    <div className="space-y-px">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-white/[0.06] flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 bg-white/[0.06] rounded w-32" />
+            <div className="h-2.5 bg-white/[0.04] rounded w-20" />
+          </div>
+          <div className="w-16 h-1.5 bg-white/[0.04] rounded-full" />
+          <div className="w-2.5 h-2.5 rounded-full bg-white/[0.06]" />
         </div>
+      ))}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Fila compacta de la lista
+// ─────────────────────────────────────────────
+
+function FilaEmpleado({
+  emp,
+  seleccionado,
+  onClick,
+}: {
+  emp: EmpleadoConProgreso
+  seleccionado: boolean
+  onClick: () => void
+}) {
+  const initials = getInitials(emp.nombre)
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left
+        transition-colors duration-100 cursor-pointer
+        border-l-2 group
+        ${seleccionado
+          ? 'bg-indigo-600/[0.10] border-l-indigo-500'
+          : 'border-l-transparent hover:bg-white/[0.03]'
+        }`}
+    >
+      {/* Avatar */}
+      <div className="w-8 h-8 rounded-full flex-shrink-0 bg-indigo-600/20 border border-indigo-500/20
+        flex items-center justify-center">
+        <span className="text-indigo-300 text-[11px] font-semibold">{initials}</span>
       </div>
-      <div className="space-y-2">
-        <div className="h-2.5 bg-white/[0.04] rounded w-full" />
-        <div className="h-1.5 bg-white/[0.06] rounded-full" />
+
+      {/* Nombre + área */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-medium truncate transition-colors duration-100
+          ${seleccionado ? 'text-white/90' : 'text-white/70 group-hover:text-white/85'}`}>
+          {emp.nombre}
+        </p>
+        {emp.area && (
+          <p className="text-[11px] text-white/30 truncate">{emp.area}</p>
+        )}
+      </div>
+
+      {/* Barra mini de progreso */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="w-16 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${semaforoColor(emp.progreso)}`}
+            style={{ width: `${emp.progreso}%` }}
+          />
+        </div>
+        <span className="text-[10px] font-mono text-white/30 w-7 text-right">
+          {emp.progreso}%
+        </span>
+        {/* Dot semáforo */}
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${semaforoColor(emp.progreso)}`} />
+      </div>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Panel derecho — Empty state
+// ─────────────────────────────────────────────
+
+function EmptyDetalle() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06]
+        flex items-center justify-center">
+        <Users className="w-6 h-6 text-white/15" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-white/35">Seleccioná un empleado</p>
+        <p className="text-xs text-white/20 mt-1">para ver su detalle aquí</p>
       </div>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Empty state
+// Panel derecho — Detalle del empleado
 // ─────────────────────────────────────────────
 
-function EmptyState({ query }: { query: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="col-span-full flex flex-col items-center justify-center py-20 text-center"
-    >
-      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mb-4 opacity-30">
-        <defs>
-          <linearGradient id="empListGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#3B4FD8" />
-            <stop offset="1" stopColor="#0D9488" />
-          </linearGradient>
-        </defs>
-        <circle cx="28" cy="26" r="10" stroke="url(#empListGrad)" strokeWidth="2" />
-        <path d="M10 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="url(#empListGrad)" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="46" cy="20" r="6" stroke="url(#empListGrad)" strokeWidth="1.5" />
-        <path d="M54 44c0-6-3.582-11-8-11" stroke="url(#empListGrad)" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <p className="text-sm font-medium text-white/50">
-        {query ? `Sin resultados para "${query}"` : 'Aún no hay empleados en esta empresa'}
-      </p>
-      {!query && (
-        <p className="text-xs text-white/30 mt-1">
-          Usá el botón "Nuevo empleado" para dar de alta el primero
-        </p>
-      )}
-    </motion.div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Confirm Delete inline
-// ─────────────────────────────────────────────
-
-interface ConfirmDeleteProps {
-  nombre: string
-  onConfirm: () => void
-  onCancel: () => void
-  loading: boolean
-}
-
-function ConfirmDelete({ nombre, onConfirm, onCancel, loading }: ConfirmDeleteProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      className="absolute inset-0 rounded-xl bg-[#0f1f3d]/95 backdrop-blur-sm
-        border border-red-500/30 z-10 flex flex-col items-center justify-center gap-3 p-4"
-    >
-      <AlertTriangle className="w-5 h-5 text-red-400" />
-      <p className="text-xs text-center text-white/70">
-        ¿Eliminar a <span className="font-semibold text-white/90">{nombre}</span>?<br />
-        <span className="text-white/40">Esta acción no se puede deshacer.</span>
-      </p>
-      <div className="flex gap-2">
-        <Button variant="ghost" size="sm" onClick={onCancel}>Cancelar</Button>
-        <Button variant="danger" size="sm" loading={loading} onClick={onConfirm}>Eliminar</Button>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Tarjeta de empleado
-// ─────────────────────────────────────────────
-
-interface EmpleadoCardProps {
+interface DetalleEmpleadoProps {
   emp: EmpleadoConProgreso
-  onRequestReset: (id: string, nombre: string) => void
-  onDeleted: (id: string) => void
+  onEditar: () => void
+  onResetear: () => void
+  onEliminar: () => void
+  eliminando: boolean
+  confirmDelete: boolean
+  onConfirmDelete: () => void
+  onCancelDelete: () => void
 }
 
-function EmpleadoCard({ emp, onRequestReset, onDeleted }: EmpleadoCardProps) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-
-  async function handleDelete() {
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/admin/empleados/${emp.id}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const d = await res.json() as { error?: string }
-        toast.error(d.error ?? 'Error al eliminar')
-        setConfirmDelete(false)
-        return
-      }
-      toast.success(`${emp.nombre} eliminado`)
-      onDeleted(emp.id)
-    } catch {
-      toast.error('Error de conexión')
-    } finally {
-      setDeleting(false)
-    }
-  }
+function DetalleEmpleado({
+  emp,
+  onEditar,
+  onResetear,
+  onEliminar,
+  eliminando,
+  confirmDelete,
+  onConfirmDelete,
+  onCancelDelete,
+}: DetalleEmpleadoProps) {
+  const initials = getInitials(emp.nombre)
 
   return (
-    <motion.div variants={cardVariants} className="relative">
-      <div className="glass-card rounded-xl p-5 h-full flex flex-col gap-4">
-        {/* Avatar + nombre */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-600/25 border border-indigo-500/25
-            flex items-center justify-center flex-shrink-0">
-            <span className="text-indigo-300 text-xs font-semibold">{getInitials(emp.nombre)}</span>
+    <motion.div
+      key={emp.id}
+      initial={{ opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="h-full flex flex-col overflow-y-auto"
+    >
+      <div className="p-6 space-y-6">
+        {/* Avatar + datos principales */}
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-full flex-shrink-0 bg-indigo-600/25 border border-indigo-500/25
+            flex items-center justify-center">
+            <span className="text-indigo-300 text-lg font-semibold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white/85 truncate">{emp.nombre}</p>
-            <p className="text-xs text-white/40 truncate mt-0.5">{emp.email}</p>
+            <h2 className="text-base font-semibold text-white/90 truncate">{emp.nombre}</h2>
+            {emp.puesto && (
+              <p className="text-sm text-white/50 mt-0.5 truncate">{emp.puesto}</p>
+            )}
+            {emp.rol === 'admin' && (
+              <div className="mt-1">
+                <Badge variant="info">Admin</Badge>
+              </div>
+            )}
           </div>
-          {emp.rol === 'admin' && (
-            <Badge variant="info" className="flex-shrink-0">Admin</Badge>
-          )}
         </div>
 
         {/* Detalles */}
-        <div className="space-y-1.5 text-xs text-white/45 flex-1">
-          {emp.puesto && (
-            <div className="flex items-center gap-2">
-              <Briefcase className="w-3.5 h-3.5 flex-shrink-0 text-white/25" />
-              <span className="truncate">{emp.puesto}</span>
-            </div>
-          )}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2.5 text-sm">
+            <Mail className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+            <span className="text-white/55 truncate">{emp.email}</span>
+          </div>
           {emp.area && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-white/25" />
-              <span className="truncate">{emp.area}</span>
+            <div className="flex items-center gap-2.5 text-sm">
+              <MapPin className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{emp.area}</span>
             </div>
           )}
           {emp.fecha_ingreso && (
-            <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-white/25" />
-              <span>{formatFecha(emp.fecha_ingreso)}</span>
+            <div className="flex items-center gap-2.5 text-sm">
+              <Calendar className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{formatFecha(emp.fecha_ingreso)}</span>
+            </div>
+          )}
+          {emp.puesto && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <Briefcase className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{emp.puesto}</span>
             </div>
           )}
           {emp.modalidad_trabajo && (
-            <div className="flex items-center gap-2">
-              <span className="text-white/20">◆</span>
-              <span>{MODALIDAD_LABEL[emp.modalidad_trabajo] ?? emp.modalidad_trabajo}</span>
+            <div className="flex items-center gap-2.5 text-sm">
+              <Monitor className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">
+                {MODALIDAD_LABEL[emp.modalidad_trabajo] ?? emp.modalidad_trabajo}
+              </span>
             </div>
           )}
         </div>
 
         {/* Progreso */}
-        <ProgressBar value={emp.progreso} label="Progreso onboarding" showPercentage />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/40">Progreso de onboarding</span>
+            <span className="font-mono text-white/60">{emp.progreso}%</span>
+          </div>
+          <ProgressBar value={emp.progreso} showPercentage={false} animated />
+        </div>
 
         {/* Acciones */}
-        <div className="flex items-center gap-1.5 pt-1 border-t border-white/[0.05]">
+        <div className="flex flex-col gap-2 pt-2">
           <Link
             href={`/admin/empleados/${emp.id}`}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs
-              text-white/50 hover:text-white/80 hover:bg-white/[0.04] transition-colors duration-150"
+            className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-white/90 hover:bg-white/[0.07] hover:border-white/[0.14]
+              transition-colors duration-150"
           >
-            <Pencil className="w-3 h-3" />
-            Editar
+            <Pencil className="w-3.5 h-3.5" />
+            Editar empleado
           </Link>
+
           <button
-            onClick={() => onRequestReset(emp.id, emp.nombre)}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs
-              text-white/50 hover:text-amber-400/70 hover:bg-amber-500/[0.06] transition-colors duration-150"
+            onClick={onResetear}
+            className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-amber-400/80 hover:bg-amber-500/[0.08] hover:border-amber-500/20
+              transition-colors duration-150"
           >
-            <RotateCcw className="w-3 h-3" />
-            Resetear
+            <RotateCcw className="w-3.5 h-3.5" />
+            Resetear progreso
           </button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs
-              text-white/50 hover:text-red-400/80 hover:bg-red-500/[0.06] transition-colors duration-150"
-          >
-            <Trash2 className="w-3 h-3" />
-            Eliminar
-          </button>
+
+          {/* Eliminar con confirmación inline */}
+          <AnimatePresence mode="wait">
+            {confirmDelete ? (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="rounded-lg bg-red-500/[0.08] border border-red-500/25 p-3 space-y-2.5"
+              >
+                <div className="flex items-center gap-2 text-sm text-red-400/90">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>¿Eliminar a <strong>{emp.nombre}</strong>?</span>
+                </div>
+                <p className="text-xs text-red-400/50">Esta acción no se puede deshacer.</p>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={onCancelDelete} className="flex-1">
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    loading={eliminando}
+                    onClick={onEliminar}
+                    className="flex-1"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.button
+                key="delete-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={onConfirmDelete}
+                className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+                  bg-white/[0.04] border border-white/[0.08] text-white/65
+                  hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
+                  transition-colors duration-150 w-full cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar empleado
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-
-      {/* Confirmación de eliminación superpuesta */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <ConfirmDelete
-            nombre={emp.nombre}
-            onConfirm={handleDelete}
-            onCancel={() => setConfirmDelete(false)}
-            loading={deleting}
-          />
-        )}
-      </AnimatePresence>
     </motion.div>
   )
 }
@@ -296,15 +351,29 @@ function EmpleadoCard({ emp, onRequestReset, onDeleted }: EmpleadoCardProps) {
 export default function EmpleadosPage() {
   const router = useRouter()
 
-  const [loading, setLoading] = useState(true)
-  const [empleados, setEmpleados] = useState<EmpleadoConProgreso[]>([])
-  const [rolAdmin, setRolAdmin] = useState<UserRole>('admin')
+  const [loading, setLoading]           = useState(true)
+  const [empleados, setEmpleados]       = useState<EmpleadoConProgreso[]>([])
+  const [rolAdmin, setRolAdmin]         = useState<UserRole>('admin')
   const [modalAbierto, setModalAbierto] = useState(false)
-  const [resetTarget, setResetTarget] = useState<{ id: string; nombre: string } | null>(null)
+  const [resetTarget, setResetTarget]   = useState<{ id: string; nombre: string } | null>(null)
+
+  // Panel derecho
+  const [seleccionado, setSeleccionado] = useState<EmpleadoConProgreso | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [eliminando, setEliminando]       = useState(false)
+
+  // Mobile: mostrar detalle a pantalla completa
+  const [vistaDetalleMobile, setVistaDetalleMobile] = useState(false)
 
   // Filtros
-  const [busqueda, setBusqueda] = useState('')
+  const [busqueda, setBusqueda]   = useState('')
   const [areaFiltro, setAreaFiltro] = useState('')
+
+  // "Cargar más" (infinite-style)
+  const [itemsVisibles, setItemsVisibles] = useState(PAGE_SIZE)
+
+  // Ref al contenedor de la lista para scroll independiente
+  const listaRef = useRef<HTMLDivElement>(null)
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
@@ -326,7 +395,6 @@ export default function EmpleadosPage() {
 
       setRolAdmin(adminData.rol as UserRole)
 
-      // Empleados de la empresa (excluye devs de la lista)
       const { data: rows } = await supabase
         .from('usuarios')
         .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, rol')
@@ -337,13 +405,11 @@ export default function EmpleadosPage() {
       const empRows = rows ?? []
       const empIds = empRows.map(e => e.id)
 
-      // Total de bloques de conocimiento como denominador del progreso
       const { count: totalBloques } = await supabase
         .from('conocimiento')
         .select('*', { count: 'exact', head: true })
         .eq('empresa_id', adminData.empresa_id)
 
-      // Progreso de módulos por empleado
       const { data: progresoRows } = await supabase
         .from('progreso_modulos')
         .select('usuario_id, completado')
@@ -373,146 +439,263 @@ export default function EmpleadosPage() {
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
-  // ── Filtros derivados ──
+  // ── Filtros en memoria (sin re-fetch) ──
   const areas = useMemo(() => {
     const set = new Set(empleados.map(e => e.area).filter(Boolean) as string[])
     return Array.from(set).sort()
   }, [empleados])
 
   const empleadosFiltrados = useMemo(() => {
+    const q = busqueda.toLowerCase()
     return empleados.filter(e => {
-      const matchBusqueda = !busqueda ||
-        e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        e.email.toLowerCase().includes(busqueda.toLowerCase())
+      const matchBusqueda = !q ||
+        e.nombre.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q)
       const matchArea = !areaFiltro || e.area === areaFiltro
       return matchBusqueda && matchArea
     })
   }, [empleados, busqueda, areaFiltro])
 
-  // ── Handlers ──
-  function handleCreated(nuevo: { id: string; nombre: string; email: string }) {
+  // Resetear items visibles al cambiar filtros
+  useEffect(() => { setItemsVisibles(PAGE_SIZE) }, [busqueda, areaFiltro])
+
+  const empleadosVisibles = useMemo(
+    () => empleadosFiltrados.slice(0, itemsVisibles),
+    [empleadosFiltrados, itemsVisibles]
+  )
+
+  const hayMas = empleadosFiltrados.length > itemsVisibles
+
+  // ── Seleccionar empleado ──
+  function handleSeleccionar(emp: EmpleadoConProgreso) {
+    setSeleccionado(emp)
+    setConfirmDelete(false)
+    setVistaDetalleMobile(true)
+  }
+
+  // ── Crear empleado ──
+  function handleCreado(nuevo: { id: string; nombre: string; email: string }) {
     setModalAbierto(false)
-    // Recargar para obtener datos completos
     cargarDatos()
     toast.success(`${nuevo.nombre} agregado al equipo`)
   }
 
-  function handleDeleted(id: string) {
-    setEmpleados(prev => prev.filter(e => e.id !== id))
+  // ── Eliminar empleado ──
+  async function handleEliminar() {
+    if (!seleccionado) return
+    setEliminando(true)
+    try {
+      const res = await fetch(`/api/admin/empleados/${seleccionado.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json() as { error?: string }
+        toast.error(d.error ?? 'Error al eliminar')
+        return
+      }
+      toast.success(`${seleccionado.nombre} eliminado`)
+      setEmpleados(prev => prev.filter(e => e.id !== seleccionado.id))
+      setSeleccionado(null)
+      setVistaDetalleMobile(false)
+      setConfirmDelete(false)
+    } catch {
+      toast.error('Error de conexión')
+    } finally {
+      setEliminando(false)
+    }
   }
 
-  function handleRequestReset(id: string, nombre: string) {
-    setResetTarget({ id, nombre })
-  }
-
+  // ── Reset progreso ──
   function handleReset() {
-    // Recargar progreso tras el reset
     cargarDatos()
     setResetTarget(null)
+    // Refrescar el empleado seleccionado con los nuevos datos
+    if (seleccionado) {
+      setSeleccionado(prev => prev ? { ...prev, progreso: 0 } : null)
+    }
   }
+
+  // ── Altura de la lista (viewport - header admin ~56px - page header ~80px) ──
+  const LISTA_HEIGHT = 'calc(100dvh - 56px - 80px - 24px)'
 
   // ─────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+    <div className="flex flex-col h-full max-w-7xl mx-auto">
+
+      {/* ── Page header ── */}
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-semibold text-white/90">Empleados</h1>
-          <p className="text-sm text-white/40 mt-0.5">
-            {loading ? '—' : `${empleados.length} ${empleados.length === 1 ? 'empleado' : 'empleados'}`}
-          </p>
+          <h1 className="text-xl font-semibold text-white">Empleados</h1>
+          <p className="text-sm text-white/40">{empleados.length} empleados</p>
         </div>
         <Button
           variant="primary"
           size="sm"
           onClick={() => setModalAbierto(true)}
-          className="flex-shrink-0 mt-0.5"
         >
-          <UserPlus className="w-3.5 h-3.5" />
-          Nuevo empleado
+          <UserPlus className="w-4 h-4" />
+          <span className="hidden sm:inline">Nuevo empleado</span>
         </Button>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Búsqueda */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
-          <input
-            type="text"
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o email..."
-            className="w-full h-9 pl-9 pr-3 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
-              text-white/85 placeholder:text-white/20 outline-none
-              focus:border-indigo-500/60 focus:bg-white/[0.06] transition-colors duration-150"
-          />
+      {/* ── Layout dos paneles ── */}
+      <div className="flex gap-4 min-h-0 flex-1">
+
+        {/* ════════════════════════════════════════
+            PANEL IZQUIERDO — Lista
+        ════════════════════════════════════════ */}
+        <div
+          className={`flex flex-col flex-shrink-0 glass-card rounded-xl overflow-hidden
+            w-full md:w-[40%]
+            ${vistaDetalleMobile && seleccionado ? 'hidden md:flex' : 'flex'}`}
+        >
+          {/* Filtros */}
+          <div className="p-3 border-b border-white/[0.06] space-y-2 flex-shrink-0">
+            {/* Búsqueda */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
+              <input
+                type="text"
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+                placeholder="Buscar por nombre o email..."
+                className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
+                  text-white/85 placeholder:text-white/20 outline-none
+                  focus:border-indigo-500/60 focus:bg-white/[0.06] transition-colors duration-150"
+              />
+            </div>
+
+            {/* Filtro área + contador */}
+            <div className="flex items-center gap-2">
+              {areas.length > 0 && (
+                <div className="relative flex-1">
+                  <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/25 pointer-events-none" />
+                  <select
+                    value={areaFiltro}
+                    onChange={e => setAreaFiltro(e.target.value)}
+                    className="w-full h-8 pl-7 pr-2 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
+                      text-white/65 appearance-none outline-none
+                      focus:border-indigo-500/60 transition-colors duration-150 cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0f1f3d]">Todas las áreas</option>
+                    {areas.map(a => (
+                      <option key={a} value={a} className="bg-[#0f1f3d]">{a}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <span className="text-[11px] text-white/30 whitespace-nowrap flex-shrink-0">
+                {empleadosFiltrados.length} resultado{empleadosFiltrados.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Lista scrolleable */}
+          <div
+            ref={listaRef}
+            className="flex-1 overflow-y-auto"
+            style={{ maxHeight: LISTA_HEIGHT }}
+          >
+            {loading ? (
+              <SkeletonLista />
+            ) : empleadosFiltrados.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Users className="w-8 h-8 text-white/10" />
+                <p className="text-xs text-white/25 text-center px-4">
+                  {busqueda
+                    ? `Sin resultados para "${busqueda}"`
+                    : 'No hay empleados en esta empresa'}
+                </p>
+              </div>
+            ) : (
+              <div>
+                {empleadosVisibles.map(emp => (
+                  <FilaEmpleado
+                    key={emp.id}
+                    emp={emp}
+                    seleccionado={seleccionado?.id === emp.id}
+                    onClick={() => handleSeleccionar(emp)}
+                  />
+                ))}
+
+                {/* Botón cargar más */}
+                {hayMas && (
+                  <div className="p-3 border-t border-white/[0.04]">
+                    <button
+                      onClick={() => setItemsVisibles(v => v + PAGE_SIZE)}
+                      className="w-full py-2 text-xs text-white/35 hover:text-white/60
+                        hover:bg-white/[0.03] rounded-lg transition-colors duration-150"
+                    >
+                      Cargar más ({empleadosFiltrados.length - itemsVisibles} restantes)
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Filtro por área */}
-        {areas.length > 0 && (
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
-            <select
-              value={areaFiltro}
-              onChange={e => setAreaFiltro(e.target.value)}
-              className="h-9 pl-9 pr-8 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
-                text-white/70 appearance-none outline-none
-                focus:border-indigo-500/60 focus:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
-            >
-              <option value="" className="bg-[#0f1f3d]">Todas las áreas</option>
-              {areas.map(a => (
-                <option key={a} value={a} className="bg-[#0f1f3d]">{a}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* ════════════════════════════════════════
+            PANEL DERECHO — Detalle
+        ════════════════════════════════════════ */}
+        <div
+          className={`flex-1 min-w-0 glass-card rounded-xl overflow-hidden
+            ${vistaDetalleMobile && seleccionado ? 'flex flex-col' : 'hidden md:flex md:flex-col'}`}
+        >
+          {/* Botón "Volver" en mobile */}
+          {vistaDetalleMobile && seleccionado && (
+            <div className="md:hidden px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
+              <button
+                onClick={() => {
+                  setVistaDetalleMobile(false)
+                  setSeleccionado(null)
+                  setConfirmDelete(false)
+                }}
+                className="flex items-center gap-1.5 text-sm text-white/50
+                  hover:text-white/80 transition-colors duration-150"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Volver a la lista
+              </button>
+            </div>
+          )}
+
+          {seleccionado ? (
+            <DetalleEmpleado
+              emp={seleccionado}
+              onEditar={() => router.push(`/admin/empleados/${seleccionado.id}`)}
+              onResetear={() => setResetTarget({ id: seleccionado.id, nombre: seleccionado.nombre })}
+              onEliminar={handleEliminar}
+              eliminando={eliminando}
+              confirmDelete={confirmDelete}
+              onConfirmDelete={() => setConfirmDelete(true)}
+              onCancelDelete={() => setConfirmDelete(false)}
+            />
+          ) : (
+            <EmptyDetalle />
+          )}
+        </div>
       </div>
 
-      {/* Grid de empleados */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+      {/* ── Dev badge ── */}
+      {rolAdmin === 'dev' && (
+        <div className="flex justify-end mt-3 flex-shrink-0">
+          <span className="text-[10px] font-mono text-amber-400/40 border border-amber-500/10
+            px-2 py-0.5 rounded">
+            dev · acceso total
+          </span>
         </div>
-      ) : empleadosFiltrados.length === 0 ? (
-        <EmptyState query={busqueda} />
-      ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
-        >
-          {empleadosFiltrados.map(emp => (
-            <EmpleadoCard
-              key={emp.id}
-              emp={emp}
-              onRequestReset={handleRequestReset}
-              onDeleted={handleDeleted}
-            />
-          ))}
-        </motion.div>
       )}
 
-      {/* Contador de resultados filtrados */}
-      {!loading && busqueda && empleadosFiltrados.length > 0 && (
-        <p className="text-xs text-white/30 text-center">
-          {empleadosFiltrados.length} resultado{empleadosFiltrados.length !== 1 ? 's' : ''}
-        </p>
-      )}
-
-      {/* Modal nuevo empleado */}
+      {/* ── Modales ── */}
       {modalAbierto && (
         <EmpleadoModal
           onClose={() => setModalAbierto(false)}
-          onCreated={handleCreated}
+          onCreated={handleCreado}
         />
       )}
 
-      {/* Modal reset progreso */}
       {resetTarget && (
         <ResetProgresoModal
           empleadoId={resetTarget.id}
@@ -521,13 +704,6 @@ export default function EmpleadosPage() {
           onClose={() => setResetTarget(null)}
           onReset={handleReset}
         />
-      )}
-
-      {/* Badge de acceso dev */}
-      {rolAdmin === 'dev' && (
-        <div className="flex justify-end">
-          <Badge variant="warning">Modo dev — acceso total</Badge>
-        </div>
       )}
     </div>
   )
