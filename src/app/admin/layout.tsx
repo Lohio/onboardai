@@ -117,7 +117,7 @@ const navItems: NavItemDef[] = [
     label: 'Equipo',
     href: '/admin/equipo',
     icon: <Users className="w-4 h-4" />,
-    disabled: true,
+    disabled: false,
   },
   {
     label: 'Conocimiento',
