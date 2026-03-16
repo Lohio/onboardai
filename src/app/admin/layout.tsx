@@ -66,16 +66,18 @@ function NavItem({
     return (
       <motion.div variants={navItemVariants}>
         <span
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
             text-white/25 cursor-not-allowed select-none"
         >
-          <span className="text-white/20">{item.icon}</span>
-          <span className="flex-1">{item.label}</span>
+          <span className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/15">
+            {item.icon}
+          </span>
+          <span className="flex-1 font-medium">{item.label}</span>
           <span
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded
-              bg-white/[0.06] text-white/30 border border-white/[0.07]"
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
+              bg-white/[0.06] text-white/25 border border-white/[0.06]"
           >
-            Próximamente
+            Pronto
           </span>
         </span>
       </motion.div>
@@ -86,17 +88,29 @@ function NavItem({
     <motion.div variants={navItemVariants}>
       <Link
         href={item.href}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-          transition-colors duration-150
+        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+          font-medium transition-all duration-150 group
           ${
             activo
-              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/20'
-              : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
+              ? 'bg-indigo-600/25 text-white border border-indigo-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+              : 'text-white/55 hover:text-white/85 hover:bg-white/[0.06] border border-transparent'
           }`}
       >
-        <span className={activo ? 'text-indigo-400' : 'text-white/35'}>
+        {/* Indicador lateral para item activo */}
+        {activo && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-indigo-400" />
+        )}
+
+        {/* Ícono con fondo */}
+        <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150
+          ${activo
+            ? 'bg-indigo-500/20 text-indigo-300'
+            : 'bg-white/[0.05] text-white/40 group-hover:bg-white/[0.08] group-hover:text-white/65'
+          }`}
+        >
           {item.icon}
         </span>
+
         <span className="flex-1">{item.label}</span>
       </Link>
     </motion.div>
@@ -111,37 +125,37 @@ const navItems: NavItemDef[] = [
   {
     label: 'Dashboard',
     href: '/admin',
-    icon: <LayoutDashboard className="w-4 h-4" />,
+    icon: <LayoutDashboard className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
     label: 'Empleados',
     href: '/admin/empleados',
-    icon: <Users className="w-4 h-4" />,
+    icon: <Users className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
     label: 'Conocimiento',
     href: '/admin/conocimiento',
-    icon: <BookOpen className="w-4 h-4" />,
+    icon: <BookOpen className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
     label: 'Contenido IA',
     href: '/admin/contenido',
-    icon: <Layers className="w-4 h-4" />,
+    icon: <Layers className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
     label: 'Reportes',
     href: '/admin/reportes',
-    icon: <BarChart2 className="w-4 h-4" />,
+    icon: <BarChart2 className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
     label: 'Configuración',
     href: '/admin/configuracion',
-    icon: <Settings className="w-4 h-4" />,
+    icon: <Settings className="w-[18px] h-[18px]" />,
     disabled: false,
   },
 ]
@@ -166,24 +180,35 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-white/[0.06]">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-          <Bot className="w-4 h-4 text-indigo-400" />
+      {/* ── Logo / marca ── */}
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.06]">
+        <div className="w-9 h-9 rounded-xl bg-indigo-600/25 border border-indigo-500/30
+          flex items-center justify-center flex-shrink-0
+          shadow-[0_0_16px_rgba(59,79,216,0.2)]">
+          <Bot className="w-[18px] h-[18px] text-indigo-300" />
         </div>
-        <span className="font-semibold text-white text-sm">OnboardAI Admin</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-white/90 leading-none">OnboardAI</p>
+          <p className="text-[11px] text-white/35 mt-0.5">Panel de administración</p>
+        </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="ml-auto text-white/30 hover:text-white/70 transition-colors duration-150 md:hidden"
+            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+              text-white/30 hover:text-white/70 hover:bg-white/[0.06]
+              transition-colors duration-150 md:hidden"
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+      {/* ── Nav ── */}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        {/* Etiqueta de sección */}
+        <p className="px-3 mb-1.5 text-[10px] font-semibold text-white/25 uppercase tracking-widest">
+          Navegación
+        </p>
         <motion.div
           variants={sidebarContainerVariants}
           initial="hidden"
@@ -205,15 +230,17 @@ function SidebarContent({
         </motion.div>
       </nav>
 
-      {/* Footer: avatar del admin */}
-      <div className="px-3 py-4 border-t border-white/[0.06]">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors duration-150">
-          <div className="w-7 h-7 rounded-full bg-indigo-600/25 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
-            <span className="text-indigo-300 text-[11px] font-semibold">{initials}</span>
+      {/* ── Footer: avatar del admin ── */}
+      <div className="px-3 py-3 border-t border-white/[0.06]">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl
+          hover:bg-white/[0.04] transition-colors duration-150 cursor-default">
+          <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30
+            flex items-center justify-center flex-shrink-0">
+            <span className="text-indigo-300 text-xs font-bold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-white/70 truncate">{adminNombre || 'Admin'}</p>
-            <p className="text-[10px] text-white/30">Administrador</p>
+            <p className="text-xs font-semibold text-white/80 truncate">{adminNombre || 'Admin'}</p>
+            <p className="text-[11px] text-white/35 mt-0.5">Administrador</p>
           </div>
         </div>
       </div>
@@ -461,7 +488,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-dvh gradient-bg flex">
       {/* ── Sidebar desktop (fijo) ── */}
-      <aside className="hidden md:flex flex-col w-60 flex-shrink-0 border-r border-white/[0.06] bg-surface-900/40">
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/[0.07] bg-white/[0.02]">
         <SidebarContent adminNombre={adminNombre} pathname={pathname} />
       </aside>
 
