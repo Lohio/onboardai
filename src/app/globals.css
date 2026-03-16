@@ -1,26 +1,236 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ==========================================
+   DESIGN TOKENS — OnboardAI
+   ========================================== */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
+  /* Paleta Navy */
+  --color-navy-950: #060e1e;
+  --color-navy-900: #0F1F3D;
+  --color-navy-800: #162847;
+  --color-navy-700: #1e3354;
+  --color-navy-600: #253e66;
+
+  /* Paleta Indigo (acento principal) */
+  --color-indigo-700: #2d3db5;
+  --color-indigo-600: #3B4FD8;
+  --color-indigo-500: #4f63e7;
+  --color-indigo-400: #6b7cf0;
+  --color-indigo-300: #8d9bf5;
+  --color-indigo-200: #b3bcf9;
+  --color-indigo-100: #e0e4fd;
+
+  /* Paleta Teal (secundario / éxito) */
+  --color-teal-700: #0a7a6f;
+  --color-teal-600: #0D9488;
+  --color-teal-500: #14b8a6;
+  --color-teal-400: #2dd4bf;
+  --color-teal-100: #ccfbf1;
+
+  /* Superficies dark */
+  --color-surface-950: #040810;
+  --color-surface-900: #0a0f1e;
+  --color-surface-800: #0f1628;
+  --color-surface-700: #141d32;
+  --color-surface-600: #1a2540;
+  --color-surface-500: #1f2d4e;
+  --color-surface-400: #2a3a60;
+
+  /* Fuentes */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ==========================================
+   BASE
+   ========================================== */
+
+:root {
+  --background: #040810;
+  --foreground: #e8eaf0;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+/* ==========================================
+   CLASES UTILITARIAS PERSONALIZADAS
+   ========================================== */
+
+/* Card con efecto glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 4px 24px 0 rgba(0, 0, 0, 0.4),
+    0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Fondo con gradiente radial atmosférico */
+.gradient-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59, 79, 216, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(13, 148, 136, 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 10% 60%, rgba(59, 79, 216, 0.06) 0%, transparent 50%),
+    #040810;
+}
+
+/* Efecto shimmer para loading/skeleton */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ==========================================
+   KEYFRAMES
+   ========================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.015);
+    opacity: 0.88;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================
+   CLASES DE ANIMACIÓN
+   ========================================== */
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-spin-fast {
+  animation: spin 0.7s linear infinite;
+}
+
+/* Delays para stagger */
+.delay-75  { animation-delay: 75ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-225 { animation-delay: 225ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ==========================================
+   SCROLLBAR PERSONALIZADA (estilo dark)
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 79, 216, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 79, 216, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 79, 216, 0.25) transparent;
+}
+
+/* ==========================================
+   UTILIDADES TIPOGRÁFICAS
+   ========================================== */
+
+.text-gradient {
+  background: linear-gradient(135deg, #8d9bf5 0%, #4f63e7 50%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
