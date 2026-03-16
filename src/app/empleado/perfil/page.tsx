@@ -5,16 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera, Mail, ExternalLink, Copy, Check,
   MessageSquare, FileText, Code, Globe,
+  Calendar, User, BookOpen, Briefcase,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
 import type { HerramientaContacto } from '@/lib/contacto'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
+
+// Total de bloques requeridos para completar M2 — Cultura
+const CULTURA_TOTAL = 5
+
+// ─────────────────────────────────────────────
+// Tipos
+// ─────────────────────────────────────────────
+
+interface EstadoModulos {
+  M1: boolean
+  M2: boolean
+  M3: boolean
+  M4: boolean
+}
 
 // ─────────────────────────────────────────────
 // Variantes de animación
@@ -90,8 +106,16 @@ function relacionBadgeVariant(r: MiembroEquipo['relacion']): 'default' | 'succes
   return 'info'
 }
 
+/** Días transcurridos desde el ingreso (mínimo 1) */
+function diasDeOnboarding(fechaIngreso: string): number {
+  const ingreso = new Date(fechaIngreso)
+  const hoy = new Date()
+  const diff = Math.floor((hoy.getTime() - ingreso.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.max(1, diff + 1)
+}
+
 // ─────────────────────────────────────────────
-// Ícono por herramienta
+// Ícono por herramienta de acceso
 // ─────────────────────────────────────────────
 
 function ToolIcon({ name, className }: { name: string; className?: string }) {
@@ -104,6 +128,17 @@ function ToolIcon({ name, className }: { name: string; className?: string }) {
 }
 
 // ─────────────────────────────────────────────
+// Info de módulos para "Mi onboarding"
+// ─────────────────────────────────────────────
+
+const MODULO_INFO = [
+  { key: 'M1' as const, label: 'Perfil',     Icon: User           },
+  { key: 'M2' as const, label: 'Cultura',    Icon: BookOpen       },
+  { key: 'M3' as const, label: 'Rol',        Icon: Briefcase      },
+  { key: 'M4' as const, label: 'Asistente',  Icon: MessageSquare  },
+]
+
+// ─────────────────────────────────────────────
 // Skeleton
 // ─────────────────────────────────────────────
 
@@ -114,23 +149,45 @@ function SkeletonLine({ width = 'w-full', className }: { width?: string; classNa
 function ProfileSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Bloque A */}
-      <div className="glass-card rounded-xl p-5">
-        <div className="flex flex-col sm:flex-row gap-5">
-          <div className="shimmer rounded-full w-24 h-24 flex-shrink-0" />
-          <div className="flex-1 space-y-3 pt-1">
-            <SkeletonLine width="w-48" className="h-6" />
-            <SkeletonLine width="w-36" />
-            <SkeletonLine width="w-24" className="h-5 rounded-full" />
-            <SkeletonLine width="w-32" />
-            <SkeletonLine width="w-full" className="h-12 mt-2" />
+      {/* Hero skeleton */}
+      <div className="glass-card rounded-xl overflow-hidden">
+        <div className="shimmer h-20" />
+        <div className="px-6 pb-6">
+          <div className="flex items-end justify-between -mt-7">
+            <div className="shimmer rounded-full w-14 h-14 flex-shrink-0" style={{ border: '4px solid #0a1628' }} />
+            <SkeletonLine width="w-28" className="h-5 rounded-full mb-1" />
           </div>
+          <div className="mt-3 space-y-2">
+            <SkeletonLine width="w-40" className="h-5" />
+            <SkeletonLine width="w-28" />
+            <div className="flex flex-wrap gap-4 mt-3">
+              <SkeletonLine width="w-32" />
+              <SkeletonLine width="w-44" />
+              <SkeletonLine width="w-20" className="h-5 rounded-md" />
+            </div>
+          </div>
+          <div className="h-px bg-white/[0.06] my-4" />
+          <SkeletonLine width="w-full" className="h-10" />
         </div>
       </div>
 
-      {/* Bloque B */}
+      {/* Mi onboarding skeleton */}
+      <div className="glass-card rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <SkeletonLine width="w-28" className="h-4" />
+          <SkeletonLine width="w-20" className="h-4" />
+        </div>
+        <SkeletonLine width="w-full" className="h-1.5 rounded-full" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="shimmer rounded-xl h-20" />
+          ))}
+        </div>
+      </div>
+
+      {/* Equipo skeleton */}
       <div className="glass-card rounded-xl p-5 space-y-3">
-        <SkeletonLine width="w-28" className="h-5 mb-4" />
+        <SkeletonLine width="w-24" className="h-4 mb-4" />
         {[1, 2, 3].map(i => (
           <div key={i} className="flex items-center gap-3">
             <div className="shimmer rounded-full w-10 h-10 flex-shrink-0" />
@@ -141,29 +198,15 @@ function ProfileSkeleton() {
           </div>
         ))}
       </div>
-
-      {/* Bloque C */}
-      <div className="glass-card rounded-xl p-5 space-y-3">
-        <SkeletonLine width="w-28" className="h-5 mb-4" />
-        {[1, 2, 3, 4, 5].map(i => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="shimmer rounded-md w-8 h-8 flex-shrink-0" />
-            <SkeletonLine width="w-32" />
-            <div className="ml-auto">
-              <SkeletonLine width="w-16" className="h-5 rounded-full" />
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Avatar con upload
+// Avatar hero — sobresale del banner (w-14 h-14)
 // ─────────────────────────────────────────────
 
-function AvatarUpload({
+function HeroAvatar({
   src,
   nombre,
   onUpload,
@@ -176,24 +219,25 @@ function AvatarUpload({
   const initials = getInitials(nombre)
 
   return (
-    <div
-      className="relative group cursor-pointer flex-shrink-0 w-24 h-24"
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      className="relative group cursor-pointer flex-shrink-0"
       onClick={() => inputRef.current?.click()}
     >
-      {src ? (
-        <img
-          src={src}
-          alt={nombre}
-          className="w-24 h-24 rounded-full object-cover"
-        />
-      ) : (
-        <div className="w-24 h-24 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-          <span className="text-indigo-300 text-3xl font-semibold">{initials}</span>
-        </div>
-      )}
+      <div
+        className="w-14 h-14 rounded-full overflow-hidden bg-indigo-900/50 flex items-center justify-center"
+        style={{ border: '4px solid #0a1628' }}
+      >
+        {src ? (
+          <img src={src} alt={nombre} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-indigo-300 text-xl font-semibold">{initials}</span>
+        )}
+      </div>
 
       <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center">
-        <Camera className="w-6 h-6 text-white" />
+        <Camera className="w-4 h-4 text-white" />
       </div>
 
       <input
@@ -207,12 +251,12 @@ function AvatarUpload({
           e.target.value = ''
         }}
       />
-    </div>
+    </motion.div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Avatar pequeño (40px) para equipo
+// Avatar pequeño (40px) para el equipo
 // ─────────────────────────────────────────────
 
 function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
@@ -243,6 +287,15 @@ export default function PerfilPage() {
   const [bio, setBio] = useState('')
   const [savedFeedback, setSavedFeedback] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [emailCopied, setEmailCopied] = useState(false)
+
+  // Progreso de los 4 módulos — M1 siempre completo
+  const [modulosProgreso, setModulosProgreso] = useState<EstadoModulos>({
+    M1: true,
+    M2: false,
+    M3: false,
+    M4: false,
+  })
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -327,6 +380,37 @@ export default function PerfilPage() {
           setEquipo(miembros)
         }
       }
+
+      // 6. Progreso de módulos (no bloqueante — tabla puede no existir)
+      try {
+        const { data: rows } = await supabase
+          .from('progreso_modulos')
+          .select('modulo, bloque, completado')
+          .eq('usuario_id', user.id)
+
+        const progresoRows = rows ?? []
+        const culturaCompletados = progresoRows.filter(
+          r => r.modulo === 'cultura' && r.completado
+        ).length
+        const m2 = culturaCompletados >= CULTURA_TOTAL
+        const m3 = progresoRows.some(r => r.modulo === 'rol' && r.completado)
+
+        // M4: al menos una conversación de IA
+        let m4 = false
+        try {
+          const { count } = await supabase
+            .from('conversaciones_ia')
+            .select('*', { count: 'exact', head: true })
+            .eq('usuario_id', user.id)
+          m4 = (count ?? 0) > 0
+        } catch {
+          // tabla puede no existir aún
+        }
+
+        setModulosProgreso({ M1: true, M2: m2, M3: m3, M4: m4 })
+      } catch (err) {
+        console.warn('[Perfil] progreso_modulos:', err)
+      }
     } catch (err) {
       console.error('Error cargando perfil:', err)
       toast.error('Error al cargar el perfil')
@@ -392,9 +476,29 @@ export default function PerfilPage() {
     }
   }
 
-  // Contactos clave desde datos de equipo ya cargados
+  // Copiar email con feedback inline
+  const handleCopyEmail = async () => {
+    if (!perfil) return
+    try {
+      await navigator.clipboard.writeText(perfil.email)
+      setEmailCopied(true)
+      setTimeout(() => setEmailCopied(false), 2000)
+      toast.success('Email copiado')
+    } catch {
+      toast.error('No se pudo copiar el email')
+    }
+  }
+
+  // Contactos clave derivados del equipo
   const manager = equipo.find(m => m.relacion === 'manager')
-  const buddy = equipo.find(m => m.relacion === 'buddy')
+  const buddy   = equipo.find(m => m.relacion === 'buddy')
+
+  // Módulo activo: el primero sin completar
+  const moduloActivo = MODULO_INFO.find(m => !modulosProgreso[m.key])?.key ?? null
+
+  // Métricas de progreso global
+  const modulosCompletados = Object.values(modulosProgreso).filter(Boolean).length
+  const progresoTotal      = Math.round((modulosCompletados / 4) * 100)
 
   // ── Render: loading ──
   if (loading) {
@@ -432,8 +536,8 @@ export default function PerfilPage() {
   // ── Render: principal ──
   return (
     <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
-
       <div className="max-w-2xl mx-auto">
+
         <motion.h1
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -449,110 +553,224 @@ export default function PerfilPage() {
           animate="show"
           className="space-y-6"
         >
-          {/* ── Bloque A: Mis datos ── */}
-          <motion.section variants={blockVariants}>
-            <Card>
-              <div className="flex flex-col sm:flex-row gap-5">
-                {/* Avatar con upload */}
-                <AvatarUpload
-                  src={perfil.foto_url}
-                  nombre={perfil.nombre}
-                  onUpload={handleAvatarUpload}
-                />
 
-                {/* Datos personales */}
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-white leading-tight">
+          {/* ── Bloque A: Hero Card ── */}
+          <motion.section variants={blockVariants}>
+            <Card padding="none" className="overflow-hidden">
+
+              {/* Banner decorativo */}
+              <div
+                className="relative h-20 overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #1a2d5a 0%, #162440 50%, #0f1e3d 100%)',
+                }}
+              >
+                {/* Overlay radial indigo en esquina izquierda */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at -10% 50%, rgba(99,102,241,0.25) 0%, transparent 60%)',
+                  }}
+                />
+                {/* Pulso sutil en esquina derecha */}
+                <div
+                  className="absolute inset-0 pointer-events-none animate-pulse opacity-50"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 110% 50%, rgba(59,79,216,0.15) 0%, transparent 55%)',
+                  }}
+                />
+              </div>
+
+              {/* Body */}
+              <div className="px-6 pb-6">
+
+                {/* Fila: avatar (sobresale del banner) + badge día */}
+                <div className="flex items-end justify-between -mt-7">
+                  <HeroAvatar
+                    src={perfil.foto_url}
+                    nombre={perfil.nombre}
+                    onUpload={handleAvatarUpload}
+                  />
+                  {perfil.fecha_ingreso && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/[0.06] mb-1"
+                      style={{ background: 'rgba(10,22,40,0.8)' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
+                      <span className="text-[11px] text-white/50">
+                        Día {diasDeOnboarding(perfil.fecha_ingreso)} de onboarding
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Nombre y puesto */}
+                <div className="mt-3">
+                  <h2 className="text-xl font-semibold text-white/90 leading-tight">
                     {perfil.nombre}
                   </h2>
-
                   {(perfil.puesto || perfil.area) && (
-                    <p className="text-sm text-white/55 mt-0.5">
+                    <p className="text-sm text-white/45 mt-0.5">
                       {[perfil.puesto, perfil.area].filter(Boolean).join(' · ')}
                     </p>
                   )}
+                </div>
 
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {perfil.modalidad && (
-                      <Badge variant={modalidadVariant(perfil.modalidad)}>
-                        {modalidadLabel(perfil.modalidad)}
-                      </Badge>
-                    )}
-                    {perfil.fecha_ingreso && (
-                      <span className="text-xs text-white/35">
-                        Ingresó el {formatDate(perfil.fecha_ingreso)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Email copiable */}
+                {/* Meta row: fecha · email copiable · modalidad */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3">
+                  {perfil.fecha_ingreso && (
+                    <span className="flex items-center gap-1.5 text-xs text-white/45">
+                      <Calendar className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                      {formatDate(perfil.fecha_ingreso)}
+                    </span>
+                  )}
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(perfil.email).catch(() => {})
-                      toast.success('Email copiado')
-                    }}
-                    className="flex items-center gap-1.5 mt-2 text-sm text-white/45 hover:text-indigo-300 transition-colors duration-150 group"
+                    onClick={handleCopyEmail}
+                    className="flex items-center gap-1.5 text-xs text-white/45 hover:text-indigo-300 transition-colors duration-150 group"
                     title="Copiar email"
                   >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span className="font-mono text-xs">{perfil.email}</span>
-                    <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                    <Mail className="w-3.5 h-3.5 text-white/30 group-hover:text-indigo-400 transition-colors flex-shrink-0" />
+                    <span className="font-mono">{perfil.email}</span>
+                    <span className="ml-0.5">
+                      {emailCopied ? (
+                        <Check className="w-3 h-3 text-teal-400" />
+                      ) : (
+                        <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                      )}
+                    </span>
                   </button>
+                  {perfil.modalidad && (
+                    <Badge variant={modalidadVariant(perfil.modalidad)}>
+                      {modalidadLabel(perfil.modalidad)}
+                    </Badge>
+                  )}
+                </div>
 
-                  {/* Sobre mí editable inline */}
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-                        Sobre mí
-                      </span>
-                      <AnimatePresence>
-                        {savedFeedback && (
-                          <motion.span
-                            initial={{ opacity: 0, x: -4 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="text-[11px] text-teal-400 flex items-center gap-1"
-                          >
-                            <Check className="w-3 h-3" /> guardado
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                {/* Divider */}
+                <div className="h-px bg-white/[0.06] my-4" />
 
-                    {editandoBio ? (
-                      <textarea
-                        autoFocus
-                        value={bio}
-                        onChange={e => setBio(e.target.value)}
-                        onBlur={handleBioBlur}
-                        rows={3}
-                        placeholder="Contá algo sobre vos..."
-                        className={cn(
-                          'w-full text-sm text-white/80 bg-surface-800/60 rounded-lg',
-                          'border border-white/10 focus:border-indigo-500/40',
-                          'p-2.5 resize-none outline-none',
-                          'placeholder:text-white/25 transition-colors duration-150',
-                        )}
-                      />
-                    ) : (
-                      <p
-                        onClick={() => setEditandoBio(true)}
-                        className={cn(
-                          'text-sm cursor-text rounded-lg p-2 -ml-2',
-                          'hover:bg-white/[0.03] transition-colors duration-150',
-                          bio ? 'text-white/70' : 'text-white/25 italic',
-                        )}
-                      >
-                        {bio || 'Contá algo sobre vos...'}
-                      </p>
-                    )}
+                {/* Sobre mí — editable inline (lógica sin cambios) */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+                      Sobre mí
+                    </span>
+                    <AnimatePresence>
+                      {savedFeedback && (
+                        <motion.span
+                          initial={{ opacity: 0, x: -4 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="text-[11px] text-teal-400 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" /> guardado
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
+
+                  {editandoBio ? (
+                    <textarea
+                      autoFocus
+                      value={bio}
+                      onChange={e => setBio(e.target.value)}
+                      onBlur={handleBioBlur}
+                      rows={3}
+                      placeholder="Contá algo sobre vos..."
+                      className={cn(
+                        'w-full text-sm text-white/80 bg-surface-800/60 rounded-lg',
+                        'border border-white/10 focus:border-indigo-500/40',
+                        'p-2.5 resize-none outline-none',
+                        'placeholder:text-white/25 transition-colors duration-150',
+                      )}
+                    />
+                  ) : (
+                    <p
+                      onClick={() => setEditandoBio(true)}
+                      className={cn(
+                        'text-sm cursor-text rounded-lg p-2 -ml-2',
+                        'hover:bg-white/[0.03] transition-colors duration-150',
+                        bio ? 'text-white/70' : 'text-white/25 italic',
+                      )}
+                    >
+                      {bio || 'Contá algo sobre vos...'}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
           </motion.section>
 
-          {/* ── Bloque B: Mi equipo ── */}
+          {/* ── Bloque B: Mi onboarding ── */}
+          <motion.section variants={blockVariants}>
+            <Card>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+                  Mi onboarding
+                </h2>
+                <span className="text-xs text-white/40 font-mono tabular-nums">
+                  {modulosCompletados} / 4 módulos
+                </span>
+              </div>
+
+              {/* Barra de progreso animada */}
+              <ProgressBar value={progresoTotal} showPercentage={false} />
+
+              {/* Grid de 4 módulos — 2 cols en mobile, 4 en desktop */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                {MODULO_INFO.map(({ key, label, Icon }) => {
+                  const completado = modulosProgreso[key]
+                  const activo     = moduloActivo === key
+
+                  const iconBg = completado
+                    ? 'bg-teal-500/15'
+                    : activo
+                    ? 'bg-indigo-600/20'
+                    : 'bg-white/[0.03]'
+
+                  const iconText = completado
+                    ? 'text-teal-400'
+                    : activo
+                    ? 'text-indigo-400'
+                    : 'text-white/20'
+
+                  const estadoLabel = completado
+                    ? 'Completado'
+                    : activo
+                    ? 'En curso'
+                    : 'Bloqueado'
+
+                  const estadoColor = completado
+                    ? 'text-teal-400'
+                    : activo
+                    ? 'text-indigo-400'
+                    : 'text-white/20'
+
+                  return (
+                    <motion.div
+                      key={key}
+                      variants={itemVariants}
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]"
+                    >
+                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', iconBg)}>
+                        <Icon className={cn('w-4 h-4', iconText)} />
+                      </div>
+                      <span className="text-[11px] font-medium text-white/60 text-center leading-tight">
+                        {label}
+                      </span>
+                      <span className={cn('text-[10px] text-center leading-tight', estadoColor)}>
+                        {estadoLabel}
+                      </span>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </Card>
+          </motion.section>
+
+          {/* ── Bloque C: Mi equipo ── */}
           {equipo.length > 0 && (
             <motion.section variants={blockVariants}>
               <Card>
@@ -602,68 +820,6 @@ export default function PerfilPage() {
             </motion.section>
           )}
 
-          {/* ── Bloque C: Mis accesos ── */}
-          {accesos.length > 0 && (
-            <motion.section variants={blockVariants}>
-              <Card>
-                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                  Mis accesos
-                </h2>
-
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-3"
-                >
-                  {accesos.map(acceso => (
-                    <motion.div
-                      key={acceso.id}
-                      variants={itemVariants}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="w-8 h-8 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
-                        <ToolIcon name={acceso.herramienta} className="text-white/50" />
-                      </div>
-
-                      <span className="flex-1 text-sm text-white/80 truncate">
-                        {acceso.herramienta}
-                      </span>
-
-                      {acceso.estado === 'activo' && (
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge variant="success">Activo</Badge>
-                          {acceso.url && (
-                            <a
-                              href={acceso.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-white/25 hover:text-teal-400 transition-colors duration-150"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      )}
-
-                      {acceso.estado === 'pendiente' && (
-                        <span className="animate-pulse-soft flex-shrink-0">
-                          <Badge variant="warning">En proceso</Badge>
-                        </span>
-                      )}
-
-                      {acceso.estado === 'sin_acceso' && (
-                        <span className="flex-shrink-0">
-                          <Badge variant="error">Sin acceso</Badge>
-                        </span>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </Card>
-            </motion.section>
-          )}
-
           {/* ── Bloque D: Contactos clave ── */}
           <motion.section variants={blockVariants}>
             <Card>
@@ -671,6 +827,7 @@ export default function PerfilPage() {
                 Contactos clave
               </h2>
 
+              {/* 2 cols en mobile, 4 en desktop */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <ContactoCard
                   tipo="manager"
@@ -699,6 +856,69 @@ export default function PerfilPage() {
               </div>
             </Card>
           </motion.section>
+
+          {/* ── Bloque E: Mis accesos ── */}
+          <motion.section variants={blockVariants}>
+            <Card>
+              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                Mis accesos
+              </h2>
+
+              {accesos.length === 0 ? (
+                <p className="text-sm text-white/30 italic py-2">
+                  Tus accesos aparecerán aquí cuando el admin los configure.
+                </p>
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-0"
+                >
+                  {accesos.map(acceso => (
+                    <motion.div
+                      key={acceso.id}
+                      variants={itemVariants}
+                      className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0"
+                    >
+                      <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
+                        <ToolIcon name={acceso.herramienta} className="text-white/50" />
+                      </div>
+
+                      <span className="flex-1 text-sm text-white/70 truncate">
+                        {acceso.herramienta}
+                      </span>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {acceso.estado === 'activo' && (
+                          <>
+                            <Badge variant="success">Activo</Badge>
+                            {acceso.url && (
+                              <a
+                                href={acceso.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-white/25 hover:text-teal-400 transition-colors duration-150"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </>
+                        )}
+                        {acceso.estado === 'pendiente' && (
+                          <Badge variant="warning">En proceso</Badge>
+                        )}
+                        {acceso.estado === 'sin_acceso' && (
+                          <Badge variant="error">Sin acceso</Badge>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </Card>
+          </motion.section>
+
         </motion.div>
       </div>
     </div>

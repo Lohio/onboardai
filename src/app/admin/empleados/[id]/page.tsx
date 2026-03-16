@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -8,7 +8,7 @@ import {
   ArrowLeft, Save, BookOpen, Wrench, MessageSquare,
   RotateCcw, CheckCircle2, Circle, Clock, AlertCircle,
   CalendarDays, Zap, Sparkles, CheckSquare, ChevronDown,
-  Pencil, BarChart2,
+  Pencil, BarChart2, Plus, Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -107,6 +107,14 @@ interface TareaPendiente {
   id: string
   titulo: string
   semana: number
+}
+
+interface AccesoRow {
+  id: string
+  herramienta: string
+  estado: 'activo' | 'pendiente' | 'sin_acceso'
+  url: string | null
+  notas: string | null
 }
 
 type TabKey = 'edicion' | 'progreso'
@@ -219,6 +227,14 @@ export default function EmpleadoDetallePage() {
   const [reporte, setReporte] = useState('')
   const [reporteVisible, setReporteVisible] = useState(false)
 
+  // Accesos y herramientas
+  const [accesos, setAccesos] = useState<AccesoRow[]>([])
+  const [empresaId, setEmpresaId] = useState<string>('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [focusNewId, setFocusNewId] = useState<string | null>(null)
+  // Timers de debounce por fila (clave: `{id}_{campo}`)
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
     try {
@@ -238,6 +254,7 @@ export default function EmpleadoDetallePage() {
       }
 
       setRolAdmin(adminData.rol as UserRole)
+      setEmpresaId(adminData.empresa_id)
 
       // ── Datos del empleado ──
       const { data: empData, error: empError } = await supabase
@@ -292,6 +309,7 @@ export default function EmpleadoDetallePage() {
         culturaCntRes,
         tareasCompRes,
         tareasPendRes,
+        accesosRes,
       ] = await Promise.all([
         supabase.from('conocimiento').select('modulo').eq('empresa_id', adminData.empresa_id),
         supabase.from('progreso_modulos').select('modulo, bloque, completado, completado_at').eq('usuario_id', id),
@@ -307,6 +325,8 @@ export default function EmpleadoDetallePage() {
           .eq('usuario_id', id).eq('completada', true).order('completada_at', { ascending: false }),
         supabase.from('tareas_onboarding').select('id, titulo, semana')
           .eq('usuario_id', id).eq('completada', false).order('semana').limit(10),
+        supabase.from('accesos_herramientas').select('id, herramienta, estado, url, notas')
+          .eq('usuario_id', id).order('herramienta'),
       ])
 
       const progresoRows = progresoRes.data ?? []
@@ -329,6 +349,8 @@ export default function EmpleadoDetallePage() {
 
       setAlertas((alertaRes.data ?? []) as AlertaRow[])
       setColaboradores((colabRes.data ?? []) as ColaboradorRow[])
+      // Accesos — tabla puede no existir aún si el SQL no fue ejecutado
+      if (accesosRes.data) setAccesos(accesosRes.data as AccesoRow[])
 
       // Módulos para tab progreso (con chart)
       const totalCultura = culturaCntRes.count ?? 0
@@ -498,6 +520,68 @@ export default function EmpleadoDetallePage() {
     } finally {
       setGenerando(false)
     }
+  }
+
+  // ── Clases de color para el select de estado de accesos ──
+  function selectEstadoCls(estado: AccesoRow['estado']): string {
+    if (estado === 'activo')    return 'text-teal-400 bg-teal-500/10 border-teal-500/20'
+    if (estado === 'pendiente') return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+    return 'text-red-400 bg-red-500/10 border-red-500/20'
+  }
+
+  // ── Agregar nuevo acceso ──
+  async function agregarAcceso(nombreHerramienta = '') {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('accesos_herramientas')
+      .insert({ usuario_id: id, empresa_id: empresaId, herramienta: nombreHerramienta, estado: 'pendiente' })
+      .select('id, herramienta, estado, url, notas')
+      .single()
+    if (error) { toast.error('No se pudo agregar la herramienta'); return }
+    setAccesos(prev => [...prev, data as AccesoRow])
+    setFocusNewId((data as AccesoRow).id)
+  }
+
+  // ── Actualizar estado (optimistic) ──
+  async function actualizarEstado(accesoId: string, nuevoEstado: AccesoRow['estado']) {
+    const prev = accesos.find(a => a.id === accesoId)
+    setAccesos(list => list.map(a => a.id === accesoId ? { ...a, estado: nuevoEstado } : a))
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('accesos_herramientas')
+      .update({ estado: nuevoEstado })
+      .eq('id', accesoId)
+    if (error) {
+      toast.error('No se pudo actualizar el estado')
+      // Revertir al estado anterior
+      if (prev) setAccesos(list => list.map(a => a.id === accesoId ? { ...a, estado: prev.estado } : a))
+    }
+  }
+
+  // ── Actualizar campo con debounce de 800ms (herramienta o url) ──
+  function actualizarCampoDebounced(accesoId: string, campo: 'herramienta' | 'url', valor: string) {
+    setAccesos(list => list.map(a => a.id === accesoId ? { ...a, [campo]: valor || null } : a))
+    const key = `${accesoId}_${campo}`
+    clearTimeout(debounceTimers.current[key])
+    debounceTimers.current[key] = setTimeout(async () => {
+      const supabase = createClient()
+      await supabase
+        .from('accesos_herramientas')
+        .update({ [campo]: valor.trim() || null })
+        .eq('id', accesoId)
+    }, 800)
+  }
+
+  // ── Eliminar acceso ──
+  async function eliminarAcceso(accesoId: string) {
+    setAccesos(prev => prev.filter(a => a.id !== accesoId))
+    setConfirmDeleteId(null)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('accesos_herramientas')
+      .delete()
+      .eq('id', accesoId)
+    if (error) { toast.error('No se pudo eliminar'); cargarDatos() }
   }
 
   // ── Loading ──
@@ -702,6 +786,114 @@ export default function EmpleadoDetallePage() {
                   </div>
                 </div>
 
+                {/* ── Accesos y herramientas ── */}
+                <div className="pt-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-sm font-semibold text-white/70 whitespace-nowrap">Accesos y herramientas</h3>
+                    <div className="flex-1 h-px bg-white/[0.06]" />
+                  </div>
+
+                  {/* Lista de accesos */}
+                  <div className="space-y-0 mb-3">
+                    <AnimatePresence initial={false}>
+                      {accesos.map(acceso => (
+                        <motion.div
+                          key={acceso.id}
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                          className="flex flex-wrap items-center gap-2 py-2 border-b border-white/[0.04] last:border-0"
+                        >
+                          {/* Nombre de la herramienta */}
+                          <input
+                            type="text"
+                            value={acceso.herramienta}
+                            autoFocus={acceso.id === focusNewId}
+                            onFocus={() => setFocusNewId(null)}
+                            onChange={e => actualizarCampoDebounced(acceso.id, 'herramienta', e.target.value)}
+                            placeholder="Nombre de la herramienta"
+                            className="flex-1 min-w-[120px] text-sm bg-transparent border-none outline-none text-white/80 placeholder:text-white/20 px-1 focus:bg-white/[0.04] focus:rounded focus:px-2 transition-all duration-150"
+                          />
+
+                          {/* Select de estado coloreado */}
+                          <select
+                            value={acceso.estado}
+                            onChange={e => actualizarEstado(acceso.id, e.target.value as AccesoRow['estado'])}
+                            className={cn(
+                              'w-30 h-7 px-2 rounded-md text-xs border outline-none cursor-pointer appearance-none font-medium transition-colors duration-150',
+                              selectEstadoCls(acceso.estado),
+                            )}
+                          >
+                            <option value="activo"     className="bg-[#0f1f3d] text-teal-400">Activo</option>
+                            <option value="pendiente"  className="bg-[#0f1f3d] text-amber-400">Pendiente</option>
+                            <option value="sin_acceso" className="bg-[#0f1f3d] text-red-400">Sin acceso</option>
+                          </select>
+
+                          {/* URL — solo visible si estado es activo */}
+                          {acceso.estado === 'activo' && (
+                            <input
+                              type="url"
+                              value={acceso.url ?? ''}
+                              onChange={e => actualizarCampoDebounced(acceso.id, 'url', e.target.value)}
+                              placeholder="URL del acceso"
+                              className="w-full sm:w-44 text-xs bg-transparent border-none outline-none text-white/40 placeholder:text-white/20 px-1 focus:bg-white/[0.04] focus:rounded focus:px-2 transition-all duration-150"
+                            />
+                          )}
+
+                          {/* Confirmar eliminación inline */}
+                          {confirmDeleteId === acceso.id ? (
+                            <div className="flex items-center gap-1.5 ml-auto">
+                              <span className="text-xs text-white/40">¿Eliminar?</span>
+                              <button
+                                onClick={() => eliminarAcceso(acceso.id)}
+                                className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors duration-150"
+                              >
+                                Sí
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs px-2 py-0.5 rounded bg-white/[0.04] text-white/40 hover:bg-white/[0.08] transition-colors duration-150"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(acceso.id)}
+                              className="ml-auto text-white/20 hover:text-red-400 transition-colors duration-150 flex-shrink-0 p-1"
+                              title="Eliminar herramienta"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Chips de herramientas sugeridas (solo si lista vacía) */}
+                  {accesos.length === 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {['Gmail', 'Slack', 'Notion', 'GitHub', 'Jira', 'Teams', 'Figma', 'Drive', 'Zoom', 'HubSpot'].map(nombre => (
+                        <button
+                          key={nombre}
+                          onClick={() => agregarAcceso(nombre)}
+                          className="px-2.5 py-1 rounded-md text-xs bg-white/[0.03] border border-white/[0.06] text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors duration-150"
+                        >
+                          {nombre}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Botón agregar */}
+                  <Button variant="ghost" size="sm" onClick={() => agregarAcceso()}>
+                    <Plus className="w-3.5 h-3.5" />
+                    Agregar herramienta
+                  </Button>
+                </div>
+
                 {/* Rol */}
                 {['admin', 'dev'].includes(rolAdmin) && (
                   <div>
@@ -818,6 +1010,20 @@ export default function EmpleadoDetallePage() {
                     <RotateCcw className="w-3 h-3" />
                     Resetear todo el progreso
                   </Button>
+
+                  {/* Mini resumen de accesos */}
+                  {accesos.length > 0 && (
+                    <p className="text-[11px] text-white/30 text-center pt-1">
+                      Accesos:{' '}
+                      <span className="text-teal-400/70">
+                        {accesos.filter(a => a.estado === 'activo').length} activos
+                      </span>
+                      {' · '}
+                      <span className="text-amber-400/70">
+                        {accesos.filter(a => a.estado === 'pendiente').length} pendientes
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Alertas */}

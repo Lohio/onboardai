@@ -574,6 +574,50 @@ CREATE POLICY "encuestas_dev_all" ON encuestas_pulso
   WITH CHECK (get_my_rol() = 'dev');
 
 
+-- ══════════════════════════════════════════════════════════════
+-- TABLA: accesos_herramientas
+-- Gestión de accesos a herramientas por empleado (admin CRUD)
+-- ══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS accesos_herramientas (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id  uuid        NOT NULL REFERENCES usuarios(id)  ON DELETE CASCADE,
+  empresa_id  uuid        NOT NULL REFERENCES empresas(id)  ON DELETE CASCADE,
+  herramienta text        NOT NULL,
+  estado      text        NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado IN ('activo', 'pendiente', 'sin_acceso')),
+  url         text,
+  notas       text,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE accesos_herramientas ENABLE ROW LEVEL SECURITY;
+
+-- Empleado: solo ve sus propios accesos
+CREATE POLICY "accesos_empleado_select" ON accesos_herramientas
+  FOR SELECT
+  USING (usuario_id = auth.uid());
+
+-- Admin: CRUD completo sobre accesos de su empresa
+CREATE POLICY "accesos_admin_all" ON accesos_herramientas
+  FOR ALL
+  USING (
+    get_my_rol() IN ('admin', 'dev')
+    AND empresa_id = get_my_empresa_id()
+  )
+  WITH CHECK (
+    get_my_rol() IN ('admin', 'dev')
+    AND empresa_id = get_my_empresa_id()
+  );
+
+-- Dev: acceso total sin restricción de empresa
+CREATE POLICY "accesos_dev_all" ON accesos_herramientas
+  FOR ALL
+  USING  (get_my_rol() = 'dev')
+  WITH CHECK (get_my_rol() = 'dev');
+
+
 -- ─────────────────────────────────────────────────────────────
 -- Fin del script
 -- ─────────────────────────────────────────────────────────────
