@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Users, TrendingUp, AlertTriangle, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -15,6 +16,7 @@ import {
 } from 'recharts'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { Button } from '@/components/ui/Button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import type { AdminEmpleadoConProgreso } from '@/types'
 
@@ -261,6 +263,7 @@ function MetricCard({
 // ─────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [empleados, setEmpleados] = useState<AdminEmpleadoConProgreso[]>([])
@@ -464,6 +467,23 @@ export default function AdminDashboardPage() {
       animate="show"
       className="space-y-6 max-w-7xl mx-auto"
     >
+      {/* ── Header de página ── */}
+      <motion.div
+        variants={cardVariants}
+        className="flex items-center justify-between gap-4"
+      >
+        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+        <Button
+          variant="primary"
+          size="sm"
+          className="flex-shrink-0"
+          onClick={() => router.push('/admin/empleados')}
+        >
+          <UserPlus className="w-4 h-4" />
+          <span className="hidden sm:inline">Nuevo empleado</span>
+        </Button>
+      </motion.div>
+
       {/* ── Métricas: 4 cards ── */}
       <motion.div
         variants={containerVariants}

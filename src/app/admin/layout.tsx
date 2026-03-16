@@ -136,7 +136,7 @@ const navItems: NavItemDef[] = [
     label: 'Reportes',
     href: '/admin/reportes',
     icon: <BarChart2 className="w-4 h-4" />,
-    disabled: true,
+    disabled: false,
   },
   {
     label: 'Configuración',
