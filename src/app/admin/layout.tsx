@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
+  Layers,
   BarChart2,
   Settings,
   Bell,
@@ -126,6 +127,12 @@ const navItems: NavItemDef[] = [
     disabled: false,
   },
   {
+    label: 'Contenido IA',
+    href: '/admin/contenido',
+    icon: <Layers className="w-4 h-4" />,
+    disabled: false,
+  },
+  {
     label: 'Reportes',
     href: '/admin/reportes',
     icon: <BarChart2 className="w-4 h-4" />,
@@ -187,7 +194,12 @@ function SidebarContent({
             <NavItem
               key={item.href}
               item={item}
-              activo={!item.disabled && pathname === item.href}
+              activo={
+                !item.disabled &&
+                (item.href === '/admin'
+                  ? pathname === '/admin'
+                  : pathname.startsWith(item.href))
+              }
             />
           ))}
         </motion.div>
