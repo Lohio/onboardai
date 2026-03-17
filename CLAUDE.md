@@ -247,3 +247,15 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 - `equipo_relaciones` — relaciones manager/buddy/compañero
 - `alertas_conocimiento` — preguntas del empleado que el admin debe responder
 - `app_config` — configuración del sistema (claude_model, max_tokens, system_prompt_base)
+
+## Supabase Storage
+
+### Bucket: `conocimiento`
+- **Creado manualmente** en el dashboard de Supabase → Storage → New Bucket
+- Nombre: `conocimiento`
+- **Público: true** (permite URLs públicas directas)
+- Política de acceso: lectura pública, escritura solo vía API con service role key
+- Path de archivos: `{empresa_id}/{modulo}/{uuid}.{ext}`
+- Tipos permitidos: imagen (5MB), pdf (20MB), archivo genérico (50MB)
+- API de upload: `POST /api/admin/conocimiento/upload` — requiere `SUPABASE_SERVICE_ROLE_KEY`
+
