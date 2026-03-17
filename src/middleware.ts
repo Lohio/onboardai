@@ -16,6 +16,9 @@ const COOKIE_ROL = 'onboard_rol'
  */
 const COOKIE_PREBOARDING = 'onboard_preboarding'
 
+/** Cookie que cachea si el setup inicial fue completado (evita query a empresas en cada request) */
+const COOKIE_SETUP = 'onboard_setup'
+
 /** Duración del caché de rol: 5 minutos en segundos */
 const COOKIE_ROL_MAX_AGE = 60 * 5
 
@@ -175,6 +178,50 @@ export async function middleware(request: NextRequest) {
     if (rol !== 'admin') {
       return NextResponse.redirect(new URL('/empleado/perfil', request.url))
     }
+
+    // /admin/setup siempre accesible para admin — no verificar setup aquí
+    if (pathname === '/admin/setup') {
+      return supabaseResponse
+    }
+
+    // Para cualquier otra ruta /admin, verificar si completó el setup.
+    // Usamos cookie de caché corta para no consultar la DB en cada request.
+    const setupCacheado = request.cookies.get(COOKIE_SETUP)?.value
+
+    if (setupCacheado !== '1') {
+      // Consultar empresas en la DB
+      try {
+        const { data: usuario } = await supabase
+          .from('usuarios')
+          .select('empresa_id')
+          .eq('id', user.id)
+          .single()
+
+        if (usuario?.empresa_id) {
+          const { data: empresa } = await supabase
+            .from('empresas')
+            .select('setup_completo')
+            .eq('id', usuario.empresa_id)
+            .single()
+
+          if (empresa && !empresa.setup_completo) {
+            return NextResponse.redirect(new URL('/admin/setup', request.url))
+          }
+
+          // Setup completo — cachear en cookie para próximos requests (1 hora)
+          supabaseResponse.cookies.set(COOKIE_SETUP, '1', {
+            httpOnly: true,
+            sameSite: 'strict',
+            maxAge: 60 * 60,
+            path: '/',
+          })
+        }
+      } catch (err) {
+        // Fail open: si falla la query de empresas, dejamos pasar
+        console.warn('[middleware] Error verificando setup:', err)
+      }
+    }
+
     return supabaseResponse
   }
 
