@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { getInitials, formatFecha, semaforoColor } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
@@ -50,23 +51,6 @@ const MODALIDAD_LABEL: Record<string, string> = {
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-
-function getInitials(nombre: string): string {
-  return nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-}
-
-function formatFecha(d?: string | null): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-AR', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
-}
-
-function semaforoColor(progreso: number): string {
-  if (progreso > 70) return 'bg-teal-500'
-  if (progreso >= 30) return 'bg-amber-500'
-  return 'bg-red-500'
-}
 
 // ─────────────────────────────────────────────
 // Skeleton de la lista

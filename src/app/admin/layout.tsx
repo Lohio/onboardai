@@ -500,11 +500,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onMenuClick={() => setSidebarAbierto(true)}
           onLogout={handleLogout}
         />
-        {/* El overflow va en el div hijo, no en el contenedor raíz —
-            así los elementos position:fixed de las páginas hijas (modales, drawers)
-            se posicionan contra el viewport y no quedan confinados. */}
-        <main className="flex-1 min-h-0">
-          <div className="h-full overflow-y-auto p-4 sm:p-6">
+        {/* El overflow va en main, no en el div hijo que envuelve {children} —
+            si estuviera en el div hijo, crearía un stacking context que confinaría
+            los position:fixed de modales dentro del div en vez del viewport. */}
+        <main className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-4 sm:p-6">
             {children}
           </div>
         </main>

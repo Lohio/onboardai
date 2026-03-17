@@ -140,10 +140,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY no configurada' }, { status: 500 })
     }
 
-    // 1. Eliminar progreso de módulos
+    // 1. Eliminar auth user primero — si falla, abortamos antes de tocar datos
+    // Así evitamos dejar datos huérfanos con un auth user activo
+    const { error: authError } = await sa.auth.admin.deleteUser(id)
+    if (authError) {
+      console.error('[DELETE empleado] Error eliminando auth user:', authError)
+      return NextResponse.json(
+        { error: 'No se pudo eliminar el usuario de autenticación. Los datos no fueron modificados.' },
+        { status: 500 }
+      )
+    }
+
+    // 2. Auth eliminado — limpiar datos asociados
     await sa.from('progreso_modulos').delete().eq('usuario_id', id)
 
-    // 2. Eliminar mensajes de conversaciones IA
     const { data: convs } = await sa
       .from('conversaciones_ia')
       .select('id')
@@ -162,13 +172,9 @@ export async function DELETE(
       .eq('id', id)
 
     if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 })
-    }
-
-    // 4. Eliminar usuario en Supabase Auth
-    const { error: authError } = await sa.auth.admin.deleteUser(id)
-    if (authError) {
-      console.error('Error eliminando auth user (la fila ya fue eliminada):', authError)
+      // Auth ya fue eliminado — el usuario no puede loguearse.
+      // Loguear para limpieza manual si fuera necesario.
+      console.error('[DELETE empleado] Auth eliminado pero fila en usuarios no se pudo borrar:', deleteError)
     }
 
     return NextResponse.json({ ok: true })

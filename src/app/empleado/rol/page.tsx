@@ -482,7 +482,7 @@ export default function RolPage() {
         .eq('id', id)
         .eq('usuario_id', user.id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Error al actualizar tarea')
 
       // Recalcular progreso y upsert en progreso_modulos
       setTareas(prev => {

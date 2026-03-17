@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import {
   Lock, CheckCircle2, BookOpen, Target, Users,
-  ClipboardList, Trophy, ChevronDown,
+  ClipboardList, Trophy, ChevronDown, ArrowRight,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import toast from 'react-hot-toast'
@@ -584,13 +585,13 @@ export default function CulturaPage() {
       setUserId(user.id)
 
       // Obtener empresa_id del perfil
-      const { data: perfil } = await supabase
+      const { data: perfil, error: perfilError } = await supabase
         .from('usuarios')
         .select('empresa_id')
         .eq('id', user.id)
         .single()
 
-      if (!perfil) return
+      if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
       // Cargar contenido y progreso en paralelo
       const [contenidosRes, progresoRes] = await Promise.all([
@@ -634,6 +635,8 @@ export default function CulturaPage() {
   }, [cargarDatos])
 
   // ── Scroll tracking ──
+  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleScroll = useCallback(() => {
     const vh = window.innerHeight
     const updates: Partial<Record<BloqueKey, number>> = {}
@@ -651,9 +654,20 @@ export default function CulturaPage() {
   }, [])
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // check initial state
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => {
+      if (scrollThrottleRef.current) return
+      scrollThrottleRef.current = setTimeout(() => {
+        scrollThrottleRef.current = null
+        handleScroll()
+      }, 100)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    handleScroll() // check estado inicial
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
+    }
   }, [handleScroll])
 
   // ── Responder una pregunta ──
@@ -821,6 +835,40 @@ export default function CulturaPage() {
             />
           ))}
         </motion.div>
+
+        {/* Banner de módulo completado */}
+        {totalCompletados === BLOQUES_ORDEN.length && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.3 }}
+            className="mt-6 rounded-xl border border-teal-500/25 bg-teal-500/10 px-5 py-4"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-teal-200">
+                    ¡Completaste el módulo de Cultura!
+                  </p>
+                  <p className="text-xs text-teal-300/60 mt-0.5">
+                    Ya conocés la empresa. Ahora es momento de conocer tu rol.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/empleado/rol"
+                className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium
+                  text-teal-300 hover:text-teal-200 transition-colors duration-150"
+              >
+                Ir a Mi Rol
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   )

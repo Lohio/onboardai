@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { cn } from '@/lib/utils'
+import { cn, getInitials, formatFecha, diasDesde } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
 import type { HerramientaContacto } from '@/lib/contacto'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
@@ -63,22 +63,7 @@ const itemVariants = {
 // Helpers
 // ─────────────────────────────────────────────
 
-function getInitials(nombre: string): string {
-  return nombre
-    .split(' ')
-    .map(n => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
+// getInitials, formatFecha y diasDesde importados desde @/lib/utils
 
 function modalidadLabel(m: string): string {
   if (m === 'presencial') return 'Presencial'
@@ -106,13 +91,7 @@ function relacionBadgeVariant(r: MiembroEquipo['relacion']): 'default' | 'succes
   return 'info'
 }
 
-/** Días transcurridos desde el ingreso (mínimo 1) */
-function diasDeOnboarding(fechaIngreso: string): number {
-  const ingreso = new Date(fechaIngreso)
-  const hoy = new Date()
-  const diff = Math.floor((hoy.getTime() - ingreso.getTime()) / (1000 * 60 * 60 * 24))
-  return Math.max(1, diff + 1)
-}
+// diasDesde importado desde @/lib/utils
 
 // ─────────────────────────────────────────────
 // Ícono por herramienta de acceso
@@ -307,7 +286,7 @@ export default function PerfilPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) throw new Error('No autenticado')
 
       // 2, 3, 5 en paralelo
       const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
@@ -436,7 +415,7 @@ export default function PerfilPage() {
         .update({ bio })
         .eq('id', perfil.id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Error al guardar')
 
       setSavedFeedback(true)
       setTimeout(() => setSavedFeedback(false), 2000)
@@ -458,7 +437,7 @@ export default function PerfilPage() {
         .from('avatars')
         .upload(path, file, { upsert: true })
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw new Error(uploadError.message ?? 'Error al subir imagen')
 
       const {
         data: { publicUrl },
@@ -599,7 +578,7 @@ export default function PerfilPage() {
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
                       <span className="text-[11px] text-white/50">
-                        Día {diasDeOnboarding(perfil.fecha_ingreso)} de onboarding
+                        Día {diasDesde(perfil.fecha_ingreso) ?? 1} de onboarding
                       </span>
                     </div>
                   )}
@@ -622,7 +601,7 @@ export default function PerfilPage() {
                   {perfil.fecha_ingreso && (
                     <span className="flex items-center gap-1.5 text-xs text-white/45">
                       <Calendar className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-                      {formatDate(perfil.fecha_ingreso)}
+                      {formatFecha(perfil.fecha_ingreso)}
                     </span>
                   )}
                   <button

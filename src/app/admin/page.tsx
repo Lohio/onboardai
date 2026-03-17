@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { getInitials, formatFecha, semaforoColor, diasDesde } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import type { AdminEmpleadoConProgreso } from '@/types'
@@ -59,39 +60,8 @@ const cardVariants = {
 }
 
 // ─────────────────────────────────────────────
-// Helpers
+// Helpers locales
 // ─────────────────────────────────────────────
-
-function getInitials(nombre: string): string {
-  return nombre
-    .split(' ')
-    .map(n => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
-
-function semaforoColor(progreso: number): string {
-  if (progreso > 70) return 'bg-teal-500'
-  if (progreso >= 30) return 'bg-amber-500'
-  return 'bg-red-500'
-}
-
-function diasDeOnboarding(fechaIngreso?: string): number | null {
-  if (!fechaIngreso) return null
-  const ingreso = new Date(fechaIngreso)
-  const ahora = new Date()
-  return Math.max(1, Math.ceil((ahora.getTime() - ingreso.getTime()) / (1000 * 60 * 60 * 24)))
-}
-
-function formatFecha(dateStr?: string): string {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 function tiempoRelativo(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime()
@@ -168,7 +138,7 @@ function AlertasSkeleton() {
 // ─────────────────────────────────────────────
 
 function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
-  const dias = diasDeOnboarding(empleado.fecha_ingreso)
+  const dias = diasDesde(empleado.fecha_ingreso)
   const initials = getInitials(empleado.nombre)
 
   return (
@@ -290,8 +260,8 @@ export default function AdminDashboardPage() {
 
     const empleadoIds = empleadosRaw.map(e => e.id)
 
-    // b, c, d en paralelo
-    const [progresoRes, alertasRes, culturaCountRes] = await Promise.all([
+    // b, c, d, e en paralelo
+    const [progresoRes, alertasRes, culturaCountRes, rolCountRes] = await Promise.all([
       supabase
         .from('progreso_modulos')
         .select('usuario_id, modulo, bloque, completado')
@@ -308,11 +278,18 @@ export default function AdminDashboardPage() {
         .select('*', { count: 'exact', head: true })
         .eq('empresa_id', empId)
         .eq('modulo', 'cultura'),
+      supabase
+        .from('conocimiento')
+        .select('*', { count: 'exact', head: true })
+        .eq('empresa_id', empId)
+        .eq('modulo', 'rol'),
     ])
 
     const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
     const totalBloquesCultura = culturaCountRes.count ?? 0
-    const totalBloques = totalBloquesCultura + 1 // cultura + rol/general
+    // Mínimo 1 bloque de rol para no dividir por 0 si la empresa aún no cargó contenido
+    const totalBloquesRol = Math.max(1, rolCountRes.count ?? 1)
+    const totalBloques = totalBloquesCultura + totalBloquesRol
 
     // Calcular progreso por empleado
     const empleadosConProgreso: AdminEmpleadoConProgreso[] = empleadosRaw.map(e => ({
@@ -335,7 +312,7 @@ export default function AdminDashboardPage() {
       'cultura',
       totalBloquesCultura
     )
-    const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', 1)
+    const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', totalBloquesRol)
     setChartData([
       { nombre: 'Cultura', progreso: avgCultura },
       { nombre: 'Rol', progreso: avgRol },
