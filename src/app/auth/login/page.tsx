@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────
@@ -401,15 +402,26 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Footer */}
-        <motion.p
+        <motion.div
           variants={itemVariants}
-          className="text-center text-[11px] text-white/25 mt-5 leading-relaxed"
+          className="mt-5 space-y-2 text-center"
         >
-          ¿Problemas para ingresar?{' '}
-          <span className="text-white/40">
-            Contactá a tu administrador
-          </span>
-        </motion.p>
+          <p className="text-[11px] text-white/25 leading-relaxed">
+            ¿Problemas para ingresar?{' '}
+            <span className="text-white/40">
+              Contactá a tu administrador
+            </span>
+          </p>
+          <p className="text-[11px] text-white/25 leading-relaxed">
+            ¿Primera vez?{' '}
+            <Link
+              href="/auth/register"
+              className="text-indigo-400/70 hover:text-indigo-300 transition-colors duration-150"
+            >
+              Registrá tu empresa
+            </Link>
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   )
