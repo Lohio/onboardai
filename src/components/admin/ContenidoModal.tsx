@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  X, ArrowLeft, FileText, Image, Play, FileDown, Link2,
+  X, Plus, FileText, Image, Play, FileDown, Link2,
   FolderOpen, Check, Upload, AlertCircle,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -41,6 +41,12 @@ interface ContenidoModalProps {
 // Opciones de tipo
 // ─────────────────────────────────────────────
 
+// Labels de módulo para el breadcrumb
+const MODULO_LABELS: Record<string, string> = {
+  cultura: 'Cultura e Identidad',
+  rol:     'Rol y Herramientas',
+}
+
 const TIPO_OPCIONES: { tipo: TipoContenido; descripcion: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { tipo: 'texto',   descripcion: 'Contenido escrito en Markdown', Icon: FileText },
   { tipo: 'imagen',  descripcion: 'JPG, PNG, WebP o GIF',          Icon: Image },
@@ -49,16 +55,6 @@ const TIPO_OPCIONES: { tipo: TipoContenido; descripcion: string; Icon: React.Com
   { tipo: 'link',    descripcion: 'Enlace externo con descripción', Icon: Link2 },
   { tipo: 'archivo', descripcion: 'Word, Excel, ZIP, etc.',         Icon: FolderOpen },
 ]
-
-// ─────────────────────────────────────────────
-// Variantes de animación
-// ─────────────────────────────────────────────
-
-const slideVariants = {
-  enterFromRight: { opacity: 0, x: 40 },
-  center:         { opacity: 1, x: 0 },
-  exitToLeft:     { opacity: 0, x: -40 },
-}
 
 // ─────────────────────────────────────────────
 // Componente principal
@@ -74,8 +70,7 @@ export function ContenidoModal({
   onGuardado,
 }: ContenidoModalProps) {
 
-  // ── Navegación entre pasos ──────────────────
-  const [paso, setPaso] = useState<'tipo' | 'formulario'>(existing ? 'formulario' : 'tipo')
+  // ── Tipo seleccionado ───────────────────────
   const [tipo, setTipo] = useState<TipoContenido | null>(existing?.tipo ?? null)
 
   // ── Campos compartidos ──────────────────────
@@ -108,7 +103,6 @@ export function ContenidoModal({
     if (!existing) return
     setTitulo(existing.titulo)
     setTipo(existing.tipo)
-    setPaso('formulario')
 
     switch (existing.tipo) {
       case 'texto':
@@ -166,10 +160,9 @@ export function ContenidoModal({
     return () => clearTimeout(timer)
   }, [url, tipo])
 
-  // ── Seleccionar tipo y avanzar ───────────────
+  // ── Seleccionar tipo ────────────────────────
   const seleccionarTipo = (t: TipoContenido) => {
     setTipo(t)
-    setPaso('formulario')
   }
 
   // ── Subir archivo ───────────────────────────
@@ -346,50 +339,37 @@ export function ContenidoModal({
   return (
     <Portal>
       <AnimatePresence>
+        {/* Overlay con blur */}
         <motion.div
-          className="fixed inset-0 bg-black/75 z-40"
+          className="fixed inset-0 z-[99] bg-black/75 backdrop-blur-[12px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
         />
 
+        {/* Modal */}
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 400, damping: 32 }}
         >
           <div
-            className="glass-card rounded-2xl w-full max-w-4xl flex flex-col overflow-hidden"
-            style={{ maxHeight: '90vh' }}
+            className="relative bg-[#111e38] border border-white/[0.12]
+              rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.6)]
+              w-full max-w-2xl max-h-[88vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            {/* ── Header ─────────────────────────────── */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] flex-shrink-0">
-              <div className="flex items-center gap-3">
-                {paso === 'formulario' && (
-                  <button
-                    onClick={() => { setPaso('tipo'); setTipo(null) }}
-                    disabled={guardando}
-                    className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70
-                      transition-colors duration-150 disabled:opacity-50"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    Cambiar tipo
-                  </button>
-                )}
-                <div>
-                  <p className="text-[11px] text-white/35 uppercase tracking-widest">
-                    {existing ? 'Editar' : 'Agregar'} · {label}
-                  </p>
-                  {tipo && (
-                    <p className="text-sm font-medium text-white mt-0.5">
-                      {TIPO_LABELS[tipo]}
-                    </p>
-                  )}
-                </div>
+            {/* ── Header con breadcrumb ───────────────── */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
+              <div className="flex items-center gap-2 text-[10px] text-white/30 uppercase tracking-widest">
+                <span>{MODULO_LABELS[modulo] ?? modulo}</span>
+                <span>›</span>
+                <span className="text-white/70 normal-case text-sm font-medium tracking-normal">
+                  {label}
+                </span>
               </div>
               <button
                 onClick={onClose}
@@ -400,60 +380,42 @@ export function ContenidoModal({
               </button>
             </div>
 
-            {/* ── Body con animación ──────────────────── */}
-            <div className="flex-1 overflow-hidden min-h-0">
-              <AnimatePresence mode="wait">
-                {paso === 'tipo' ? (
-                  <motion.div
-                    key="paso-tipo"
-                    variants={slideVariants}
-                    initial="enterFromRight"
-                    animate="center"
-                    exit="exitToLeft"
-                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-                    className="p-6 h-full overflow-y-auto"
-                  >
-                    <PasoTipo onSelect={seleccionarTipo} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="paso-formulario"
-                    variants={slideVariants}
-                    initial="enterFromRight"
-                    animate="center"
-                    exit="exitToLeft"
-                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-                    className="flex flex-col h-full overflow-hidden"
-                  >
-                    {/* Campo título (siempre visible) */}
-                    <div className="px-6 py-3 border-b border-white/[0.04] flex-shrink-0">
-                      <input
-                        value={titulo}
-                        onChange={e => setTitulo(e.target.value)}
-                        placeholder="Título de la sección"
-                        className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-                          px-3 py-2 text-white outline-none focus:border-indigo-500/40
-                          transition-colors placeholder:text-white/20"
-                      />
-                    </div>
+            {/* ── Body ────────────────────────────────── */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
 
-                    {/* Contenido del tipo */}
-                    <div className="flex-1 overflow-y-auto p-6">
-                      {tipo === 'texto'   && <FormTexto    contenido={contenido} setContenido={setContenido} />}
-                      {tipo === 'imagen'  && <FormImagen   activeTab={activeTab} setActiveTab={setActiveTab} url={url} setUrl={setUrl} uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
-                      {tipo === 'video'   && <FormVideo    url={url} setUrl={setUrl} embedUrl={embedUrl} />}
-                      {tipo === 'pdf'     && <FormPdf      activeTab={activeTab} setActiveTab={setActiveTab} url={url} setUrl={setUrl} uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
-                      {tipo === 'link'    && <FormLink     url={url} setUrl={setUrl} descripcion={descripcion} setDescripcion={setDescripcion} plataforma={plataforma} setPlataforma={setPlataforma} />}
-                      {tipo === 'archivo' && <FormArchivo  uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Selector de tipo — siempre visible */}
+              <SelectorTipo tipoActual={tipo} onSelect={seleccionarTipo} />
+
+              {/* Resto del formulario — solo cuando hay tipo */}
+              {tipo && (
+                <>
+                  {/* Campo título */}
+                  <input
+                    value={titulo}
+                    onChange={e => setTitulo(e.target.value)}
+                    placeholder="Título de la sección"
+                    className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
+                      px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+                      transition-colors placeholder:text-white/20"
+                  />
+
+                  {/* Formulario del tipo */}
+                  {tipo === 'texto'   && <FormTexto    contenido={contenido} setContenido={setContenido} />}
+                  {tipo === 'imagen'  && <FormImagen   activeTab={activeTab} setActiveTab={setActiveTab} url={url} setUrl={setUrl} uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
+                  {tipo === 'video'   && <FormVideo    url={url} setUrl={setUrl} embedUrl={embedUrl} />}
+                  {tipo === 'pdf'     && <FormPdf      activeTab={activeTab} setActiveTab={setActiveTab} url={url} setUrl={setUrl} uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
+                  {tipo === 'link'    && <FormLink     url={url} setUrl={setUrl} descripcion={descripcion} setDescripcion={setDescripcion} plataforma={plataforma} setPlataforma={setPlataforma} />}
+                  {tipo === 'archivo' && <FormArchivo  uploadedPublicUrl={uploadedPublicUrl} uploadedFile={uploadedFile} uploadStatus={uploadStatus} uploadError={uploadError} dragOver={dragOver} setDragOver={setDragOver} fileInputRef={fileInputRef} handleDrop={handleDrop} handleFileChange={handleFileChange} tipo={tipo} />}
+
+                  {/* Botón decorativo agregar otro bloque */}
+                  <BtnAgregarBloque />
+                </>
+              )}
             </div>
 
-            {/* ── Footer (solo en paso formulario) ─── */}
-            {paso === 'formulario' && (
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.06] flex-shrink-0">
+            {/* ── Footer ──────────────────────────────── */}
+            {tipo && (
+              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-white/[0.08] flex-shrink-0">
                 <button
                   onClick={onClose}
                   disabled={guardando}
@@ -487,34 +449,83 @@ export function ContenidoModal({
 // SUB-COMPONENTES
 // ═══════════════════════════════════════════════════════════════
 
-// ── PASO A: Selector de tipo ────────────────────────────────
+// ── Selector de tipo (siempre visible, con estado seleccionado) ──
 
-function PasoTipo({ onSelect }: { onSelect: (t: TipoContenido) => void }) {
+function SelectorTipo({
+  tipoActual,
+  onSelect,
+}: {
+  tipoActual: TipoContenido | null
+  onSelect: (t: TipoContenido) => void
+}) {
   return (
-    <div>
-      <p className="text-sm text-white/40 mb-5">¿Qué tipo de contenido querés agregar?</p>
-      <div className="grid grid-cols-3 gap-3">
-        {TIPO_OPCIONES.map(({ tipo, descripcion, Icon }) => (
+    <div className="grid grid-cols-3 gap-2">
+      {TIPO_OPCIONES.map(({ tipo, descripcion, Icon }) => {
+        const activo = tipoActual === tipo
+        return (
           <button
             key={tipo}
             onClick={() => onSelect(tipo)}
-            className="flex flex-col items-center gap-3 p-5 rounded-xl text-center
-              border border-white/[0.07] bg-white/[0.02]
-              hover:border-indigo-500/40 hover:bg-indigo-500/[0.07]
-              transition-all duration-150 group"
+            className={cn(
+              'flex flex-col items-center gap-2 py-3 px-3 rounded-xl text-center',
+              'border transition-all duration-150 group',
+              activo
+                ? 'bg-indigo-600/15 border-indigo-500/50'
+                : 'border-white/[0.07] bg-white/[0.02] hover:border-indigo-500/40 hover:bg-indigo-500/[0.07]'
+            )}
           >
-            <div className="w-12 h-12 rounded-xl bg-white/[0.06] group-hover:bg-indigo-500/15
-              border border-white/[0.08] group-hover:border-indigo-500/25
-              flex items-center justify-center transition-all duration-150">
-              <Icon className="w-6 h-6 text-white/40 group-hover:text-indigo-300 transition-colors duration-150" />
+            <div className={cn(
+              'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150',
+              activo
+                ? 'bg-indigo-500/20 border border-indigo-500/30'
+                : 'bg-white/[0.06] border border-white/[0.08] group-hover:bg-indigo-500/15 group-hover:border-indigo-500/25'
+            )}>
+              <Icon className={cn(
+                'w-4 h-4 transition-colors duration-150',
+                activo ? 'text-indigo-300' : 'text-white/40 group-hover:text-indigo-300'
+              )} />
             </div>
             <div>
-              <p className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+              <p className={cn(
+                'text-xs font-medium transition-colors',
+                activo ? 'text-white' : 'text-white/70 group-hover:text-white'
+              )}>
                 {TIPO_LABELS[tipo]}
               </p>
-              <p className="text-[11px] text-white/30 mt-0.5 leading-tight">{descripcion}</p>
+              <p className="text-[10px] text-white/30 mt-0.5 leading-tight">{descripcion}</p>
             </div>
           </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Botón decorativo: agregar otro bloque ───────────────────
+
+function BtnAgregarBloque() {
+  return (
+    <div className="flex items-center gap-3 mt-3 p-3
+      rounded-xl border border-dashed border-white/[0.08]
+      hover:border-indigo-500/30 hover:bg-indigo-600/5
+      cursor-pointer transition-all duration-150 group">
+      <div className="w-6 h-6 rounded-md bg-indigo-600/20
+        flex items-center justify-center flex-shrink-0">
+        <Plus className="w-3.5 h-3.5 text-indigo-400" />
+      </div>
+      <span className="text-xs text-white/35 group-hover:text-white/60">
+        Agregar otro bloque de contenido
+      </span>
+      <div className="flex gap-1.5 ml-auto">
+        {['🖼️ Imagen', '🔗 Link', '🎬 Video'].map(chip => (
+          <span
+            key={chip}
+            className="text-[10px] px-2 py-1 rounded-md
+              bg-white/[0.04] border border-white/[0.07]
+              text-white/35 hover:text-white/60 cursor-pointer"
+          >
+            {chip}
+          </span>
         ))}
       </div>
     </div>
