@@ -185,6 +185,10 @@ export default function AsistentePage() {
 
       if (!res.ok || !res.body) throw new Error('Error en la respuesta')
 
+      // Leer conversacionId del header (el servidor lo envía en X-Conversation-Id)
+      const convIdHeader = res.headers.get('X-Conversation-Id')
+      if (convIdHeader) setConversacionId(convIdHeader)
+
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let acumulado = ''
@@ -195,11 +199,9 @@ export default function AsistentePage() {
 
         const chunk = decoder.decode(value, { stream: true })
 
-        // Detectar separador con conversacionId al final
+        // Filtrar el separador legacy |--| por compatibilidad (ya no debería llegar)
         if (chunk.includes('|--|')) {
-          const [texto, convId] = chunk.split('|--|')
-          acumulado += texto
-          if (convId) setConversacionId(convId.trim())
+          acumulado += chunk.split('|--|')[0]
         } else {
           acumulado += chunk
         }
