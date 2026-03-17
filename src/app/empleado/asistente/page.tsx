@@ -127,6 +127,12 @@ export default function AsistentePage() {
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // ── Cancelar stream al desmontar ──
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort() }
+  }, [])
 
   // ── Cargar nombre del usuario ──
   const cargarUsuario = useCallback(async () => {
@@ -177,10 +183,15 @@ export default function AsistentePage() {
     ])
 
     try {
+      // Cancelar request anterior si aún está en curso
+      if (abortControllerRef.current) abortControllerRef.current.abort()
+      abortControllerRef.current = new AbortController()
+
       const res = await fetch('/api/empleado/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mensaje: texto, conversacionId }),
+        signal: abortControllerRef.current.signal,
       })
 
       if (!res.ok || !res.body) throw new Error('Error en la respuesta')
@@ -223,6 +234,8 @@ export default function AsistentePage() {
         )
       )
     } catch (err) {
+      // AbortError es intencional (navegación o nuevo mensaje) — no mostrar error al usuario
+      if (err instanceof Error && err.name === 'AbortError') return
       console.error('Error en chat:', err)
       setErrorRed(true)
       setMensajes(prev => prev.filter(m => m.id !== idAssistant))
