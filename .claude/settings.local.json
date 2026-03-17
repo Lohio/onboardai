@@ -6,7 +6,9 @@
       "Bash(echo \"$USERPROFILE\")",
       "Read(//c/Users/Maxi/.config/superpowers/worktrees/onboardai/**)",
       "Bash(cd:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)"
     ]
   }
 }
