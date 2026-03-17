@@ -241,12 +241,13 @@ export default function EmpleadoHomePage() {
         new Date(usuario.fecha_ingreso) <= new Date()
       ) {
         const supabaseCleanup = createClient()
-        supabaseCleanup
-          .from('usuarios')
-          .update({ preboarding_activo: false })
-          .eq('id', user.id)
-          .then(() => {})
-          .catch(() => {}) // no bloquea la UI
+        // Wrapeamos en Promise para poder usar .catch() — PromiseLike no lo tiene
+        Promise.resolve(
+          supabaseCleanup
+            .from('usuarios')
+            .update({ preboarding_activo: false })
+            .eq('id', user.id)
+        ).catch(() => {}) // fire-and-forget, no bloquea la UI
       }
 
       // Verificar encuestas de pulso solo si NO está en pre-boarding
