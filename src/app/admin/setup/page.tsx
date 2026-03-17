@@ -107,17 +107,17 @@ export default function SetupPage() {
 
   // Llamado cuando se completa el último paso o se omite
   const handleFinish = useCallback(async () => {
-    if (!setupData) return
-
-    try {
-      const supabase = createClient()
-      // Marcar setup como completo en la empresa
-      await supabase
-        .from('empresas')
-        .update({ setup_completo: true })
-        .eq('id', setupData.empresaId)
-    } catch {
-      // No es crítico — continuar igual
+    // Marcar setup como completo solo si tenemos el ID de empresa
+    if (setupData) {
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('empresas')
+          .update({ setup_completo: true })
+          .eq('id', setupData.empresaId)
+      } catch {
+        // No es crítico — continuar igual
+      }
     }
 
     // Persistir en localStorage para evitar re-mostrar

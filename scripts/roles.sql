@@ -425,10 +425,11 @@ ALTER TABLE usuarios
   ADD COLUMN IF NOT EXISTS contacto_rrhh_nombre TEXT,
   ADD COLUMN IF NOT EXISTS contacto_rrhh_email  TEXT;
 
--- Herramienta de comunicación configurada por empresa
+-- Herramientas de comunicación configuradas por empresa (array, reemplaza herramienta_contacto)
 ALTER TABLE empresas
-  ADD COLUMN IF NOT EXISTS herramienta_contacto TEXT NOT NULL DEFAULT 'email'
-  CHECK (herramienta_contacto IN ('email', 'teams', 'slack', 'whatsapp', 'meet'));
+  DROP COLUMN IF EXISTS herramienta_contacto;
+ALTER TABLE empresas
+  ADD COLUMN IF NOT EXISTS herramientas_contacto text[] NOT NULL DEFAULT '{email}';
 
 
 -- ══════════════════════════════════════════════════════════════

@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Mail, Briefcase, Users, Shield, Code,
-  Copy, Check, Video, User,
+  Copy, Check, Video, User, MessageSquare,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-import { buildContactUrl, HERRAMIENTA_LABELS, type HerramientaContacto } from '@/lib/contacto'
+import { buildContactUrl, getHerramientaLabel, type HerramientaContacto } from '@/lib/contacto'
 
 // ─────────────────────────────────────────────
 // Íconos inline (sin dependencias externas)
@@ -92,12 +92,14 @@ function getInitials(nombre: string): string {
 // Ícono de la herramienta seleccionada
 // ─────────────────────────────────────────────
 
-function HerramientaIcon({ h }: { h: HerramientaContacto }) {
+function HerramientaIcon({ h }: { h: string }) {
   if (h === 'teams')    return <TeamsIcon />
   if (h === 'slack')    return <SlackIcon />
   if (h === 'whatsapp') return <WhatsAppIcon />
   if (h === 'meet')     return <Video className="w-3.5 h-3.5" />
-  return <Mail className="w-3.5 h-3.5" />
+  if (h === 'email')    return <Mail className="w-3.5 h-3.5" />
+  // Herramienta custom: ícono genérico
+  return <MessageSquare className="w-3.5 h-3.5" />
 }
 
 // ─────────────────────────────────────────────
@@ -108,7 +110,7 @@ interface ContactoCardProps {
   tipo: TipoContacto
   nombre?: string | null
   email?: string | null
-  herramienta: HerramientaContacto
+  herramienta: string
 }
 
 export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardProps) {
@@ -174,12 +176,12 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
           {url ? (
             <a
               href={url}
-              target={herramienta !== 'email' && herramienta !== 'meet' ? '_blank' : undefined}
+              target={!url.startsWith('mailto:') ? '_blank' : undefined}
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-white/30 hover:text-indigo-300 transition-colors duration-150"
             >
               <HerramientaIcon h={herramienta} />
-              <span>{HERRAMIENTA_LABELS[herramienta]}</span>
+              <span>{getHerramientaLabel(herramienta)}</span>
             </a>
           ) : (
             <button

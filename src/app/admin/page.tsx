@@ -242,81 +242,88 @@ export default function AdminDashboardPage() {
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async (empId: string) => {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // a. Empleados de la empresa
-    const { data: empleadosRaw } = await supabase
-      .from('usuarios')
-      .select('id, nombre, puesto, area, foto_url, fecha_ingreso')
-      .eq('empresa_id', empId)
-      .eq('rol', 'empleado')
+      // a. Empleados de la empresa
+      const { data: empleadosRaw } = await supabase
+        .from('usuarios')
+        .select('id, nombre, puesto, area, foto_url, fecha_ingreso')
+        .eq('empresa_id', empId)
+        .eq('rol', 'empleado')
 
-    if (!empleadosRaw || empleadosRaw.length === 0) {
+      if (!empleadosRaw || empleadosRaw.length === 0) {
+        setEmpleados([])
+        setAlertas([])
+        setChartData([])
+        return
+      }
+
+      const empleadoIds = empleadosRaw.map(e => e.id)
+
+      // b, c, d, e en paralelo
+      const [progresoRes, alertasRes, culturaCountRes, rolCountRes] = await Promise.all([
+        supabase
+          .from('progreso_modulos')
+          .select('usuario_id, modulo, bloque, completado')
+          .in('usuario_id', empleadoIds),
+        supabase
+          .from('alertas_conocimiento')
+          .select('id, pregunta, usuario_id, created_at, resuelta, usuarios(nombre)')
+          .eq('empresa_id', empId)
+          .eq('resuelta', false)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('conocimiento')
+          .select('*', { count: 'exact', head: true })
+          .eq('empresa_id', empId)
+          .eq('modulo', 'cultura'),
+        supabase
+          .from('conocimiento')
+          .select('*', { count: 'exact', head: true })
+          .eq('empresa_id', empId)
+          .eq('modulo', 'rol'),
+      ])
+
+      const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
+      const totalBloquesCultura = culturaCountRes.count ?? 0
+      // Mínimo 1 bloque de rol para no dividir por 0 si la empresa aún no cargó contenido
+      const totalBloquesRol = Math.max(1, rolCountRes.count ?? 1)
+      const totalBloques = totalBloquesCultura + totalBloquesRol
+
+      // Calcular progreso por empleado
+      const empleadosConProgreso: AdminEmpleadoConProgreso[] = empleadosRaw.map(e => ({
+        id: e.id,
+        nombre: e.nombre ?? '',
+        puesto: e.puesto ?? undefined,
+        area: e.area ?? undefined,
+        foto_url: e.foto_url ?? undefined,
+        fecha_ingreso: e.fecha_ingreso ?? undefined,
+        progreso: calcularProgreso(e.id, progresoRows, totalBloques),
+      }))
+
+      setEmpleados(empleadosConProgreso)
+      setAlertas((alertasRes.data ?? []) as AlertaRow[])
+
+      // Chart data
+      const avgCultura = calcularPromedioModulo(
+        progresoRows,
+        empleadoIds,
+        'cultura',
+        totalBloquesCultura
+      )
+      const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', totalBloquesRol)
+      setChartData([
+        { nombre: 'Cultura', progreso: avgCultura },
+        { nombre: 'Rol', progreso: avgRol },
+      ])
+    } catch (err) {
+      console.error('[AdminDashboard] Error en cargarDatos:', err)
       setEmpleados([])
       setAlertas([])
       setChartData([])
-      return
     }
-
-    const empleadoIds = empleadosRaw.map(e => e.id)
-
-    // b, c, d, e en paralelo
-    const [progresoRes, alertasRes, culturaCountRes, rolCountRes] = await Promise.all([
-      supabase
-        .from('progreso_modulos')
-        .select('usuario_id, modulo, bloque, completado')
-        .in('usuario_id', empleadoIds),
-      supabase
-        .from('alertas_conocimiento')
-        .select('id, pregunta, usuario_id, created_at, resuelta, usuarios(nombre)')
-        .eq('empresa_id', empId)
-        .eq('resuelta', false)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('conocimiento')
-        .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empId)
-        .eq('modulo', 'cultura'),
-      supabase
-        .from('conocimiento')
-        .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empId)
-        .eq('modulo', 'rol'),
-    ])
-
-    const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
-    const totalBloquesCultura = culturaCountRes.count ?? 0
-    // Mínimo 1 bloque de rol para no dividir por 0 si la empresa aún no cargó contenido
-    const totalBloquesRol = Math.max(1, rolCountRes.count ?? 1)
-    const totalBloques = totalBloquesCultura + totalBloquesRol
-
-    // Calcular progreso por empleado
-    const empleadosConProgreso: AdminEmpleadoConProgreso[] = empleadosRaw.map(e => ({
-      id: e.id,
-      nombre: e.nombre ?? '',
-      puesto: e.puesto ?? undefined,
-      area: e.area ?? undefined,
-      foto_url: e.foto_url ?? undefined,
-      fecha_ingreso: e.fecha_ingreso ?? undefined,
-      progreso: calcularProgreso(e.id, progresoRows, totalBloques),
-    }))
-
-    setEmpleados(empleadosConProgreso)
-    setAlertas((alertasRes.data ?? []) as AlertaRow[])
-
-    // Chart data
-    const avgCultura = calcularPromedioModulo(
-      progresoRows,
-      empleadoIds,
-      'cultura',
-      totalBloquesCultura
-    )
-    const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', totalBloquesRol)
-    setChartData([
-      { nombre: 'Cultura', progreso: avgCultura },
-      { nombre: 'Rol', progreso: avgRol },
-    ])
   }, [])
 
   // ── Inicialización ──

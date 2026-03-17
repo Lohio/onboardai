@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Mail, Video, MessageSquare } from 'lucide-react'
+import { Mail, Video, MessageSquare, Check, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
-import { HERRAMIENTA_LABELS, type HerramientaContacto } from '@/lib/contacto'
+import { HERRAMIENTA_LABELS } from '@/lib/contacto'
 import type { SetupData } from '@/app/admin/setup/page'
 
 // ─────────────────────────────────────────────
-// Íconos (copiados de configuracion/page.tsx)
+// Íconos inline
 // ─────────────────────────────────────────────
 
 function TeamsIcon({ className }: { className?: string }) {
@@ -37,7 +37,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-function HerramientaIcon({ h, cls = 'w-5 h-5' }: { h: HerramientaContacto; cls?: string }) {
+function HerramientaIcon({ h, cls = 'w-5 h-5' }: { h: string; cls?: string }) {
   if (h === 'teams')    return <TeamsIcon className={cls} />
   if (h === 'slack')    return <SlackIcon className={cls} />
   if (h === 'whatsapp') return <WhatsAppIcon className={cls} />
@@ -46,10 +46,10 @@ function HerramientaIcon({ h, cls = 'w-5 h-5' }: { h: HerramientaContacto; cls?:
 }
 
 // ─────────────────────────────────────────────
-// Opciones
+// Opciones estándar
 // ─────────────────────────────────────────────
 
-const OPCIONES: { value: HerramientaContacto; desc: string }[] = [
+const OPCIONES_ESTANDAR: { value: string; desc: string }[] = [
   { value: 'email',    desc: 'Abre el cliente de correo' },
   { value: 'teams',    desc: 'Abre un chat en Microsoft Teams' },
   { value: 'slack',    desc: 'Copia el email para buscar en Slack' },
@@ -68,16 +68,45 @@ interface Step3Props {
 }
 
 export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
-  const [seleccionada, setSeleccionada] = useState<HerramientaContacto>('email')
+  // Herramientas estándar seleccionadas
+  const [seleccionadas, setSeleccionadas] = useState<string[]>(['email'])
+  // Card "Otra"
+  const [otraSeleccionada, setOtraSeleccionada] = useState(false)
+  const [otraTexto, setOtraTexto] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Array final que se guardará en DB
+  const arrayFinal = [
+    ...seleccionadas,
+    ...(otraSeleccionada && otraTexto.trim() ? [otraTexto.trim()] : []),
+  ]
+
+  const puedeConntinuar = arrayFinal.length > 0
+
+  const toggleEstandar = (valor: string) => {
+    setSeleccionadas(prev =>
+      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
+    )
+  }
+
+  const toggleOtra = () => {
+    if (otraSeleccionada) {
+      // Deseleccionar: limpiar input
+      setOtraSeleccionada(false)
+      setOtraTexto('')
+    } else {
+      setOtraSeleccionada(true)
+    }
+  }
+
   const handleContinuar = useCallback(async () => {
+    if (arrayFinal.length === 0) return
     setSaving(true)
     try {
       const supabase = createClient()
       const { error } = await supabase
         .from('empresas')
-        .update({ herramienta_contacto: seleccionada })
+        .update({ herramientas_contacto: arrayFinal })
         .eq('id', setupData.empresaId)
 
       if (error) throw new Error(error.message)
@@ -87,7 +116,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
     } finally {
       setSaving(false)
     }
-  }, [seleccionada, setupData.empresaId, onNext])
+  }, [arrayFinal, setupData.empresaId, onNext])
 
   return (
     <div className="glass-card rounded-2xl p-6 sm:p-8">
@@ -98,36 +127,30 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
           shadow-[0_0_32px_rgba(59,79,216,0.2)]">
           <MessageSquare className="w-8 h-8 text-indigo-400" />
         </div>
-        <h2 className="text-xl font-semibold text-white mb-1">Herramienta de contacto</h2>
+        <h2 className="text-xl font-semibold text-white mb-1">Herramientas de contacto</h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Elegí cómo van a poder contactar a sus compañeros los empleados desde OnboardAI
+          Elegí cómo van a poder contactar a sus compañeros los empleados desde OnboardAI.
+          Podés seleccionar más de una.
         </p>
       </div>
 
-      {/* Radio cards */}
+      {/* Checkbox cards — opciones estándar */}
       <div className="space-y-2">
-        {OPCIONES.map(opcion => {
-          const isSelected = seleccionada === opcion.value
+        {OPCIONES_ESTANDAR.map(opcion => {
+          const isSelected = seleccionadas.includes(opcion.value)
           return (
-            <label
+            <button
               key={opcion.value}
+              type="button"
+              onClick={() => toggleEstandar(opcion.value)}
               className={cn(
-                'flex items-center gap-4 p-4 rounded-xl cursor-pointer',
+                'w-full flex items-center gap-4 p-4 rounded-xl text-left',
                 'border transition-all duration-150',
                 isSelected
-                  ? 'border-indigo-500/50 bg-indigo-500/10'
+                  ? 'border-indigo-500/50 bg-indigo-600/10'
                   : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.03]'
               )}
             >
-              <input
-                type="radio"
-                name="herramienta"
-                value={opcion.value}
-                checked={isSelected}
-                onChange={() => setSeleccionada(opcion.value)}
-                className="sr-only"
-              />
-
               {/* Ícono de la herramienta */}
               <div className={cn(
                 'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
@@ -149,16 +172,79 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
                 <p className="text-xs text-white/35 mt-0.5">{opcion.desc}</p>
               </div>
 
-              {/* Indicador de selección */}
+              {/* Indicador checkbox */}
               <div className={cn(
-                'w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all duration-150',
+                'w-4 h-4 rounded flex items-center justify-center flex-shrink-0',
+                'border-2 transition-all duration-150',
                 isSelected
                   ? 'border-indigo-400 bg-indigo-400'
                   : 'border-white/20 bg-transparent'
-              )} />
-            </label>
+              )}>
+                {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
+            </button>
           )
         })}
+
+        {/* Card especial "Otra" */}
+        <button
+          type="button"
+          onClick={toggleOtra}
+          className={cn(
+            'w-full flex items-center gap-4 p-4 rounded-xl text-left',
+            'border transition-all duration-150',
+            otraSeleccionada
+              ? 'border-indigo-500/50 bg-indigo-600/10'
+              : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.03]'
+          )}
+        >
+          <div className={cn(
+            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+            otraSeleccionada
+              ? 'bg-indigo-500/20 text-indigo-300'
+              : 'bg-white/[0.05] text-white/40'
+          )}>
+            <Plus className="w-5 h-5" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className={cn(
+              'text-sm font-medium',
+              otraSeleccionada ? 'text-white' : 'text-white/70'
+            )}>
+              Otra
+            </p>
+            <p className="text-xs text-white/35 mt-0.5">Especificá el nombre de otra herramienta</p>
+          </div>
+
+          <div className={cn(
+            'w-4 h-4 rounded flex items-center justify-center flex-shrink-0',
+            'border-2 transition-all duration-150',
+            otraSeleccionada
+              ? 'border-indigo-400 bg-indigo-400'
+              : 'border-white/20 bg-transparent'
+          )}>
+            {otraSeleccionada && <Check className="w-2.5 h-2.5 text-white" />}
+          </div>
+        </button>
+
+        {/* Input para herramienta custom — visible solo cuando "Otra" está seleccionada */}
+        {otraSeleccionada && (
+          <div className="px-1">
+            <input
+              type="text"
+              value={otraTexto}
+              onChange={e => setOtraTexto(e.target.value)}
+              placeholder="Nombre de la herramienta (ej: Discord, Telegram...)"
+              className="w-full px-4 py-2.5 rounded-lg text-sm
+                bg-white/[0.04] border border-white/[0.10]
+                text-white placeholder:text-white/25
+                focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06]
+                transition-all duration-150"
+              autoFocus
+            />
+          </div>
+        )}
       </div>
 
       {/* Botones */}
@@ -167,6 +253,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
           variant="primary"
           size="md"
           loading={saving}
+          disabled={!puedeConntinuar}
           onClick={handleContinuar}
           className="flex-1"
         >

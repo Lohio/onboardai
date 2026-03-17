@@ -15,7 +15,6 @@ import { Card } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn, getInitials, formatFecha, diasDesde } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
-import type { HerramientaContacto } from '@/lib/contacto'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
 
 // Total de bloques requeridos para completar M2 — Cultura
@@ -260,7 +259,7 @@ export default function PerfilPage() {
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([])
   const [accesos, setAccesos] = useState<Acceso[]>([])
 
-  const [herramientaContacto, setHerramientaContacto] = useState<HerramientaContacto>('email')
+  const [herramientaContacto, setHerramientaContacto] = useState<string>('email')
 
   const [editandoBio, setEditandoBio] = useState(false)
   const [bio, setBio] = useState('')
@@ -310,14 +309,15 @@ export default function PerfilPage() {
         setPerfil(perfilRes.data as Usuario)
         setBio(perfilRes.data.bio ?? '')
 
-        // Herramienta de contacto de la empresa
+        // Herramienta de contacto de la empresa (primera del array)
         const empresaRes = await supabase
           .from('empresas')
-          .select('herramienta_contacto')
+          .select('herramientas_contacto')
           .eq('id', perfilRes.data.empresa_id)
           .single()
-        if (empresaRes.data?.herramienta_contacto) {
-          setHerramientaContacto(empresaRes.data.herramienta_contacto as HerramientaContacto)
+        const herramientas = empresaRes.data?.herramientas_contacto
+        if (herramientas && herramientas.length > 0) {
+          setHerramientaContacto(herramientas[0] as string)
         }
       }
 

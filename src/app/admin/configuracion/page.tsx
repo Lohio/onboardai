@@ -3,25 +3,29 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Check, Mail, Video } from 'lucide-react'
+import { Save, Check, Mail, Video, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
-import { HERRAMIENTA_LABELS, type HerramientaContacto } from '@/lib/contacto'
+import { HERRAMIENTA_LABELS } from '@/lib/contacto'
+import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────
-// Opciones de herramienta
+// Opciones estándar de herramienta
 // ─────────────────────────────────────────────
 
-const OPCIONES: { value: HerramientaContacto; desc: string }[] = [
+const OPCIONES_ESTANDAR: { value: string; desc: string }[] = [
   { value: 'email',    desc: 'Abre el cliente de correo' },
   { value: 'teams',    desc: 'Abre un chat en Microsoft Teams' },
   { value: 'slack',    desc: 'Copia el email (Slack no tiene deep links)' },
   { value: 'whatsapp', desc: 'Copia el email (necesita número de teléfono)' },
   { value: 'meet',     desc: 'Envía un email para coordinar reunión' },
 ]
+
+// Herramientas conocidas para separar estándar de custom al cargar
+const HERRAMIENTAS_CONOCIDAS = new Set(['email', 'teams', 'slack', 'whatsapp', 'meet'])
 
 // Íconos inline para Teams, Slack, WhatsApp
 function TeamsIcon({ className }: { className?: string }) {
@@ -48,7 +52,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-function OpcionIcon({ h, className }: { h: HerramientaContacto; className?: string }) {
+function OpcionIcon({ h, className }: { h: string; className?: string }) {
   const cls = className ?? 'w-4 h-4'
   if (h === 'teams')    return <TeamsIcon className={cls} />
   if (h === 'slack')    return <SlackIcon className={cls} />
@@ -67,10 +71,43 @@ export default function ConfiguracionPage() {
   const [saving, setSaving] = useState(false)
   const [savedOk, setSavedOk] = useState(false)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
-  const [herramienta, setHerramienta] = useState<HerramientaContacto>('email')
-  const [original, setOriginal] = useState<HerramientaContacto>('email')
 
-  const hayPendientes = herramienta !== original
+  // Herramientas estándar seleccionadas
+  const [seleccionadas, setSeleccionadas] = useState<string[]>(['email'])
+  // Estado original para detectar cambios pendientes
+  const [original, setOriginal] = useState<string[]>(['email'])
+  // Card "Otra"
+  const [otraSeleccionada, setOtraSeleccionada] = useState(false)
+  const [otraTexto, setOtraTexto] = useState('')
+  // Original de "Otra" para detectar cambios
+  const [originalOtra, setOriginalOtra] = useState('')
+
+  // Array final que se guardará en DB
+  const arrayFinal = [
+    ...seleccionadas,
+    ...(otraSeleccionada && otraTexto.trim() ? [otraTexto.trim()] : []),
+  ]
+
+  // Detectar cambios pendientes
+  const hayPendientes = (
+    JSON.stringify([...seleccionadas].sort()) !== JSON.stringify([...original].sort()) ||
+    (otraSeleccionada && otraTexto.trim()) !== originalOtra
+  )
+
+  const toggleEstandar = (valor: string) => {
+    setSeleccionadas(prev =>
+      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
+    )
+  }
+
+  const toggleOtra = () => {
+    if (otraSeleccionada) {
+      setOtraSeleccionada(false)
+      setOtraTexto('')
+    } else {
+      setOtraSeleccionada(true)
+    }
+  }
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -93,14 +130,24 @@ export default function ConfiguracionPage() {
 
       const { data: empresaData } = await supabase
         .from('empresas')
-        .select('herramienta_contacto')
+        .select('herramientas_contacto')
         .eq('id', adminData.empresa_id)
         .single()
 
-      if (empresaData?.herramienta_contacto) {
-        const h = empresaData.herramienta_contacto as HerramientaContacto
-        setHerramienta(h)
-        setOriginal(h)
+      if (empresaData?.herramientas_contacto) {
+        const arr: string[] = empresaData.herramientas_contacto
+        // Separar herramientas conocidas de custom
+        const conocidas = arr.filter(h => HERRAMIENTAS_CONOCIDAS.has(h))
+        const custom    = arr.find(h => !HERRAMIENTAS_CONOCIDAS.has(h)) ?? ''
+
+        setSeleccionadas(conocidas.length > 0 ? conocidas : ['email'])
+        setOriginal(conocidas.length > 0 ? conocidas : ['email'])
+
+        if (custom) {
+          setOtraSeleccionada(true)
+          setOtraTexto(custom)
+          setOriginalOtra(custom)
+        }
       }
     } catch (err) {
       console.error('Error cargando configuración:', err)
@@ -113,18 +160,19 @@ export default function ConfiguracionPage() {
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
   async function handleGuardar() {
-    if (!empresaId) return
+    if (!empresaId || arrayFinal.length === 0) return
     setSaving(true)
     try {
       const supabase = createClient()
       const { error } = await supabase
         .from('empresas')
-        .update({ herramienta_contacto: herramienta })
+        .update({ herramientas_contacto: arrayFinal })
         .eq('id', empresaId)
 
       if (error) throw error
 
-      setOriginal(herramienta)
+      setOriginal(seleccionadas)
+      setOriginalOtra(otraSeleccionada && otraTexto.trim() ? otraTexto.trim() : '')
       setSavedOk(true)
       setTimeout(() => setSavedOk(false), 2500)
       toast.success('Configuración guardada')
@@ -134,6 +182,9 @@ export default function ConfiguracionPage() {
       setSaving(false)
     }
   }
+
+  // Primera herramienta seleccionada para la vista previa
+  const herramientaPreview = arrayFinal[0] ?? 'email'
 
   if (loading) {
     return (
@@ -158,7 +209,7 @@ export default function ConfiguracionPage() {
         <p className="text-sm text-white/40 mt-1">Ajustes generales del panel admin</p>
       </motion.div>
 
-      {/* ── Herramienta de contacto ── */}
+      {/* ── Herramientas de contacto ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,7 +218,7 @@ export default function ConfiguracionPage() {
         <Card>
           <div className="flex items-start justify-between mb-1">
             <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-              Herramienta de contacto
+              Herramientas de contacto
             </h2>
             <AnimatePresence>
               {hayPendientes && (
@@ -185,54 +236,124 @@ export default function ConfiguracionPage() {
           </div>
 
           <p className="text-xs text-white/40 mb-4">
-            Herramienta que se usa para el botón de contacto en las tarjetas "Contactos clave"
-            del módulo M1 de los empleados.
+            Herramientas que se usan para el botón de contacto en las tarjetas "Contactos clave"
+            del módulo M1. Podés seleccionar más de una.
           </p>
 
-          {/* Opciones */}
+          {/* Opciones estándar */}
           <div className="space-y-2">
-            {OPCIONES.map(op => (
-              <label
-                key={op.value}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
-                  border transition-all duration-150
-                  ${herramienta === op.value
-                    ? 'bg-indigo-600/10 border-indigo-500/30'
-                    : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="herramienta"
-                  value={op.value}
-                  checked={herramienta === op.value}
-                  onChange={() => setHerramienta(op.value)}
-                  className="sr-only"
-                />
-
-                {/* Dot */}
-                <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-colors duration-150
-                  ${herramienta === op.value
-                    ? 'border-indigo-400 bg-indigo-400'
-                    : 'border-white/20 bg-transparent'
-                  }`}
-                />
-
-                {/* Ícono + label */}
-                <span className={`flex-shrink-0 transition-colors duration-150
-                  ${herramienta === op.value ? 'text-indigo-300' : 'text-white/30'}`}>
-                  <OpcionIcon h={op.value} />
-                </span>
-
-                <div className="flex-1 min-w-0">
-                  <span className={`text-sm font-medium transition-colors duration-150
-                    ${herramienta === op.value ? 'text-white/90' : 'text-white/60'}`}>
-                    {HERRAMIENTA_LABELS[op.value]}
+            {OPCIONES_ESTANDAR.map(op => {
+              const isSelected = seleccionadas.includes(op.value)
+              return (
+                <button
+                  key={op.value}
+                  type="button"
+                  onClick={() => toggleEstandar(op.value)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
+                    'border transition-all duration-150',
+                    isSelected
+                      ? 'bg-indigo-600/10 border-indigo-500/30'
+                      : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+                  )}
+                >
+                  {/* Checkbox dot */}
+                  <span className={cn(
+                    'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                    'transition-colors duration-150',
+                    isSelected
+                      ? 'border-indigo-400 bg-indigo-400'
+                      : 'border-white/20 bg-transparent'
+                  )}>
+                    {isSelected && <Check className="w-2 h-2 text-white" />}
                   </span>
-                  <p className="text-xs text-white/30 mt-0.5">{op.desc}</p>
-                </div>
-              </label>
-            ))}
+
+                  {/* Ícono + label */}
+                  <span className={cn(
+                    'flex-shrink-0 transition-colors duration-150',
+                    isSelected ? 'text-indigo-300' : 'text-white/30'
+                  )}>
+                    <OpcionIcon h={op.value} />
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      'text-sm font-medium transition-colors duration-150',
+                      isSelected ? 'text-white/90' : 'text-white/60'
+                    )}>
+                      {HERRAMIENTA_LABELS[op.value]}
+                    </span>
+                    <p className="text-xs text-white/30 mt-0.5">{op.desc}</p>
+                  </div>
+                </button>
+              )
+            })}
+
+            {/* Card "Otra" */}
+            <button
+              type="button"
+              onClick={toggleOtra}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
+                'border transition-all duration-150',
+                otraSeleccionada
+                  ? 'bg-indigo-600/10 border-indigo-500/30'
+                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+              )}
+            >
+              <span className={cn(
+                'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                'transition-colors duration-150',
+                otraSeleccionada
+                  ? 'border-indigo-400 bg-indigo-400'
+                  : 'border-white/20 bg-transparent'
+              )}>
+                {otraSeleccionada && <Check className="w-2 h-2 text-white" />}
+              </span>
+
+              <span className={cn(
+                'flex-shrink-0 transition-colors duration-150',
+                otraSeleccionada ? 'text-indigo-300' : 'text-white/30'
+              )}>
+                <Plus className="w-4 h-4" />
+              </span>
+
+              <div className="flex-1 min-w-0">
+                <span className={cn(
+                  'text-sm font-medium transition-colors duration-150',
+                  otraSeleccionada ? 'text-white/90' : 'text-white/60'
+                )}>
+                  Otra
+                </span>
+                <p className="text-xs text-white/30 mt-0.5">Especificá el nombre de otra herramienta</p>
+              </div>
+            </button>
+
+            {/* Input custom — visible solo cuando "Otra" está seleccionada */}
+            <AnimatePresence>
+              {otraSeleccionada && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden px-1"
+                >
+                  <input
+                    type="text"
+                    value={otraTexto}
+                    onChange={e => setOtraTexto(e.target.value)}
+                    placeholder="Nombre de la herramienta (ej: Discord, Telegram...)"
+                    className="w-full px-3 py-2 rounded-lg text-sm
+                      bg-white/[0.04] border border-white/[0.10]
+                      text-white placeholder:text-white/25
+                      focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06]
+                      transition-all duration-150"
+                    autoFocus
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Botón guardar */}
@@ -254,7 +375,7 @@ export default function ConfiguracionPage() {
               variant="primary"
               size="sm"
               loading={saving}
-              disabled={!hayPendientes}
+              disabled={!hayPendientes || arrayFinal.length === 0}
               onClick={handleGuardar}
             >
               <Save className="w-3.5 h-3.5" />
@@ -275,32 +396,32 @@ export default function ConfiguracionPage() {
             Vista previa — Contactos clave
           </h2>
           <p className="text-xs text-white/35 mb-4">
-            Así verá el empleado las tarjetas en su módulo M1 con la herramienta seleccionada.
+            Así verá el empleado las tarjetas en su módulo M1. Se muestra la primera herramienta seleccionada.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <ContactoCard
               tipo="manager"
               nombre="Ana García"
               email="ana@empresa.com"
-              herramienta={herramienta}
+              herramienta={herramientaPreview}
             />
             <ContactoCard
               tipo="buddy"
               nombre="Juan Pérez"
               email="juan@empresa.com"
-              herramienta={herramienta}
+              herramienta={herramientaPreview}
             />
             <ContactoCard
               tipo="it"
               nombre="Carlos IT"
               email="it@empresa.com"
-              herramienta={herramienta}
+              herramienta={herramientaPreview}
             />
             <ContactoCard
               tipo="rrhh"
               nombre={undefined}
               email={undefined}
-              herramienta={herramienta}
+              herramienta={herramientaPreview}
             />
           </div>
         </Card>

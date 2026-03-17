@@ -1,12 +1,13 @@
 // ─────────────────────────────────────────────
 // contacto.ts — Herramienta de contacto por empresa
+// Tipo abierto: herramientas conocidas + strings custom
 // ─────────────────────────────────────────────
 
-export type HerramientaContacto = 'email' | 'teams' | 'slack' | 'whatsapp' | 'meet'
+export type HerramientaContacto = 'email' | 'teams' | 'slack' | 'whatsapp' | 'meet' | string
 
 /**
  * Genera la URL de acción según la herramienta configurada.
- * Devuelve null si la herramienta no soporta URLs basadas en email (ej. WhatsApp).
+ * Para herramientas desconocidas hace fallback a mailto: si hay email disponible.
  */
 export function buildContactUrl(herramienta: HerramientaContacto, email: string): string | null {
   switch (herramienta) {
@@ -21,14 +22,24 @@ export function buildContactUrl(herramienta: HerramientaContacto, email: string)
     case 'meet':
       return `mailto:${email}?subject=Reunión de onboarding`
     default:
-      return `mailto:${email}`
+      // Herramienta custom: fallback a mailto: si hay email
+      return email ? `mailto:${email}` : null
   }
 }
 
-export const HERRAMIENTA_LABELS: Record<HerramientaContacto, string> = {
+// Labels para herramientas conocidas
+export const HERRAMIENTA_LABELS: Record<string, string> = {
   email:    'Email',
   teams:    'Teams',
   slack:    'Slack',
   whatsapp: 'WhatsApp',
   meet:     'Meet',
+}
+
+/**
+ * Devuelve el label de la herramienta.
+ * Para herramientas custom, retorna el nombre tal cual está guardado.
+ */
+export function getHerramientaLabel(h: string): string {
+  return HERRAMIENTA_LABELS[h] ?? h
 }
