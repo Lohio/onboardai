@@ -48,17 +48,20 @@ const mdComponents: Components = {
     <h3 className="text-xs font-medium text-white/75 mt-2 mb-0.5">{children}</h3>
   ),
   table: ({ children }) => (
-    <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.08]">
-      <table className="w-full text-xs">{children}</table>
+    <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.08] text-xs">
+      <table className="w-full border-collapse">{children}</table>
     </div>
   ),
+  thead: ({ children }) => <thead>{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="border-b border-white/[0.04] last:border-0">{children}</tr>,
   th: ({ children }) => (
-    <th className="bg-white/[0.04] text-white/45 px-3 py-1.5 text-left font-medium border-b border-white/[0.06]">
+    <th className="bg-white/[0.04] text-white/45 px-3 py-1.5 text-left font-medium">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-3 py-1.5 text-white/65 border-b border-white/[0.04] last:border-0">
+    <td className="px-3 py-1.5 text-white/65">
       {children}
     </td>
   ),
@@ -333,7 +336,7 @@ export default function AsistentePage() {
 
       {/* ── Mensajes ── */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
       >
         {mensajes.length === 0 ? (
