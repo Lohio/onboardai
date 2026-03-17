@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Maxi/onboardai/$USERPROFILE/.config/superpowers/worktrees/onboardai/**)",
+      "Bash(npm install:*)",
+      "Bash(echo \"$USERPROFILE\")",
+      "Read(//c/Users/Maxi/.config/superpowers/worktrees/onboardai/**)",
+      "Bash(cd:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

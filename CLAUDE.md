@@ -57,6 +57,7 @@ El login es único en `/auth/login`. El sistema redirige según el rol del usuar
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=   # Requerida para crear usuarios auth desde el admin (/api/admin/empleados POST)
 ANTHROPIC_API_KEY=
 RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en consola.
 ```
@@ -78,7 +79,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `/empleado` | Home: módulos con progreso, tareas pendientes, encuesta de pulso modal |
 | `/empleado/perfil` | M1: datos personales, equipo (manager/buddy/compañeros), accesos, contactos IT/RRHH |
 | `/empleado/cultura` | M2: bloques de contenido por módulo, quizzes, barra de progreso por sección |
-| `/empleado/rol` | M3: herramientas del rol con guías paso a paso, tareas con checkbox, objetivos por semana |
+| `/empleado/rol` | M3: herramientas del rol con guías paso a paso, tareas con checkbox, objetivos por semana, tabla de autonomía de decisiones |
 | `/empleado/asistente` | M4: chat conversacional con Claude, historial en sesión |
 
 #### App del admin (`/admin/*`)
@@ -86,7 +87,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 |------|-------------|
 | `/admin` | Dashboard: métricas globales, grid de empleados con progreso, alertas, chart de actividad |
 | `/admin/empleados` | Lista completa de empleados de la empresa |
-| `/admin/empleados/[id]` | Detalle unificado con dos tabs: **Edición** (formulario + módulos + alertas) y **Progreso y reporte** (timeline, tareas, preguntas IA, reporte streaming) |
+| `/admin/empleados/[id]` | Detalle unificado con dos tabs: **Edición** (formulario + módulos + alertas + CRUD de accesos a herramientas) y **Progreso y reporte** (timeline, tareas, preguntas IA, reporte streaming) |
 | `/admin/contenido` | Selector de módulo para gestionar bloques de contenido |
 | `/admin/contenido/[modulo]` | Edición de bloques de contenido por módulo (CRUD con modal) |
 | `/admin/conocimiento` | Gestión del conocimiento institucional de la empresa |
@@ -150,6 +151,15 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 - `src/app/admin/layout.tsx` — Shell con sidebar (desktop) + drawer (mobile), contador de alertas en tiempo real via Supabase Realtime
 - `src/app/dev/layout.tsx` — Layout del panel de superadmin
 
+### Librerías (`src/lib/`)
+| Archivo | Descripción |
+|---------|-------------|
+| `supabase.ts` | `createClient()` (client-side) y `createServerSupabaseClient()` (server-side) |
+| `claude.ts` | `buildSystemPrompt()`, `streamChat()`, `logMensaje()` — integración con Claude API |
+| `roles.ts` | Helpers de control de acceso por rol |
+| `utils.ts` | `cn()` para merging de classNames, funciones de formato |
+| `contacto.ts` | Resolución de contactos de equipo/IT/RRHH |
+
 ---
 
 ## Sistema de encuestas de pulso
@@ -208,13 +218,32 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 
 ## Tipos principales (`src/types/index.ts`)
 - `UserRole` — `'empleado' | 'admin' | 'dev'`
-- `Usuario` — perfil completo del usuario
+- `Usuario` — perfil completo del usuario (incluye campos `contacto_it_nombre/email` y `contacto_rrhh_nombre/email`)
 - `MiembroEquipo` — manager, buddy o compañero
 - `Acceso` — herramienta con estado (activo/pendiente/sin_acceso)
 - `ContenidoBloque` — bloque de contenido por módulo
 - `ProgresoModulo` — progreso del empleado por bloque
-- `TareaOnboarding` — tarea semanal con checkbox
-- `HerramientaRol` — herramienta del rol con guías paso a paso
-- `ObjetivoRol` — objetivo por semana con estado
+- `TareaOnboarding` — tarea semanal con checkbox (incluye campo `orden` para ordenamiento)
+- `GuiaHerramienta` — sección de guía para una herramienta (titulo + pasos: string[])
+- `HerramientaRol` — herramienta del rol con guías paso a paso (`guia: GuiaHerramienta[]`)
+- `ObjetivoRol` — objetivo por semana con estado (pendiente/en_progreso/completado)
+- `DecisionAutonomia` — fila de tabla de autonomía (decision + nivel: 'solo'|'consultar'|'escalar')
 - `EncuestaPulso` — encuesta de pulso (días 7/30/60)
 - `AdminEmpleadoConProgreso` — empleado con progreso calculado para el admin
+
+## Tablas principales en Supabase
+- `usuarios` — perfiles de usuario con rol, empresa y asignaciones de equipo
+- `empresas` — datos de la empresa/organización
+- `progreso_modulos` — tracking de completado por módulo y bloque
+- `tareas_onboarding` — tareas semanales por empleado
+- `herramientas_rol` — herramientas del puesto con guías paso a paso
+- `objetivos_rol` — objetivos mensuales por empleado
+- `conocimiento` — bloques de conocimiento institucional para el asistente IA
+- `conversaciones_ia` — conversaciones del chat IA
+- `mensajes_ia` — historial de mensajes del chat (rol + contenido, últimos 20 por conversación)
+- `mensajes_chat` — log de auditoría de todas las interacciones IA
+- `encuestas_pulso` — encuestas de pulso (preguntas + respuestas + comentario)
+- `accesos` — accesos a herramientas/apps por empleado (activo/pendiente/sin_acceso)
+- `equipo_relaciones` — relaciones manager/buddy/compañero
+- `alertas_conocimiento` — preguntas del empleado que el admin debe responder
+- `app_config` — configuración del sistema (claude_model, max_tokens, system_prompt_base)
