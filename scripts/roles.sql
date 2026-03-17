@@ -621,3 +621,19 @@ CREATE POLICY "accesos_dev_all" ON accesos_herramientas
 -- ─────────────────────────────────────────────────────────────
 -- Fin del script
 -- ─────────────────────────────────────────────────────────────
+
+-- ══════════════════════════════════════════════════════════════
+-- 14. SETUP INICIAL DE EMPRESA
+--     setup_completo: false hasta que el admin complete el wizard
+--     industria, tamano: datos recopilados en el paso 1
+--     logo_url: URL del logo en Supabase Storage (paso 1, opcional)
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE empresas
+  ADD COLUMN IF NOT EXISTS setup_completo boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS industria      text,
+  ADD COLUMN IF NOT EXISTS tamano         text;
+
+-- logo_url ya puede existir o no; la agregamos con IF NOT EXISTS
+ALTER TABLE empresas
+  ADD COLUMN IF NOT EXISTS logo_url text;
