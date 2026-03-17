@@ -584,13 +584,13 @@ export default function CulturaPage() {
       setUserId(user.id)
 
       // Obtener empresa_id del perfil
-      const { data: perfil } = await supabase
+      const { data: perfil, error: perfilError } = await supabase
         .from('usuarios')
         .select('empresa_id')
         .eq('id', user.id)
         .single()
 
-      if (!perfil) return
+      if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
       // Cargar contenido y progreso en paralelo
       const [contenidosRes, progresoRes] = await Promise.all([
