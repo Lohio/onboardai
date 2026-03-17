@@ -234,6 +234,21 @@ export default function EmpleadoHomePage() {
         proximaTarea,
       })
 
+      // Si el flag sigue activo en DB pero la fecha ya pasó, sincronizar en background
+      if (
+        usuario?.preboarding_activo === true &&
+        !!usuario?.fecha_ingreso &&
+        new Date(usuario.fecha_ingreso) <= new Date()
+      ) {
+        const supabaseCleanup = createClient()
+        supabaseCleanup
+          .from('usuarios')
+          .update({ preboarding_activo: false })
+          .eq('id', user.id)
+          .then(() => {})
+          .catch(() => {}) // no bloquea la UI
+      }
+
       // Verificar encuestas de pulso solo si NO está en pre-boarding
       if (!enPreboarding && user) {
         const diasOnboarding = Math.max(
