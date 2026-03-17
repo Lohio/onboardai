@@ -638,3 +638,18 @@ ALTER TABLE empresas
 -- logo_url ya puede existir o no; la agregamos con IF NOT EXISTS
 ALTER TABLE empresas
   ADD COLUMN IF NOT EXISTS logo_url text;
+
+-- ══════════════════════════════════════════════════════════════
+-- 15. CONOCIMIENTO MULTI-TIPO
+--     tipo: texto (default) | imagen | video | pdf | link | archivo
+--     url: URL pública del recurso
+--     storage_path: path interno en Supabase Storage bucket 'conocimiento'
+--     metadata: datos extra según tipo (jsonb)
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE conocimiento
+  ADD COLUMN IF NOT EXISTS tipo text NOT NULL DEFAULT 'texto'
+    CHECK (tipo IN ('texto','imagen','video','pdf','link','archivo')),
+  ADD COLUMN IF NOT EXISTS url text,
+  ADD COLUMN IF NOT EXISTS storage_path text,
+  ADD COLUMN IF NOT EXISTS metadata jsonb;

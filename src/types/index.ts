@@ -38,6 +38,22 @@ export interface Acceso {
   estado: 'activo' | 'pendiente' | 'sin_acceso'
 }
 
+// Tipos de contenido soportados
+export type TipoContenido = 'texto' | 'imagen' | 'video' | 'pdf' | 'link' | 'archivo'
+
+// Metadata tipada por tipo de contenido
+export interface MetadataVideo {
+  plataforma: 'youtube' | 'vimeo'
+  url_original: string
+}
+export interface MetadataLink {
+  plataforma: string
+}
+export interface MetadataArchivo {
+  nombre: string
+  tamano: number
+}
+
 export interface ContenidoBloque {
   id: string
   empresa_id: string
@@ -45,6 +61,10 @@ export interface ContenidoBloque {
   bloque: string
   titulo: string
   contenido: string
+  tipo: TipoContenido
+  url?: string | null
+  storage_path?: string | null
+  metadata?: Record<string, string | number | boolean | null> | null
   created_at: string
 }
 
