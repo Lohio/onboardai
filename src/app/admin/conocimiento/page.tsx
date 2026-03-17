@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Wrench, AlertTriangle, Plus, Edit3, X, Check } from 'lucide-react'
+import { BookOpen, Wrench, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Portal } from '@/components/shared/Portal'
-import type { ContenidoBloque } from '@/types'
+import { ContenidoModal } from '@/components/admin/ContenidoModal'
+import { estadoBloque, infoBloque } from '@/lib/conocimiento'
+import type { ContenidoBloque, TipoContenido } from '@/types'
 
 // ─────────────────────────────────────────────
 // Constantes: módulos y bloques del producto
@@ -53,7 +55,7 @@ interface AlertaRow {
   usuarios: { nombre: string }[] | null
 }
 
-type EstadoBloque = 'vacio' | 'parcial' | 'completo'
+type EstadoBloque = ReturnType<typeof estadoBloque>
 
 // ─────────────────────────────────────────────
 // Variantes de animación
@@ -77,12 +79,6 @@ const cardVariants = {
 // Helpers
 // ─────────────────────────────────────────────
 
-function estadoBloque(contenido?: ContenidoBloque): EstadoBloque {
-  if (!contenido) return 'vacio'
-  if (contenido.contenido.length < 100) return 'parcial'
-  return 'completo'
-}
-
 function tiempoRelativo(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime()
   const minutos = Math.floor(diffMs / 60000)
@@ -93,70 +89,6 @@ function tiempoRelativo(dateStr: string): string {
 }
 
 // ─────────────────────────────────────────────
-// Mini Markdown Preview (sin librerías externas)
-// ─────────────────────────────────────────────
-
-function formatInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/)
-  return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
-          return <strong key={i} className="text-white/90 font-semibold">{part.slice(2, -2)}</strong>
-        }
-        if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
-          return <em key={i} className="text-white/70">{part.slice(1, -1)}</em>
-        }
-        return <span key={i}>{part}</span>
-      })}
-    </>
-  )
-}
-
-function MiniMarkdownPreview({ text }: { text: string }) {
-  if (!text.trim()) {
-    return <p className="text-white/25 text-sm italic">El preview aparecerá aquí...</p>
-  }
-
-  const lines = text.split('\n')
-  const elementos: React.ReactNode[] = []
-  let listBuffer: React.ReactNode[] = []
-
-  const flushList = (key: string) => {
-    if (listBuffer.length > 0) {
-      elementos.push(
-        <ul key={key} className="list-disc ml-4 space-y-0.5 text-sm text-white/65">
-          {listBuffer}
-        </ul>
-      )
-      listBuffer = []
-    }
-  }
-
-  lines.forEach((line, i) => {
-    if (line.startsWith('# ')) {
-      flushList(`list-${i}`)
-      elementos.push(<h2 key={i} className="text-base font-bold text-white/90 mt-3 mb-1 first:mt-0">{formatInline(line.slice(2))}</h2>)
-    } else if (line.startsWith('## ')) {
-      flushList(`list-${i}`)
-      elementos.push(<h3 key={i} className="text-sm font-semibold text-white/80 mt-3 mb-1 first:mt-0">{formatInline(line.slice(3))}</h3>)
-    } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      listBuffer.push(<li key={i}>{formatInline(line.slice(2))}</li>)
-    } else if (line.trim() === '') {
-      flushList(`list-${i}`)
-      elementos.push(<br key={i} />)
-    } else {
-      flushList(`list-${i}`)
-      elementos.push(<p key={i} className="text-sm text-white/65 leading-relaxed">{formatInline(line)}</p>)
-    }
-  })
-
-  flushList('final')
-
-  return <div className="space-y-1">{elementos}</div>
-}
-
-// ─────────────────────────────────────────────
 // Indicador de estado del bloque
 // ─────────────────────────────────────────────
 
@@ -164,6 +96,20 @@ function EstadoDot({ estado }: { estado: EstadoBloque }) {
   if (estado === 'completo') return <span className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0" />
   if (estado === 'parcial') return <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
   return <span className="w-2 h-2 rounded-full bg-white/20 flex-shrink-0" />
+}
+
+// Ícono del tipo de contenido (14px) para la lista de bloques
+function TipoIcon({ tipo }: { tipo: TipoContenido }) {
+  const cls = 'w-3.5 h-3.5 text-white/25'
+  switch (tipo) {
+    case 'texto':   return <FileText   className={cls} />
+    case 'imagen':  return <Image      className={cls} />
+    case 'video':   return <Play       className={cls} />
+    case 'pdf':     return <FileDown   className={cls} />
+    case 'link':    return <Link2      className={cls} />
+    case 'archivo': return <FolderOpen className={cls} />
+    default:        return <FileText   className={cls} />
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -182,8 +128,6 @@ export default function ConocimientoPage() {
     bloque: string
     label: string
   } | null>(null)
-  const [editTitulo, setEditTitulo] = useState('')
-  const [editContenido, setEditContenido] = useState('')
 
   // Modal alerta: responder pregunta sin respuesta
   const [alertaActiva, setAlertaActiva] = useState<AlertaRow | null>(null)
@@ -191,7 +135,6 @@ export default function ConocimientoPage() {
   const [alertaContenido, setAlertaContenido] = useState('')
 
   const [guardando, setGuardando] = useState(false)
-  const [guardadoFeedback, setGuardadoFeedback] = useState(false)
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async (empId: string) => {
@@ -251,56 +194,7 @@ export default function ConocimientoPage() {
 
   // ── Abrir modal contenido ──
   const abrirModalContenido = (modulo: string, bloque: string, label: string) => {
-    const existing = conocimientoMap[`${modulo}-${bloque}`]
-    setEditTitulo(existing?.titulo ?? label)
-    setEditContenido(existing?.contenido ?? '')
     setModalContenido({ modulo, bloque, label })
-  }
-
-  // ── Guardar contenido ──
-  const guardarContenido = async () => {
-    if (!empresaId || !modalContenido || !editContenido.trim()) return
-    setGuardando(true)
-
-    try {
-      const supabase = createClient()
-      const key = `${modalContenido.modulo}-${modalContenido.bloque}`
-      const existing = conocimientoMap[key]
-
-      let savedRow: ContenidoBloque
-
-      if (existing) {
-        await supabase
-          .from('conocimiento')
-          .update({ titulo: editTitulo, contenido: editContenido })
-          .eq('id', existing.id)
-        savedRow = { ...existing, titulo: editTitulo, contenido: editContenido }
-      } else {
-        const { data } = await supabase
-          .from('conocimiento')
-          .insert({
-            empresa_id: empresaId,
-            modulo: modalContenido.modulo,
-            bloque: modalContenido.bloque,
-            titulo: editTitulo,
-            contenido: editContenido,
-          })
-          .select()
-          .single()
-        savedRow = data as ContenidoBloque
-      }
-
-      setConocimientoMap(prev => ({ ...prev, [key]: savedRow }))
-      setGuardadoFeedback(true)
-      setTimeout(() => {
-        setGuardadoFeedback(false)
-        setModalContenido(null)
-      }, 800)
-    } catch (err) {
-      console.error('Error guardando conocimiento:', err)
-    } finally {
-      setGuardando(false)
-    }
   }
 
   // ── Guardar respuesta a alerta ──
@@ -461,10 +355,13 @@ export default function ConocimientoPage() {
                       className="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0"
                     >
                       <EstadoDot estado={estado} />
-                      <span className="flex-1 text-sm text-white/65 truncate">{bloque.label}</span>
+                      <span className="flex-1 text-sm text-white/65 truncate flex items-center gap-1.5">
+                        {contenido && <TipoIcon tipo={contenido.tipo} />}
+                        {bloque.label}
+                      </span>
                       {contenido && (
-                        <span className="text-[10px] text-white/25 font-mono mr-2">
-                          {contenido.contenido.length} chars
+                        <span className="text-[10px] text-white/25 font-mono mr-2 truncate max-w-[80px]">
+                          {infoBloque(contenido)}
                         </span>
                       )}
                       <button
@@ -492,125 +389,22 @@ export default function ConocimientoPage() {
         </div>
       </motion.div>
 
-      {/* ═══════════════════════════════════════
-          Modal: Editar/Agregar contenido
-      ═══════════════════════════════════════ */}
-      <Portal>
-      <AnimatePresence>
-        {modalContenido && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black/70 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={() => !guardando && setModalContenido(null)}
-            />
-
-            <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            >
-              <div
-                className="glass-card rounded-xl w-full max-w-3xl flex flex-col"
-                style={{ maxHeight: 'min(85vh, 680px)' }}
-                onClick={e => e.stopPropagation()}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/[0.06] flex-shrink-0">
-                  <div>
-                    <p className="text-[11px] text-white/35 uppercase tracking-widest">
-                      {conocimientoMap[`${modalContenido.modulo}-${modalContenido.bloque}`]
-                        ? 'Editar contenido'
-                        : 'Agregar contenido'}
-                    </p>
-                    <h3 className="text-sm font-medium text-white mt-0.5">{modalContenido.label}</h3>
-                  </div>
-                  <button
-                    onClick={() => !guardando && setModalContenido(null)}
-                    className="text-white/30 hover:text-white/70 transition-colors duration-150 p-1"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Body: split editor / preview */}
-                <div className="flex-1 overflow-hidden grid grid-cols-1 sm:grid-cols-2 min-h-0">
-                  {/* Editor */}
-                  <div className="flex flex-col gap-3 p-4 border-r border-white/[0.06] min-h-0">
-                    <div>
-                      <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1">
-                        Título
-                      </label>
-                      <input
-                        value={editTitulo}
-                        onChange={e => setEditTitulo(e.target.value)}
-                        className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2
-                          text-white outline-none focus:border-indigo-500/40 transition-colors"
-                        placeholder="Título de la sección"
-                      />
-                    </div>
-                    <div className="flex-1 flex flex-col min-h-0">
-                      <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1">
-                        Contenido (Markdown)
-                      </label>
-                      <textarea
-                        value={editContenido}
-                        onChange={e => setEditContenido(e.target.value)}
-                        className="flex-1 w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-                          px-3 py-2 text-white/80 outline-none focus:border-indigo-500/40
-                          resize-none font-mono transition-colors placeholder:text-white/20"
-                        placeholder={'# Título\n\nEscribí el contenido acá...\n\n**negrita** *itálica*\n- lista'}
-                        style={{ minHeight: '200px' }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  <div className="hidden sm:flex flex-col p-4 overflow-y-auto min-h-0">
-                    <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-2 flex-shrink-0">
-                      Preview
-                    </label>
-                    <MiniMarkdownPreview text={editContenido} />
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-end gap-3 p-4 border-t border-white/[0.06] flex-shrink-0">
-                  <button
-                    onClick={() => !guardando && setModalContenido(null)}
-                    className="text-sm text-white/40 hover:text-white/70 px-4 py-2 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={guardarContenido}
-                    disabled={guardando || !editContenido.trim()}
-                    className={cn(
-                      'flex items-center gap-2 text-sm font-medium px-5 py-2 rounded-lg transition-all duration-150',
-                      'bg-indigo-600 hover:bg-indigo-500 text-white',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
-                    )}
-                  >
-                    {guardadoFeedback ? (
-                      <><Check className="w-3.5 h-3.5 text-teal-300" /> Guardado</>
-                    ) : guardando ? (
-                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" /> Guardando...</>
-                    ) : (
-                      'Guardar'
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-      </Portal>
+      {/* ── Modal de contenido ── */}
+      {modalContenido && empresaId && (
+        <ContenidoModal
+          modulo={modalContenido.modulo}
+          bloque={modalContenido.bloque}
+          label={modalContenido.label}
+          empresaId={empresaId}
+          existing={conocimientoMap[`${modalContenido.modulo}-${modalContenido.bloque}`] ?? null}
+          onClose={() => setModalContenido(null)}
+          onGuardado={(bloque) => {
+            const key = `${modalContenido.modulo}-${modalContenido.bloque}`
+            setConocimientoMap(prev => ({ ...prev, [key]: bloque }))
+            setModalContenido(null)
+          }}
+        />
+      )}
 
       {/* ═══════════════════════════════════════
           Modal: Responder alerta
