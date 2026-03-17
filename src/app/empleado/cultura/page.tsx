@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import {
   Lock, CheckCircle2, BookOpen, Target, Users,
-  ClipboardList, Trophy, ChevronDown,
+  ClipboardList, Trophy, ChevronDown, ArrowRight,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import toast from 'react-hot-toast'
@@ -834,6 +835,40 @@ export default function CulturaPage() {
             />
           ))}
         </motion.div>
+
+        {/* Banner de módulo completado */}
+        {totalCompletados === BLOQUES_ORDEN.length && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.3 }}
+            className="mt-6 rounded-xl border border-teal-500/25 bg-teal-500/10 px-5 py-4"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-teal-200">
+                    ¡Completaste el módulo de Cultura!
+                  </p>
+                  <p className="text-xs text-teal-300/60 mt-0.5">
+                    Ya conocés la empresa. Ahora es momento de conocer tu rol.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/empleado/rol"
+                className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium
+                  text-teal-300 hover:text-teal-200 transition-colors duration-150"
+              >
+                Ir a Mi Rol
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   )
