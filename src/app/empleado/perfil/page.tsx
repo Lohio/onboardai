@@ -286,7 +286,7 @@ export default function PerfilPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) throw new Error('No autenticado')
 
       // 2, 3, 5 en paralelo
       const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
@@ -415,7 +415,7 @@ export default function PerfilPage() {
         .update({ bio })
         .eq('id', perfil.id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Error al guardar')
 
       setSavedFeedback(true)
       setTimeout(() => setSavedFeedback(false), 2000)
@@ -437,7 +437,7 @@ export default function PerfilPage() {
         .from('avatars')
         .upload(path, file, { upsert: true })
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw new Error(uploadError.message ?? 'Error al subir imagen')
 
       const {
         data: { publicUrl },
