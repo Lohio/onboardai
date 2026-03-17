@@ -180,7 +180,7 @@ export default function AsistentePage() {
   const [nombreUsuario, setNombreUsuario] = useState('')
   const [errorRed, setErrorRed] = useState(false)
 
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -215,8 +215,12 @@ export default function AsistentePage() {
   }, [cargarUsuario])
 
   // ── Auto-scroll al último mensaje ──
+  // Usamos scrollTop directo en el contenedor para no scrollear el body
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [mensajes])
 
   // ── Ajustar altura del textarea ──
@@ -336,6 +340,7 @@ export default function AsistentePage() {
 
       {/* ── Mensajes ── */}
       <div
+        ref={messagesContainerRef}
         className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
       >
@@ -359,7 +364,6 @@ export default function AsistentePage() {
             )}
           </>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* ── Input ── */}
