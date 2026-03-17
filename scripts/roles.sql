@@ -653,3 +653,26 @@ ALTER TABLE conocimiento
   ADD COLUMN IF NOT EXISTS url text,
   ADD COLUMN IF NOT EXISTS storage_path text,
   ADD COLUMN IF NOT EXISTS metadata jsonb;
+
+-- ══════════════════════════════════════════════════════════════
+-- 16. CREDENCIALES CORPORATIVAS EN USUARIOS
+--     password_corporativo: contraseña de acceso corporativo
+--     password_bitlocker: clave de recuperación BitLocker
+--     Visibles solo para admins desde el panel de edición
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS password_corporativo text,
+  ADD COLUMN IF NOT EXISTS password_bitlocker text;
+
+-- ══════════════════════════════════════════════════════════════
+-- 17. CREDENCIALES POR HERRAMIENTA EN ACCESOS
+--     usuario_acceso: usuario/email de la herramienta
+--     password_acceso: contraseña de la herramienta
+--     notas: indicaciones adicionales (ya puede existir)
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE accesos_herramientas
+  ADD COLUMN IF NOT EXISTS usuario_acceso text,
+  ADD COLUMN IF NOT EXISTS password_acceso text,
+  ADD COLUMN IF NOT EXISTS notas text;

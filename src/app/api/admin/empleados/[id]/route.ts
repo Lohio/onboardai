@@ -71,6 +71,7 @@ export async function PATCH(
       'modalidad', 'manager_id', 'buddy_id', 'bio',
       'contacto_it_nombre', 'contacto_it_email',
       'contacto_rrhh_nombre', 'contacto_rrhh_email',
+      'password_corporativo', 'password_bitlocker',
     ]
     const updateData: Record<string, unknown> = {}
     for (const campo of camposPermitidos) {

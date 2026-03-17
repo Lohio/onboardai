@@ -8,7 +8,7 @@ import {
   ArrowLeft, Save, BookOpen, Wrench, MessageSquare,
   RotateCcw, CheckCircle2, Circle, Clock, AlertCircle,
   CalendarDays, Zap, Sparkles, CheckSquare, ChevronDown,
-  Pencil, BarChart2, Plus, Trash2,
+  Pencil, BarChart2, Plus, Trash2, Lock, Eye, EyeOff,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -42,6 +42,8 @@ interface EmpleadoFull {
   contacto_rrhh_email: string | null
   preboarding_activo: boolean
   fecha_acceso_preboarding: string | null
+  password_corporativo: string | null
+  password_bitlocker: string | null
 }
 
 interface FormData {
@@ -58,6 +60,8 @@ interface FormData {
   contacto_it_email: string
   contacto_rrhh_nombre: string
   contacto_rrhh_email: string
+  password_corporativo: string
+  password_bitlocker: string
 }
 
 interface ProgresoModulo {
@@ -115,6 +119,18 @@ interface AccesoRow {
   estado: 'activo' | 'pendiente' | 'sin_acceso'
   url: string | null
   notas: string | null
+  usuario_acceso: string | null
+  password_acceso: string | null
+}
+
+// Borrador de edición local de un acceso (antes de guardar)
+interface AccesoEditDraft {
+  herramienta: string
+  estado: AccesoRow['estado']
+  usuario_acceso: string
+  password_acceso: string
+  url: string
+  notas: string
 }
 
 type TabKey = 'edicion' | 'progreso'
@@ -231,9 +247,13 @@ export default function EmpleadoDetallePage() {
   const [accesos, setAccesos] = useState<AccesoRow[]>([])
   const [empresaId, setEmpresaId] = useState<string>('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [focusNewId, setFocusNewId] = useState<string | null>(null)
-  // Timers de debounce por fila (clave: `{id}_{campo}`)
-  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  // Panel expandible — solo uno abierto a la vez
+  const [expandedAccesoId, setExpandedAccesoId] = useState<string | null>(null)
+  const [accesoEdits, setAccesoEdits] = useState<Record<string, AccesoEditDraft>>({})
+  const [showPassAcceso, setShowPassAcceso] = useState<Record<string, boolean>>({})
+  // Visibilidad de contraseñas en datos personales
+  const [showPassCorp, setShowPassCorp] = useState(false)
+  const [showPassBitlocker, setShowPassBitlocker] = useState(false)
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
@@ -263,7 +283,8 @@ export default function EmpleadoDetallePage() {
           modalidad, manager_id, buddy_id, bio, rol, foto_url,
           contacto_it_nombre, contacto_it_email,
           contacto_rrhh_nombre, contacto_rrhh_email,
-          preboarding_activo, fecha_acceso_preboarding`)
+          preboarding_activo, fecha_acceso_preboarding,
+          password_corporativo, password_bitlocker`)
         .eq('id', id)
         .single()
 
@@ -297,6 +318,8 @@ export default function EmpleadoDetallePage() {
         contacto_it_email: empData.contacto_it_email ?? '',
         contacto_rrhh_nombre: empData.contacto_rrhh_nombre ?? '',
         contacto_rrhh_email: empData.contacto_rrhh_email ?? '',
+        password_corporativo: empData.password_corporativo ?? '',
+        password_bitlocker: empData.password_bitlocker ?? '',
       })
 
       // ── Queries en paralelo: edición + progreso ──
@@ -325,7 +348,7 @@ export default function EmpleadoDetallePage() {
           .eq('usuario_id', id).eq('completada', true).order('completada_at', { ascending: false }),
         supabase.from('tareas_onboarding').select('id, titulo, semana')
           .eq('usuario_id', id).eq('completada', false).order('semana').limit(10),
-        supabase.from('accesos_herramientas').select('id, herramienta, estado, url, notas')
+        supabase.from('accesos_herramientas').select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
           .eq('usuario_id', id).order('herramienta'),
       ])
 
@@ -451,6 +474,8 @@ export default function EmpleadoDetallePage() {
           contacto_it_email:    form.contacto_it_email.trim() || null,
           contacto_rrhh_nombre: form.contacto_rrhh_nombre.trim() || null,
           contacto_rrhh_email:  form.contacto_rrhh_email.trim() || null,
+          password_corporativo: form.password_corporativo.trim() || null,
+          password_bitlocker:   form.password_bitlocker.trim() || null,
         }),
       })
       const data = await res.json() as { usuario?: EmpleadoFull; error?: string }
@@ -522,54 +547,83 @@ export default function EmpleadoDetallePage() {
     }
   }
 
-  // ── Clases de color para el select de estado de accesos ──
-  function selectEstadoCls(estado: AccesoRow['estado']): string {
-    if (estado === 'activo')    return 'text-teal-400 bg-teal-500/10 border-teal-500/20'
-    if (estado === 'pendiente') return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-    return 'text-red-400 bg-red-500/10 border-red-500/20'
+  // ── Herramienta "configurada": activa con usuario o contraseña cargados ──
+  function isConfigured(a: AccesoRow): boolean {
+    return a.estado === 'activo' && !!(a.usuario_acceso?.trim() || a.password_acceso?.trim())
   }
 
-  // ── Agregar nuevo acceso ──
+  // ── Abrir/cerrar panel de un acceso (solo uno a la vez) ──
+  function toggleAcceso(accesoId: string) {
+    if (expandedAccesoId === accesoId) { setExpandedAccesoId(null); return }
+    const acceso = accesos.find(a => a.id === accesoId)
+    if (!acceso) return
+    setAccesoEdits(prev => ({
+      ...prev,
+      [accesoId]: {
+        herramienta: acceso.herramienta,
+        estado: acceso.estado,
+        usuario_acceso: acceso.usuario_acceso ?? '',
+        password_acceso: acceso.password_acceso ?? '',
+        url: acceso.url ?? '',
+        notas: acceso.notas ?? '',
+      },
+    }))
+    setExpandedAccesoId(accesoId)
+  }
+
+  // ── Editar campo del borrador local ──
+  function setAccesoField<K extends keyof AccesoEditDraft>(accesoId: string, campo: K, valor: AccesoEditDraft[K]) {
+    setAccesoEdits(prev => ({ ...prev, [accesoId]: { ...prev[accesoId], [campo]: valor } }))
+  }
+
+  // ── Guardar acceso en DB ──
+  async function guardarAcceso(accesoId: string) {
+    const draft = accesoEdits[accesoId]
+    if (!draft) return
+    // Actualización optimista
+    setAccesos(list => list.map(a => a.id === accesoId ? {
+      ...a,
+      herramienta: draft.herramienta,
+      estado: draft.estado,
+      usuario_acceso: draft.usuario_acceso.trim() || null,
+      password_acceso: draft.password_acceso.trim() || null,
+      url: draft.url.trim() || null,
+      notas: draft.notas.trim() || null,
+    } : a))
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('accesos_herramientas')
+      .update({
+        herramienta:    draft.herramienta.trim() || null,
+        estado:         draft.estado,
+        usuario_acceso: draft.usuario_acceso.trim() || null,
+        password_acceso: draft.password_acceso.trim() || null,
+        url:            draft.url.trim() || null,
+        notas:          draft.notas.trim() || null,
+      })
+      .eq('id', accesoId)
+    if (error) { toast.error('Error al guardar'); cargarDatos(); return }
+    toast.success('Acceso guardado')
+    setExpandedAccesoId(null)
+  }
+
+  // ── Agregar nuevo acceso y expandirlo ──
   async function agregarAcceso(nombreHerramienta = '') {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('accesos_herramientas')
       .insert({ usuario_id: id, empresa_id: empresaId, herramienta: nombreHerramienta, estado: 'pendiente' })
-      .select('id, herramienta, estado, url, notas')
+      .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
       .single()
     if (error) { toast.error('No se pudo agregar la herramienta'); return }
-    setAccesos(prev => [...prev, data as AccesoRow])
-    setFocusNewId((data as AccesoRow).id)
-  }
-
-  // ── Actualizar estado (optimistic) ──
-  async function actualizarEstado(accesoId: string, nuevoEstado: AccesoRow['estado']) {
-    const prev = accesos.find(a => a.id === accesoId)
-    setAccesos(list => list.map(a => a.id === accesoId ? { ...a, estado: nuevoEstado } : a))
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('accesos_herramientas')
-      .update({ estado: nuevoEstado })
-      .eq('id', accesoId)
-    if (error) {
-      toast.error('No se pudo actualizar el estado')
-      // Revertir al estado anterior
-      if (prev) setAccesos(list => list.map(a => a.id === accesoId ? { ...a, estado: prev.estado } : a))
-    }
-  }
-
-  // ── Actualizar campo con debounce de 800ms (herramienta o url) ──
-  function actualizarCampoDebounced(accesoId: string, campo: 'herramienta' | 'url', valor: string) {
-    setAccesos(list => list.map(a => a.id === accesoId ? { ...a, [campo]: valor || null } : a))
-    const key = `${accesoId}_${campo}`
-    clearTimeout(debounceTimers.current[key])
-    debounceTimers.current[key] = setTimeout(async () => {
-      const supabase = createClient()
-      await supabase
-        .from('accesos_herramientas')
-        .update({ [campo]: valor.trim() || null })
-        .eq('id', accesoId)
-    }, 800)
+    const newAcceso = data as AccesoRow
+    setAccesos(prev => [...prev, newAcceso])
+    // Inicializar borrador y expandir
+    setAccesoEdits(prev => ({
+      ...prev,
+      [newAcceso.id]: { herramienta: newAcceso.herramienta, estado: newAcceso.estado, usuario_acceso: '', password_acceso: '', url: '', notas: '' },
+    }))
+    setExpandedAccesoId(newAcceso.id)
   }
 
   // ── Eliminar acceso ──
@@ -696,6 +750,54 @@ export default function EmpleadoDetallePage() {
                   />
                 </div>
 
+                {/* Contraseñas corporativas — solo visibles para admins */}
+                {['admin', 'dev'].includes(rolAdmin) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/45 mb-1.5 flex items-center gap-1.5">
+                        <Lock className="w-3 h-3" />
+                        Contraseña corporativa
+                        <Badge variant="info" className="ml-1">Solo admins</Badge>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassCorp ? 'text' : 'password'}
+                          value={form.password_corporativo}
+                          onChange={e => setField('password_corporativo', e.target.value)}
+                          placeholder="Contraseña de acceso corporativo"
+                          className={inputCls() + ' pr-9'}
+                        />
+                        <button type="button" onClick={() => setShowPassCorp(v => !v)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                          {showPassCorp ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-white/20 mt-1">🔒 Visible solo para admins</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/45 mb-1.5 flex items-center gap-1.5">
+                        <Lock className="w-3 h-3" />
+                        Password BitLocker
+                        <Badge variant="info" className="ml-1">Solo admins</Badge>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassBitlocker ? 'text' : 'password'}
+                          value={form.password_bitlocker}
+                          onChange={e => setField('password_bitlocker', e.target.value)}
+                          placeholder="Clave de recuperación BitLocker"
+                          className={inputCls() + ' pr-9'}
+                        />
+                        <button type="button" onClick={() => setShowPassBitlocker(v => !v)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                          {showPassBitlocker ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-white/20 mt-1">🔒 Visible solo para admins</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-white/45 mb-1.5">Puesto</label>
@@ -793,99 +895,162 @@ export default function EmpleadoDetallePage() {
                     <div className="flex-1 h-px bg-white/[0.06]" />
                   </div>
 
-                  {/* Lista de accesos */}
-                  <div className="space-y-0 mb-3">
-                    <AnimatePresence initial={false}>
-                      {accesos.map(acceso => (
-                        <motion.div
-                          key={acceso.id}
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-                          className="flex flex-wrap items-center gap-2 py-2 border-b border-white/[0.04] last:border-0"
-                        >
-                          {/* Nombre de la herramienta */}
-                          <input
-                            type="text"
-                            value={acceso.herramienta}
-                            autoFocus={acceso.id === focusNewId}
-                            onFocus={() => setFocusNewId(null)}
-                            onChange={e => actualizarCampoDebounced(acceso.id, 'herramienta', e.target.value)}
-                            placeholder="Nombre de la herramienta"
-                            className="flex-1 min-w-[120px] text-sm bg-transparent border-none outline-none text-white/80 placeholder:text-white/20 px-1 focus:bg-white/[0.04] focus:rounded focus:px-2 transition-all duration-150"
-                          />
-
-                          {/* Select de estado coloreado */}
-                          <select
-                            value={acceso.estado}
-                            onChange={e => actualizarEstado(acceso.id, e.target.value as AccesoRow['estado'])}
-                            className={cn(
-                              'w-30 h-7 px-2 rounded-md text-xs border outline-none cursor-pointer appearance-none font-medium transition-colors duration-150',
-                              selectEstadoCls(acceso.estado),
-                            )}
-                          >
-                            <option value="activo"     className="bg-[#0f1f3d] text-teal-400">Activo</option>
-                            <option value="pendiente"  className="bg-[#0f1f3d] text-amber-400">Pendiente</option>
-                            <option value="sin_acceso" className="bg-[#0f1f3d] text-red-400">Sin acceso</option>
-                          </select>
-
-                          {/* URL — solo visible si estado es activo */}
-                          {acceso.estado === 'activo' && (
-                            <input
-                              type="url"
-                              value={acceso.url ?? ''}
-                              onChange={e => actualizarCampoDebounced(acceso.id, 'url', e.target.value)}
-                              placeholder="URL del acceso"
-                              className="w-full sm:w-44 text-xs bg-transparent border-none outline-none text-white/40 placeholder:text-white/20 px-1 focus:bg-white/[0.04] focus:rounded focus:px-2 transition-all duration-150"
-                            />
-                          )}
-
-                          {/* Confirmar eliminación inline */}
-                          {confirmDeleteId === acceso.id ? (
-                            <div className="flex items-center gap-1.5 ml-auto">
-                              <span className="text-xs text-white/40">¿Eliminar?</span>
-                              <button
-                                onClick={() => eliminarAcceso(acceso.id)}
-                                className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors duration-150"
-                              >
-                                Sí
-                              </button>
-                              <button
-                                onClick={() => setConfirmDeleteId(null)}
-                                className="text-xs px-2 py-0.5 rounded bg-white/[0.04] text-white/40 hover:bg-white/[0.08] transition-colors duration-150"
-                              >
-                                No
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setConfirmDeleteId(acceso.id)}
-                              className="ml-auto text-white/20 hover:text-red-400 transition-colors duration-150 flex-shrink-0 p-1"
-                              title="Eliminar herramienta"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Chips de herramientas sugeridas (solo si lista vacía) */}
+                  {/* Chips sugeridos (solo si no hay accesos) */}
                   {accesos.length === 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {['Gmail', 'Slack', 'Notion', 'GitHub', 'Jira', 'Teams', 'Figma', 'Drive', 'Zoom', 'HubSpot'].map(nombre => (
-                        <button
-                          key={nombre}
-                          onClick={() => agregarAcceso(nombre)}
-                          className="px-2.5 py-1 rounded-md text-xs bg-white/[0.03] border border-white/[0.06] text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors duration-150"
-                        >
+                        <button key={nombre} onClick={() => agregarAcceso(nombre)}
+                          className="px-2.5 py-1 rounded-md text-xs bg-white/[0.03] border border-white/[0.06] text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors duration-150">
                           {nombre}
                         </button>
                       ))}
                     </div>
                   )}
+
+                  {/* Cards expandibles */}
+                  <div className="space-y-1.5 mb-3">
+                    <AnimatePresence initial={false}>
+                      {accesos.map(acceso => {
+                        const configurado = isConfigured(acceso)
+                        const expandido = expandedAccesoId === acceso.id
+                        const draft = accesoEdits[acceso.id]
+                        return (
+                          <motion.div key={acceso.id}
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                          >
+                            {/* Chip / encabezado */}
+                            <button onClick={() => toggleAcceso(acceso.id)}
+                              className={cn(
+                                'w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-150',
+                                expandido ? 'rounded-xl rounded-b-none bg-indigo-600/10 border border-indigo-500/30' :
+                                configurado ? 'rounded-xl bg-teal-500/10 border border-teal-500/25 hover:bg-teal-500/15' :
+                                'rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05]',
+                              )}>
+                              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', configurado ? 'bg-teal-400' : 'bg-white/20')} />
+                              <span className={cn('text-xs font-medium flex-1 truncate', configurado ? 'text-teal-300/90' : 'text-white/60')}>
+                                {acceso.herramienta || 'Sin nombre'}
+                              </span>
+                              {configurado && <span className="text-[10px] text-teal-400/60 flex-shrink-0">configurado</span>}
+                              <ChevronDown className={cn('w-3.5 h-3.5 text-white/30 flex-shrink-0 transition-transform duration-200', expandido && 'rotate-180')} />
+                            </button>
+
+                            {/* Panel expandible */}
+                            <AnimatePresence>
+                              {expandido && draft && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="border border-t-0 border-indigo-500/20 rounded-b-xl px-4 py-4 space-y-3 bg-indigo-600/[0.04]">
+                                    {/* Nombre */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">Herramienta</label>
+                                      <input type="text" value={draft.herramienta}
+                                        onChange={e => setAccesoField(acceso.id, 'herramienta', e.target.value)}
+                                        placeholder="Nombre de la herramienta" className={inputCls()} />
+                                    </div>
+
+                                    {/* Estado — toggle 3 opciones */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">Estado</label>
+                                      <div className="flex gap-2">
+                                        {(['activo', 'pendiente', 'sin_acceso'] as const).map(est => (
+                                          <button key={est} onClick={() => setAccesoField(acceso.id, 'estado', est)}
+                                            className={cn(
+                                              'flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150',
+                                              draft.estado === est
+                                                ? est === 'activo' ? 'bg-teal-500/20 border-teal-500/40 text-teal-300'
+                                                  : est === 'pendiente' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                                                  : 'bg-red-500/20 border-red-500/40 text-red-300'
+                                                : 'bg-white/[0.03] border-white/[0.07] text-white/30 hover:text-white/50',
+                                            )}>
+                                            {est === 'activo' ? 'Activo' : est === 'pendiente' ? 'Pendiente' : 'Sin acceso'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Usuario */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">Usuario</label>
+                                      <input type="text" value={draft.usuario_acceso}
+                                        onChange={e => setAccesoField(acceso.id, 'usuario_acceso', e.target.value)}
+                                        placeholder="usuario@empresa.com o nombre de usuario" className={inputCls()} />
+                                    </div>
+
+                                    {/* Contraseña */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">Contraseña</label>
+                                      <div className="relative">
+                                        <input
+                                          type={showPassAcceso[acceso.id] ? 'text' : 'password'}
+                                          value={draft.password_acceso}
+                                          onChange={e => setAccesoField(acceso.id, 'password_acceso', e.target.value)}
+                                          placeholder="Contraseña de acceso"
+                                          className={inputCls() + ' pr-9'}
+                                        />
+                                        <button type="button"
+                                          onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
+                                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                                          {showPassAcceso[acceso.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                        </button>
+                                      </div>
+                                      <p className="text-[10px] text-white/20 mt-1">🔒 Visible solo para admins</p>
+                                    </div>
+
+                                    {/* URL */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">URL <span className="text-white/20">(opcional)</span></label>
+                                      <input type="url" value={draft.url}
+                                        onChange={e => setAccesoField(acceso.id, 'url', e.target.value)}
+                                        placeholder="https://app.herramienta.com" className={inputCls()} />
+                                    </div>
+
+                                    {/* Notas */}
+                                    <div>
+                                      <label className="block text-[11px] font-medium text-white/40 mb-1">Notas <span className="text-white/20">(opcional)</span></label>
+                                      <input type="text" value={draft.notas}
+                                        onChange={e => setAccesoField(acceso.id, 'notas', e.target.value)}
+                                        placeholder="Ej: usar VPN primero" className={inputCls()} />
+                                    </div>
+
+                                    {/* Botones guardar / eliminar */}
+                                    <div className="flex items-center justify-between pt-1">
+                                      <Button variant="primary" size="sm" onClick={() => guardarAcceso(acceso.id)}>
+                                        <Save className="w-3.5 h-3.5" />
+                                        Guardar
+                                      </Button>
+                                      {confirmDeleteId === acceso.id ? (
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-xs text-white/40">¿Eliminar?</span>
+                                          <button onClick={() => eliminarAcceso(acceso.id)}
+                                            className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors duration-150">Sí</button>
+                                          <button onClick={() => setConfirmDeleteId(null)}
+                                            className="text-xs px-2 py-0.5 rounded bg-white/[0.04] text-white/40 hover:bg-white/[0.08] transition-colors duration-150">No</button>
+                                        </div>
+                                      ) : (
+                                        <button onClick={() => setConfirmDeleteId(acceso.id)}
+                                          className="flex items-center gap-1.5 text-xs text-white/25 hover:text-red-400 transition-colors duration-150">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          Eliminar
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        )
+                      })}
+                    </AnimatePresence>
+                  </div>
 
                   {/* Botón agregar */}
                   <Button variant="ghost" size="sm" onClick={() => agregarAcceso()}>
