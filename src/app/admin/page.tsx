@@ -290,8 +290,8 @@ export default function AdminDashboardPage() {
 
     const empleadoIds = empleadosRaw.map(e => e.id)
 
-    // b, c, d en paralelo
-    const [progresoRes, alertasRes, culturaCountRes] = await Promise.all([
+    // b, c, d, e en paralelo
+    const [progresoRes, alertasRes, culturaCountRes, rolCountRes] = await Promise.all([
       supabase
         .from('progreso_modulos')
         .select('usuario_id, modulo, bloque, completado')
@@ -308,11 +308,18 @@ export default function AdminDashboardPage() {
         .select('*', { count: 'exact', head: true })
         .eq('empresa_id', empId)
         .eq('modulo', 'cultura'),
+      supabase
+        .from('conocimiento')
+        .select('*', { count: 'exact', head: true })
+        .eq('empresa_id', empId)
+        .eq('modulo', 'rol'),
     ])
 
     const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
     const totalBloquesCultura = culturaCountRes.count ?? 0
-    const totalBloques = totalBloquesCultura + 1 // cultura + rol/general
+    // Mínimo 1 bloque de rol para no dividir por 0 si la empresa aún no cargó contenido
+    const totalBloquesRol = Math.max(1, rolCountRes.count ?? 1)
+    const totalBloques = totalBloquesCultura + totalBloquesRol
 
     // Calcular progreso por empleado
     const empleadosConProgreso: AdminEmpleadoConProgreso[] = empleadosRaw.map(e => ({
@@ -335,7 +342,7 @@ export default function AdminDashboardPage() {
       'cultura',
       totalBloquesCultura
     )
-    const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', 1)
+    const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', totalBloquesRol)
     setChartData([
       { nombre: 'Cultura', progreso: avgCultura },
       { nombre: 'Rol', progreso: avgRol },
