@@ -112,6 +112,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `/api/admin/empleados` | GET/POST | Listado y creación de empleados |
 | `/api/admin/empleados/[id]` | GET/PUT/DELETE | Detalle, edición y eliminación de empleado |
 | `/api/admin/preboarding` | POST | Gestión del estado de preboarding |
+| `/api/admin/conocimiento/upload` | POST | Sube archivo al bucket `conocimiento` de Supabase Storage; requiere `SUPABASE_SERVICE_ROLE_KEY` |
 | `/api/empleado/chat` | POST | Chat con el asistente IA (streaming) |
 | `/api/empleado/encuesta-check` | POST | Verifica y crea encuestas de pulso pendientes, retorna la más antigua sin responder |
 | `/api/empleado/encuesta-responder` | POST | Guarda las respuestas de una encuesta de pulso |
@@ -123,6 +124,8 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 |-----------|-------------|
 | `src/components/shared/PageWrapper.tsx` | Transición de página con Framer Motion (`key={pathname}`) |
 | `src/components/shared/ErrorState.tsx` | Estado de error reutilizable con botón de retry |
+| `src/components/shared/MiniMarkdownPreview.tsx` | Preview markdown sin librerías: `#`/`##` headings, `**bold**`, `*italic*`, listas, `<br>` |
+| `src/components/shared/Portal.tsx` | `createPortal(children, document.body)` — usar para modales que necesitan superar z-index del layout |
 
 #### UI base
 | Componente | Descripción |
@@ -139,6 +142,8 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `src/components/admin/ResetProgresoModal.tsx` | Modal de confirmación para resetear progreso |
 | `src/components/admin/BloqueContenidoForm.tsx` | Formulario de edición de bloque de contenido |
 | `src/components/admin/EliminarBloqueModal.tsx` | Modal de confirmación para eliminar bloque |
+| `src/components/admin/ContenidoModal.tsx` | Modal multi-tipo para agregar/editar bloques de conocimiento (texto, imagen, video, PDF, link, archivo); flujo de un solo paso con selector de tipo siempre visible, upload drag&drop, Portal + z-[100] |
+| `src/components/admin/ContenidoPreview.tsx` | Preview read-only de un `ContenidoBloque` según su `tipo` |
 
 #### Empleado
 | Componente | Descripción |
@@ -159,6 +164,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `roles.ts` | Helpers de control de acceso por rol |
 | `utils.ts` | `cn()` para merging de classNames, funciones de formato |
 | `contacto.ts` | Resolución de contactos de equipo/IT/RRHH |
+| `conocimiento.ts` | Utilidades del módulo de conocimiento: `parseVideoUrl`, `getDomainFromUrl`, `getFilenameFromPath`, `estadoBloque`, `infoBloque`, `formatFileSize`, `getFileEmoji`, `ACCEPT_BY_TIPO`, `MAX_SIZE_BY_TIPO`, `TIPO_LABELS`, `LINK_PLATAFORMAS` |
 
 ---
 
@@ -258,4 +264,28 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 - Path de archivos: `{empresa_id}/{modulo}/{uuid}.{ext}`
 - Tipos permitidos: imagen (5MB), pdf (20MB), archivo genérico (50MB)
 - API de upload: `POST /api/admin/conocimiento/upload` — requiere `SUPABASE_SERVICE_ROLE_KEY`
+
+## Principios de trabajo para Claude Code
+
+### Antes de ejecutar cualquier tarea
+- Planificar los pasos antes de escribir código
+- Si algo falla, PARAR y replantear — no seguir forzando
+- Escribir especificaciones antes de implementar
+
+### Al encontrar errores
+- Corregir errores de TypeScript y build de forma autónoma
+- Revisar logs, identificar causa raíz, resolver sin pedir guía
+- Nunca marcar una tarea como completa sin verificar que funciona
+- Ejecutar `npx tsc --noEmit` antes de terminar cualquier tarea
+
+### Estándares de código
+- Cada cambio debe tocar solo lo necesario — impacto mínimo
+- Antes de entregar preguntarse: ¿Aprobaría esto un ingeniero senior?
+- Para cambios no triviales: buscar siempre la solución más elegante
+- Omitir sobre-diseño en arreglos simples y obvios
+
+### Gestión de tareas
+- Documentar lecciones aprendidas después de cada corrección
+- Verificar build y TypeScript antes de marcar tarea como completa
+- Para problemas complejos, descomponer en pasos verificables
 

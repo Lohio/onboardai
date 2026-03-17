@@ -10,7 +10,9 @@
       "Bash(npm run:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls /c/Users/Maxi/onboardai/*.config* /c/Users/Maxi/onboardai/*.config.*)",
+      "Bash(npm list:*)"
     ]
   }
 }

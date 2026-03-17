@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Send, Bot, Loader2, AlertTriangle } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import { createClient } from '@/lib/supabase'
 
 // ─────────────────────────────────────────────
@@ -13,6 +15,7 @@ interface Mensaje {
   id: string
   rol: 'user' | 'assistant'
   contenido: string
+  timestamp: string
   streaming?: boolean
 }
 
@@ -30,10 +33,42 @@ const msgVariants = {
 }
 
 // ─────────────────────────────────────────────
+// Componentes markdown del asistente
+// ─────────────────────────────────────────────
+
+const mdComponents: Components = {
+  p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+  strong: ({ children }) => <strong className="text-white/90 font-medium">{children}</strong>,
+  ul: ({ children }) => <ul className="list-disc pl-4 my-1.5 space-y-0.5">{children}</ul>,
+  li: ({ children }) => <li className="text-[12px] text-white/65">{children}</li>,
+  h2: ({ children }) => (
+    <h2 className="text-sm font-semibold text-white/85 mt-3 mb-1 first:mt-0">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-xs font-medium text-white/75 mt-2 mb-0.5">{children}</h3>
+  ),
+  table: ({ children }) => (
+    <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.08]">
+      <table className="w-full text-xs">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th className="bg-white/[0.04] text-white/45 px-3 py-1.5 text-left font-medium border-b border-white/[0.06]">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="px-3 py-1.5 text-white/65 border-b border-white/[0.04] last:border-0">
+      {children}
+    </td>
+  ),
+}
+
+// ─────────────────────────────────────────────
 // Burbuja de mensaje
 // ─────────────────────────────────────────────
 
-function BurbujaMensaje({ msg }: { msg: Mensaje }) {
+function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
   const esUsuario = msg.rol === 'user'
 
   return (
@@ -45,30 +80,46 @@ function BurbujaMensaje({ msg }: { msg: Mensaje }) {
     >
       {/* Avatar */}
       <div
-        className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center
+        className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center self-end mb-5
           ${esUsuario
-            ? 'bg-indigo-600/25 border border-indigo-500/25'
+            ? 'bg-indigo-600/20 border border-indigo-500/30'
             : 'bg-teal-500/15 border border-teal-500/20'
           }`}
       >
         {esUsuario
-          ? <User className="w-3.5 h-3.5 text-indigo-300" />
+          ? <span className="text-[10px] font-semibold text-indigo-300">{initials}</span>
           : <Bot className="w-3.5 h-3.5 text-teal-400" />
         }
       </div>
 
-      {/* Burbuja */}
-      <div
-        className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed
-          ${esUsuario
-            ? 'bg-indigo-600/20 border border-indigo-500/20 text-white/85 rounded-tr-sm'
-            : 'bg-white/[0.04] border border-white/[0.07] text-white/75 rounded-tl-sm'
-          }`}
-      >
-        {msg.contenido}
-        {msg.streaming && (
-          <span className="inline-block w-1.5 h-4 ml-0.5 bg-teal-400/70 rounded-sm animate-pulse align-middle" />
-        )}
+      {/* Contenido: burbuja + timestamp */}
+      <div className={`flex flex-col max-w-[78%] ${esUsuario ? 'items-end' : 'items-start'}`}>
+        {/* Burbuja */}
+        <div
+          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed
+            ${esUsuario
+              ? 'bg-[#1e2e6e] border border-indigo-500/40 text-white/88 rounded-tr-sm'
+              : 'bg-white/[0.04] border border-white/[0.08] text-white/78 rounded-tl-sm'
+            }`}
+        >
+          {esUsuario ? (
+            // Mensajes del usuario: texto plano
+            <span>{msg.contenido}</span>
+          ) : (
+            // Respuestas del asistente: markdown con componentes tipados
+            <ReactMarkdown components={mdComponents}>
+              {msg.contenido}
+            </ReactMarkdown>
+          )}
+          {msg.streaming && (
+            <span className="inline-block w-1.5 h-4 ml-0.5 bg-teal-400/70 rounded-sm animate-pulse align-middle" />
+          )}
+        </div>
+
+        {/* Timestamp */}
+        <p className={`text-[10px] text-white/20 mt-1 px-1 ${esUsuario ? 'text-right' : 'text-left'}`}>
+          {msg.timestamp}
+        </p>
       </div>
     </motion.div>
   )
@@ -78,7 +129,7 @@ function BurbujaMensaje({ msg }: { msg: Mensaje }) {
 // Estado vacío
 // ─────────────────────────────────────────────
 
-function EstadoVacio({ nombre }: { nombre: string }) {
+function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (texto: string) => void }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
       <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
@@ -101,6 +152,7 @@ function EstadoVacio({ nombre }: { nombre: string }) {
         ].map(sugerencia => (
           <button
             key={sugerencia}
+            onClick={() => onSugerencia(sugerencia)}
             className="text-[11px] text-white/40 border border-white/[0.07] rounded-lg px-3 py-2
               hover:border-teal-500/30 hover:text-teal-400/70 hover:bg-teal-500/5
               transition-colors duration-150 text-left"
@@ -128,6 +180,14 @@ export default function AsistentePage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Iniciales del usuario para el avatar
+  const initials = nombreUsuario
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'TU'
 
   // ── Cancelar stream al desmontar ──
   useEffect(() => {
@@ -173,13 +233,14 @@ export default function AsistentePage() {
     setErrorRed(false)
     setEnviando(true)
 
+    const ahora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
     const idUser = `msg-${Date.now()}-u`
     const idAssistant = `msg-${Date.now()}-a`
 
     setMensajes(prev => [
       ...prev,
-      { id: idUser, rol: 'user', contenido: texto },
-      { id: idAssistant, rol: 'assistant', contenido: '', streaming: true },
+      { id: idUser, rol: 'user', contenido: texto, timestamp: ahora },
+      { id: idAssistant, rol: 'assistant', contenido: '', timestamp: ahora, streaming: true },
     ])
 
     try {
@@ -253,7 +314,7 @@ export default function AsistentePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-3rem)]"> {/* 3rem = header del layout */}
+    <div className="flex flex-col h-full min-h-0"> {/* h-full toma el flex-1 del layout */}
       {/* ── Header ── */}
       <div className="flex-shrink-0 border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
@@ -263,16 +324,24 @@ export default function AsistentePage() {
           <p className="text-sm font-medium text-white/80">Asistente de onboarding</p>
           <p className="text-[11px] text-white/30">Powered by Claude</p>
         </div>
+        {/* Dot de estado activo */}
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_6px_rgba(13,148,136,0.7)] animate-pulse" />
+          <span className="text-[10px] text-white/30">Activo</span>
+        </div>
       </div>
 
       {/* ── Mensajes ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+      >
         {mensajes.length === 0 ? (
-          <EstadoVacio nombre={nombreUsuario} />
+          <EstadoVacio nombre={nombreUsuario} onSugerencia={enviar} />
         ) : (
           <>
             {mensajes.map(msg => (
-              <BurbujaMensaje key={msg.id} msg={msg} />
+              <BurbujaMensaje key={msg.id} msg={msg} initials={initials} />
             ))}
             {errorRed && (
               <motion.div

@@ -124,9 +124,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   }, [router, pathname]) // re-evalúa al cambiar de ruta
 
   return (
-    <>
+    <div className="flex flex-col h-dvh">
       {/* ── Header de progreso (sticky) ── */}
-      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#0f1f3d]/80 backdrop-blur-xl">
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#0f1f3d]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 h-12">
           {/* Logo */}
           <Link
@@ -256,8 +256,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         </div>
       </header>
 
-      {/* Contenido de la página */}
-      {children}
-    </>
+      {/* Contenido de la página — flex-1 para que el chat pueda usar h-full */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {children}
+      </div>
+    </div>
   )
 }
