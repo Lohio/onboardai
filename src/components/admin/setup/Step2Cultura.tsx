@@ -70,6 +70,13 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
     try {
       const supabase = createClient()
 
+      // Eliminar entradas previas de cultura para esta empresa (evita duplicados)
+      await supabase
+        .from('conocimiento')
+        .delete()
+        .eq('empresa_id', setupData.empresaId)
+        .eq('modulo', 'cultura')
+
       const inserts = conContenido.map(campo => ({
         empresa_id: setupData.empresaId,
         modulo: 'cultura',
