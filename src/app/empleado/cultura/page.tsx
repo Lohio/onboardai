@@ -634,6 +634,8 @@ export default function CulturaPage() {
   }, [cargarDatos])
 
   // ── Scroll tracking ──
+  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleScroll = useCallback(() => {
     const vh = window.innerHeight
     const updates: Partial<Record<BloqueKey, number>> = {}
@@ -651,9 +653,20 @@ export default function CulturaPage() {
   }, [])
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // check initial state
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => {
+      if (scrollThrottleRef.current) return
+      scrollThrottleRef.current = setTimeout(() => {
+        scrollThrottleRef.current = null
+        handleScroll()
+      }, 100)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    handleScroll() // check estado inicial
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
+    }
   }, [handleScroll])
 
   // ── Responder una pregunta ──
