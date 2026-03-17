@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Portal } from '@/components/shared/Portal'
 import type { BloqueContenido } from './BloqueContenidoForm'
 
 // ─────────────────────────────────────────────
@@ -37,6 +38,7 @@ export function EliminarBloqueModal({
   }
 
   return (
+    <Portal>
     <AnimatePresence>
       {/* Backdrop */}
       <motion.div
@@ -108,5 +110,6 @@ export function EliminarBloqueModal({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   )
 }

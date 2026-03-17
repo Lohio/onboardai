@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, Send, CheckCircle2 } from 'lucide-react'
+import { Portal } from '@/components/shared/Portal'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -114,6 +115,7 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
   const titulo = `Check-in — Día ${encuesta.dia_onboarding}`
 
   return (
+    <Portal>
     <AnimatePresence>
       {/* Overlay */}
       <motion.div
@@ -259,5 +261,6 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
         </motion.div>
       </motion.div>
     </AnimatePresence>
+    </Portal>
   )
 }

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
+import { Portal } from '@/components/shared/Portal'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -122,6 +123,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
   }
 
   return (
+    <Portal>
     <AnimatePresence>
       {/* Backdrop */}
       <motion.div
@@ -289,5 +291,6 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   )
 }

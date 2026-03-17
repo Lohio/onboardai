@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Wrench, AlertTriangle, Plus, Edit3, X, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { Portal } from '@/components/shared/Portal'
 import type { ContenidoBloque } from '@/types'
 
 // ─────────────────────────────────────────────
@@ -494,6 +495,7 @@ export default function ConocimientoPage() {
       {/* ═══════════════════════════════════════
           Modal: Editar/Agregar contenido
       ═══════════════════════════════════════ */}
+      <Portal>
       <AnimatePresence>
         {modalContenido && (
           <>
@@ -608,10 +610,12 @@ export default function ConocimientoPage() {
           </>
         )}
       </AnimatePresence>
+      </Portal>
 
       {/* ═══════════════════════════════════════
           Modal: Responder alerta
       ═══════════════════════════════════════ */}
+      <Portal>
       <AnimatePresence>
         {alertaActiva && (
           <>
@@ -736,6 +740,7 @@ export default function ConocimientoPage() {
           </>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   )
 }

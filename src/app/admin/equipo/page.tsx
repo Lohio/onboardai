@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { Portal } from '@/components/shared/Portal'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -588,6 +589,7 @@ export default function EquipoPage() {
       )}
 
       {/* Drawer */}
+      <Portal>
       <AnimatePresence>
         {drawerAbierto && (
           <>
@@ -619,6 +621,7 @@ export default function EquipoPage() {
           </>
         )}
       </AnimatePresence>
+      </Portal>
     </div>
   )
 }

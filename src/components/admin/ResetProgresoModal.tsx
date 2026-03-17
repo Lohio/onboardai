@@ -6,6 +6,7 @@ import { X, AlertTriangle, BookOpen, Wrench, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase'
+import { Portal } from '@/components/shared/Portal'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -145,6 +146,7 @@ export function ResetProgresoModal({
   }
 
   return (
+    <Portal>
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 bg-black/60 z-40"
@@ -228,5 +230,6 @@ export function ResetProgresoModal({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   )
 }
