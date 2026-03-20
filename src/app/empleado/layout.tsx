@@ -243,10 +243,11 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         </div>
       </header>
 
-      {/* Contenido de la página — flex-1 para que el chat pueda usar h-full */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      {/* Contenido de la página */}
+      <div className="flex-1 flex flex-col">
         {children}
       </div>
+
     </div>
   )
 }
