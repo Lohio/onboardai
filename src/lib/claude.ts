@@ -23,6 +23,11 @@ export interface StreamChatParams {
   empresaId: string
   /** Historial completo, ya incluye el último mensaje del usuario */
   mensajes: ChatMensaje[]
+  /**
+   * Información contextual del empleado que chatea (nombre, puesto, días de onboarding).
+   * Se inyecta al final del system prompt para personalizar las respuestas.
+   */
+  contextoEmpleado?: string
   onChunk: (text: string) => void
   onDone: () => void
 }
@@ -79,15 +84,23 @@ async function getAppConfig(): Promise<ResolvedConfig> {
 }
 
 // ─────────────────────────────────────────────
-// buildSystemPrompt
-// Construye el system prompt para el asistente de onboarding
-// combinando: base de app_config + instrucciones fijas + conocimiento de la empresa
+// buildSystemPromptWithConfig
+// Construye el system prompt y devuelve también la config
+// para evitar una segunda query a app_config en streamChat.
 // ─────────────────────────────────────────────
 
-export async function buildSystemPrompt(empresaId: string): Promise<string> {
+interface SystemPromptResult {
+  systemPrompt: string
+  config: ResolvedConfig
+}
+
+export async function buildSystemPromptWithConfig(
+  empresaId: string,
+  contextoEmpleado?: string
+): Promise<SystemPromptResult> {
   const supabase = createClient()
 
-  // Cargar conocimiento y config en paralelo
+  // Cargar conocimiento y config en paralelo (una sola query cada uno)
   const [{ data: bloques }, config] = await Promise.all([
     supabase
       .from('conocimiento')
@@ -128,7 +141,7 @@ Reglas de comportamiento:
 - Cuando sea útil, indicar el módulo o sección de donde proviene la información`
 
   // ── Ensamblar el prompt final ─────────────────────────────────
-  // Orden: base personalizable (dev) → instrucciones fijas → conocimiento
+  // Orden: base personalizable (dev) → instrucciones fijas → conocimiento → contexto empleado
   const partes: string[] = []
 
   if (config.systemPromptBase.trim()) {
@@ -138,7 +151,21 @@ Reglas de comportamiento:
   partes.push(instrucciones)
   partes.push(`# Conocimiento de la empresa\n\n${seccionesConocimiento}`)
 
-  return partes.join('\n\n')
+  // Agregar contexto del empleado si está disponible (personaliza las respuestas)
+  if (contextoEmpleado?.trim()) {
+    partes.push(`# Contexto del empleado\n\n${contextoEmpleado.trim()}`)
+  }
+
+  return { systemPrompt: partes.join('\n\n'), config }
+}
+
+/**
+ * @deprecated Usar buildSystemPromptWithConfig para evitar doble query a app_config.
+ * Se mantiene por compatibilidad con código externo.
+ */
+export async function buildSystemPrompt(empresaId: string): Promise<string> {
+  const { systemPrompt } = await buildSystemPromptWithConfig(empresaId)
+  return systemPrompt
 }
 
 // ─────────────────────────────────────────────
@@ -149,15 +176,14 @@ Reglas de comportamiento:
 
 export async function streamChat({
   empresaId,
+  contextoEmpleado,
   mensajes,
   onChunk,
   onDone,
 }: StreamChatParams): Promise<void> {
-  // Construir contexto y leer config en paralelo
-  const [systemPrompt, config] = await Promise.all([
-    buildSystemPrompt(empresaId),
-    getAppConfig(),
-  ])
+  // buildSystemPromptWithConfig devuelve el prompt Y la config en una sola llamada
+  // (evita la doble query a app_config que existía antes)
+  const { systemPrompt, config } = await buildSystemPromptWithConfig(empresaId, contextoEmpleado)
 
   const stream = anthropic.messages.stream({
     model: config.claudeModel,

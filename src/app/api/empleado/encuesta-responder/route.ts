@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { ApiError } from '@/lib/errors'
 
 // ─────────────────────────────────────────────
 // POST /api/empleado/encuesta-responder
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     const supabase = await createServerSupabaseClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    if (!user) return ApiError.unauthorized()
 
     const body = await request.json() as {
       encuestaId?: string
@@ -27,7 +28,13 @@ export async function POST(request: Request) {
       body.respuesta2 === undefined ||
       body.respuesta3 === undefined
     ) {
-      return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
+      return ApiError.badRequest('Datos incompletos')
+    }
+
+    // Validar rango de respuestas (1-5)
+    const respuestas = [body.respuesta1, body.respuesta2, body.respuesta3]
+    if (respuestas.some(r => r < 1 || r > 5 || !Number.isInteger(r))) {
+      return ApiError.badRequest('Las respuestas deben ser valores enteros entre 1 y 5')
     }
 
     // Verificar que la encuesta pertenece al usuario y no fue completada
@@ -37,17 +44,11 @@ export async function POST(request: Request) {
       .eq('id', body.encuestaId)
       .single()
 
-    if (!encuesta) {
-      return NextResponse.json({ error: 'Encuesta no encontrada' }, { status: 404 })
-    }
+    if (!encuesta) return ApiError.notFound('Encuesta')
 
-    if (encuesta.usuario_id !== user.id) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-    }
+    if (encuesta.usuario_id !== user.id) return ApiError.forbidden()
 
-    if (encuesta.completada) {
-      return NextResponse.json({ error: 'Encuesta ya respondida' }, { status: 409 })
-    }
+    if (encuesta.completada) return ApiError.conflict('Encuesta ya respondida')
 
     const { error: updateError } = await supabase
       .from('encuestas_pulso')
@@ -62,12 +63,13 @@ export async function POST(request: Request) {
       .eq('id', body.encuestaId)
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
+      return ApiError.internal(updateError.message)
     }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[encuesta-responder] Error:', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return ApiError.internal()
   }
 }
+

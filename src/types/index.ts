@@ -13,7 +13,9 @@ export interface Usuario {
   fecha_ingreso?: string
   manager_id?: string
   buddy_id?: string
+  /** Campo en tabla usuarios — algunas APIs usan 'modalidad', otras 'modalidad_trabajo' */
   modalidad?: 'presencial' | 'remoto' | 'hibrido'
+  modalidad_trabajo?: 'presencial' | 'remoto' | 'hibrido'
   bio?: string
   contacto_it_nombre?: string
   contacto_it_email?: string
@@ -21,6 +23,7 @@ export interface Usuario {
   contacto_rrhh_email?: string
   created_at: string
 }
+
 
 export interface MiembroEquipo {
   id: string

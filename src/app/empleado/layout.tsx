@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -17,9 +18,6 @@ const MODULOS = [
   { key: 'M3', href: '/empleado/rol' },
   { key: 'M4', href: '/empleado/asistente' },
 ] as const
-
-// M2: requiere 5 bloques de cultura completados
-const CULTURA_TOTAL = 5
 
 type ModuloKey = (typeof MODULOS)[number]['key']
 type EstadoModulos = Record<ModuloKey, boolean>
@@ -77,7 +75,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       // Datos del empleado para el avatar
       const { data: usuarioData } = await supabase
         .from('usuarios')
-        .select('nombre, puesto')
+        .select('nombre, puesto, empresa_id')
         .eq('id', user.id)
         .single()
 
@@ -86,38 +84,27 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         setEmpleadoPuesto(usuarioData.puesto ?? '')
       }
 
-      // M1: el usuario existe y llegó aquí → siempre completado
-      const m1 = true
+      // Consultar progreso y total real de bloques de cultura (en paralelo)
+      const [progresoRes, culturaCountRes] = await Promise.all([
+        supabase
+          .from('progreso_modulos')
+          .select('modulo, bloque, completado')
+          .eq('usuario_id', user.id),
+        usuarioData?.empresa_id
+          ? supabase
+              .from('conocimiento')
+              .select('*', { count: 'exact', head: true })
+              .eq('empresa_id', usuarioData.empresa_id)
+              .eq('modulo', 'cultura')
+          : Promise.resolve({ count: 0 }),
+      ])
 
-      // M2 y M3: leer progreso_modulos
-      const { data: rows } = await supabase
-        .from('progreso_modulos')
-        .select('modulo, bloque, completado')
-        .eq('usuario_id', user.id)
+      const progresoRows = progresoRes.data ?? []
+      const totalCultura = (culturaCountRes as { count: number | null }).count ?? 5
 
-      const progresoRows = rows ?? []
-      const culturaCompletados = progresoRows.filter(
-        r => r.modulo === 'cultura' && r.completado
-      ).length
-      const m2 = culturaCompletados >= CULTURA_TOTAL
-      const m3 = progresoRows.some(r => r.modulo === 'rol' && r.completado)
-
-      // M4: tiene al menos una conversación de IA
-      let m4 = false
-      try {
-        const { count } = await supabase
-          .from('conversaciones_ia')
-          .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id)
-        m4 = (count ?? 0) > 0
-      } catch {
-        // tabla puede no existir si M4 no está implementado aún
-      }
-
-      const estados: EstadoModulos = { M1: m1, M2: m2, M3: m3, M4: m4 }
+      const estados = calcularEstadoModulos(progresoRows, totalCultura)
       setModulos(estados)
-      const completados = Object.values(estados).filter(Boolean).length
-      setProgreso(Math.round((completados / 4) * 100))
+      setProgreso(calcularProgresoPct(estados))
     }
 
     cargarProgreso()

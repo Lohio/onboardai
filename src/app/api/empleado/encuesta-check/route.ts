@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { ApiError } from '@/lib/errors'
 
 // Días del onboarding en que se disparan encuestas
 const DIAS_ENCUESTA = [7, 30, 60]
@@ -31,36 +32,30 @@ function preguntasPorDia(dia: number): { p1: string; p2: string; p3: string } {
 // ─────────────────────────────────────────────
 // POST /api/empleado/encuesta-check
 // Crea encuestas pendientes según días de onboarding
-// y devuelve la más antigua sin responder
+// y devuelve la más antigua sin responder.
+// diasOnboarding se calcula server-side desde fecha_ingreso (nunca del cliente).
 // ─────────────────────────────────────────────
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const supabase = await createServerSupabaseClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    if (!user) return ApiError.unauthorized()
 
-    const body = await request.json() as { usuarioId?: string; diasOnboarding?: number }
-    if (!body.usuarioId || body.diasOnboarding === undefined) {
-      return NextResponse.json({ error: 'usuarioId y diasOnboarding requeridos' }, { status: 400 })
-    }
-
-    // Solo el propio usuario puede verificar sus encuestas
-    if (body.usuarioId !== user.id) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-    }
-
-    // Obtener empresa_id
+    // Obtener empresa_id y fecha_ingreso desde la DB (no del cliente)
     const { data: usuario } = await supabase
       .from('usuarios')
-      .select('empresa_id')
+      .select('empresa_id, fecha_ingreso')
       .eq('id', user.id)
       .single()
 
-    if (!usuario) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
-    }
+    if (!usuario) return ApiError.notFound('Usuario')
+
+    // Calcular días de onboarding server-side desde la DB
+    const diasOnboarding = usuario.fecha_ingreso
+      ? Math.max(1, Math.ceil((Date.now() - new Date(usuario.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)))
+      : 0
 
     // Ver qué encuestas ya existen para este usuario
     const { data: existentes } = await supabase
@@ -72,7 +67,7 @@ export async function POST(request: Request) {
 
     // Crear encuestas para días alcanzados que no existen aún
     const diasACrear = DIAS_ENCUESTA.filter(
-      (d) => body.diasOnboarding! >= d && !diasExistentes.has(d),
+      (d) => diasOnboarding >= d && !diasExistentes.has(d),
     )
 
     if (diasACrear.length > 0) {
@@ -104,6 +99,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ encuesta: pendiente ?? null })
   } catch (err) {
     console.error('[encuesta-check] Error:', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return ApiError.internal()
   }
 }

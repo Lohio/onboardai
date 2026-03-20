@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { streamChat, logMensaje } from '@/lib/claude'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { ApiError } from '@/lib/errors'
+
+// Límite de mensajes de usuario por día (evita abuso de la API de Anthropic)
+const RATE_LIMIT_DIARIO = 50
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +12,7 @@ export async function POST(request: Request) {
 
     // ── Auth ──────────────────────────────────────────────────────
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    if (!user) return ApiError.unauthorized()
 
     const { mensaje, conversacionId } = await request.json() as {
       mensaje: string
@@ -16,19 +20,49 @@ export async function POST(request: Request) {
     }
 
     if (!mensaje?.trim()) {
-      return NextResponse.json({ error: 'Mensaje vacío' }, { status: 400 })
+      return ApiError.badRequest('Mensaje vacío')
+    }
+
+    if (mensaje.trim().length > 2000) {
+      return ApiError.badRequest('El mensaje no puede superar los 2000 caracteres')
     }
 
     // ── Datos del empleado ────────────────────────────────────────
     const { data: usuario } = await supabase
       .from('usuarios')
-      .select('nombre, puesto, empresa_id')
+      .select('nombre, puesto, empresa_id, fecha_ingreso')
       .eq('id', user.id)
       .single()
 
-    if (!usuario) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    if (!usuario) return ApiError.notFound('Usuario')
 
     const { empresa_id: empresaId } = usuario
+
+    // ── Rate limiting: máx. RATE_LIMIT_DIARIO mensajes por día ───
+    const hoy = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    const { count: mensajesHoy } = await supabase
+      .from('mensajes_ia')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversacion_id', conversacionId ?? '')
+      .gte('created_at', `${hoy}T00:00:00.000Z`)
+
+    // Si no hay conversacionId, contar por usuario en mensajes_chat
+    let countHoy = mensajesHoy ?? 0
+    if (!conversacionId) {
+      const { count: countPorUsuario } = await supabase
+        .from('mensajes_chat')
+        .select('*', { count: 'exact', head: true })
+        .eq('usuario_id', user.id)
+        .eq('rol', 'user')
+        .gte('created_at', `${hoy}T00:00:00.000Z`)
+      countHoy = countPorUsuario ?? 0
+    }
+
+    if (countHoy >= RATE_LIMIT_DIARIO) {
+      return ApiError.tooManyRequests(
+        `Alcanzaste el límite de ${RATE_LIMIT_DIARIO} mensajes por día. Volvé mañana.`
+      )
+    }
 
     // ── Gestión de conversación ───────────────────────────────────
     let historial: { role: 'user' | 'assistant'; content: string }[] = []
@@ -70,9 +104,18 @@ export async function POST(request: Request) {
     logMensaje({ usuarioId: user.id, empresaId, rol: 'user', contenido: mensaje })
 
     // ── Streaming ────────────────────────────────────────────────
-    // Se usa streamChat que internamente llama buildSystemPrompt
-    // y lee model/max_tokens de app_config.
     let respuestaCompleta = ''
+
+    // Contexto del empleado para personalizar el system prompt
+    const diasOnboarding = usuario.fecha_ingreso
+      ? Math.max(1, Math.ceil((Date.now() - new Date(usuario.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)))
+      : null
+
+    const contextoEmpleado = [
+      usuario.nombre ? `El empleado se llama ${usuario.nombre}.` : '',
+      usuario.puesto ? `Su puesto es ${usuario.puesto}.` : '',
+      diasOnboarding ? `Lleva ${diasOnboarding} día${diasOnboarding === 1 ? '' : 's'} en la empresa.` : '',
+    ].filter(Boolean).join(' ')
 
     const readable = new ReadableStream({
       async start(controller) {
@@ -81,6 +124,7 @@ export async function POST(request: Request) {
         try {
           await streamChat({
             empresaId,
+            contextoEmpleado,
             mensajes: [
               ...historial,
               { role: 'user', content: mensaje },
@@ -143,6 +187,8 @@ export async function POST(request: Request) {
     })
   } catch (err) {
     console.error('Error en chat API:', err)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return ApiError.internal()
   }
 }
+
+
