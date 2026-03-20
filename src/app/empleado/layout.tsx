@@ -111,7 +111,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   }, [router, pathname]) // re-evalúa al cambiar de ruta
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden">
+    <div className="min-h-dvh flex flex-col">
       {/* ── Header de progreso (sticky) ── */}
       <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#0f1f3d]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 h-12">

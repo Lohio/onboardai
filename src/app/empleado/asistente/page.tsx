@@ -321,7 +321,7 @@ export default function AsistentePage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0"> {/* h-full toma el flex-1 del layout */}
+    <div className="flex flex-col h-[calc(100dvh-3rem)] min-h-0"> {/* 3rem = altura del header */}
       {/* ── Header ── */}
       <div className="flex-shrink-0 border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
