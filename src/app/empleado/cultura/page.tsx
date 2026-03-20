@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import {
   Lock, CheckCircle2, BookOpen, Target, Users,
   ClipboardList, Trophy, ChevronDown, ArrowRight,
+  Sparkles, Star,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Badge } from '@/components/ui/Badge'
-import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn } from '@/lib/utils'
 import type { ContenidoBloque, ProgresoModulo } from '@/types'
 
@@ -29,7 +29,7 @@ interface Pregunta {
 }
 
 // ─────────────────────────────────────────────
-// Orden y metadatos de los bloques
+// Configuración de bloques
 // ─────────────────────────────────────────────
 
 const BLOQUES_ORDEN: BloqueKey[] = [
@@ -40,36 +40,58 @@ const BLOQUES_ORDEN: BloqueKey[] = [
   'hitos',
 ]
 
-const BLOQUES_CONFIG: Record<BloqueKey, { label: string; icon: React.ReactNode; iconColor: string }> = {
+const BLOQUES_CONFIG: Record<BloqueKey, {
+  label: string
+  icon: React.ReactNode
+  gradient: string
+  iconBg: string
+  iconText: string
+  accent: string
+}> = {
   historia: {
     label: 'Nuestra historia',
     icon: <BookOpen className="w-5 h-5" />,
-    iconColor: 'text-indigo-400 bg-indigo-600/15',
+    gradient: 'from-indigo-600/20 via-indigo-600/5 to-transparent',
+    iconBg: 'bg-indigo-600/20',
+    iconText: 'text-indigo-400',
+    accent: 'border-indigo-500/30',
   },
   mision: {
     label: 'Misión, visión y valores',
     icon: <Target className="w-5 h-5" />,
-    iconColor: 'text-teal-400 bg-teal-600/15',
+    gradient: 'from-teal-600/20 via-teal-600/5 to-transparent',
+    iconBg: 'bg-teal-600/20',
+    iconText: 'text-teal-400',
+    accent: 'border-teal-500/30',
   },
   como_trabajamos: {
     label: 'Cómo trabajamos',
     icon: <Users className="w-5 h-5" />,
-    iconColor: 'text-sky-400 bg-sky-600/15',
+    gradient: 'from-sky-600/20 via-sky-600/5 to-transparent',
+    iconBg: 'bg-sky-600/20',
+    iconText: 'text-sky-400',
+    accent: 'border-sky-500/30',
   },
   expectativas: {
     label: 'Qué se espera de mí',
     icon: <ClipboardList className="w-5 h-5" />,
-    iconColor: 'text-amber-400 bg-amber-600/15',
+    gradient: 'from-amber-600/20 via-amber-600/5 to-transparent',
+    iconBg: 'bg-amber-600/20',
+    iconText: 'text-amber-400',
+    accent: 'border-amber-500/30',
   },
   hitos: {
     label: 'Nuestros hitos',
     icon: <Trophy className="w-5 h-5" />,
-    iconColor: 'text-rose-400 bg-rose-600/15',
+    gradient: 'from-rose-600/20 via-rose-600/5 to-transparent',
+    iconBg: 'bg-rose-600/20',
+    iconText: 'text-rose-400',
+    accent: 'border-rose-500/30',
   },
 }
 
 // ─────────────────────────────────────────────
-// Preguntas hardcodeadas (genéricas por tema)
+// Preguntas
 // ─────────────────────────────────────────────
 
 const PREGUNTAS: Record<BloqueKey, Pregunta[]> = {
@@ -191,7 +213,7 @@ const PREGUNTAS: Record<BloqueKey, Pregunta[]> = {
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.12 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
 }
 
 const blockVariants = {
@@ -203,12 +225,17 @@ const blockVariants = {
   },
 }
 
-const quizEntryVariants = {
-  hidden: { opacity: 0, y: 12 },
+const quizVariants = {
+  hidden: { opacity: 0, height: 0 },
   show: {
     opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 26 },
+    height: 'auto',
+    transition: { type: 'spring' as const, stiffness: 300, damping: 28 },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: { duration: 0.2 },
   },
 }
 
@@ -220,9 +247,9 @@ function SkeletonCultura() {
   return (
     <div className="space-y-4">
       {[1, 2, 3, 4, 5].map(i => (
-        <div key={i} className="glass-card rounded-xl p-5">
+        <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
           <div className="flex items-center gap-3">
-            <div className="shimmer rounded-lg w-10 h-10 flex-shrink-0" />
+            <div className="shimmer rounded-xl w-11 h-11 flex-shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="shimmer rounded-md h-4 w-40" />
               <div className="shimmer rounded-full h-1.5 w-full" />
@@ -236,27 +263,110 @@ function SkeletonCultura() {
 }
 
 // ─────────────────────────────────────────────
-// Subcomponente: Barra de lectura dentro del header
+// Barra de progreso de lectura (por bloque)
 // ─────────────────────────────────────────────
 
-function ReadProgressBar({ value }: { value: number }) {
+function ReadBar({ value, color }: { value: number; color: string }) {
   return (
-    <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden mt-2">
+    <div className="h-0.5 w-full rounded-full bg-white/[0.06] overflow-hidden mt-2">
       <motion.div
-        className="h-full rounded-full bg-indigo-500"
+        className={cn('h-full rounded-full', color)}
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        style={{ boxShadow: value > 0 ? '0 0 6px rgba(79,99,231,0.5)' : 'none' }}
+        style={{
+          boxShadow: value > 0 ? `0 0 8px ${color.includes('indigo') ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.4)'}` : 'none',
+        }}
       />
     </div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Subcomponente: Quiz de comprensión
+// Stepper lateral
 // ─────────────────────────────────────────────
 
-interface BloqueQuizProps {
+function StepperSidebar({
+  progreso,
+  bloqueActivo,
+  onClickBloque,
+}: {
+  progreso: Partial<Record<BloqueKey, ProgresoModulo>>
+  bloqueActivo: BloqueKey | null
+  onClickBloque: (key: BloqueKey) => void
+}) {
+  const completados = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
+
+  return (
+    <div className="hidden lg:flex flex-col gap-1 sticky top-8 self-start w-48 flex-shrink-0">
+      {/* Mini progreso */}
+      <div className="mb-4 px-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] text-white/30 uppercase tracking-widest font-medium">Progreso</span>
+          <span className="text-xs font-mono text-white/50">{completados}/{BLOQUES_ORDEN.length}</span>
+        </div>
+        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-teal-400"
+            animate={{ width: `${(completados / BLOQUES_ORDEN.length) * 100}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+
+      {BLOQUES_ORDEN.map((key, idx) => {
+        const cfg = BLOQUES_CONFIG[key]
+        const completado = progreso[key]?.completado === true
+        const activo = bloqueActivo === key
+        const desbloqueado = idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
+
+        return (
+          <button
+            key={key}
+            onClick={() => desbloqueado && onClickBloque(key)}
+            disabled={!desbloqueado}
+            className={cn(
+              'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200',
+              activo && desbloqueado
+                ? 'bg-white/[0.07] border border-white/[0.1]'
+                : 'hover:bg-white/[0.04]',
+              !desbloqueado && 'opacity-35 cursor-not-allowed',
+            )}
+          >
+            {/* Indicador */}
+            <div className={cn(
+              'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300',
+              completado
+                ? 'bg-teal-500/20 text-teal-400'
+                : activo
+                ? cn(cfg.iconBg, cfg.iconText)
+                : 'bg-white/[0.05] text-white/20',
+            )}>
+              {completado ? (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              ) : (
+                <span className="text-[10px] font-mono font-bold">{idx + 1}</span>
+              )}
+            </div>
+
+            {/* Label */}
+            <span className={cn(
+              'text-xs font-medium leading-tight',
+              completado ? 'text-teal-300/70 line-through' : activo ? 'text-white/90' : 'text-white/40',
+            )}>
+              {cfg.label}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Quiz de comprensión — rediseñado
+// ─────────────────────────────────────────────
+
+interface QuizProps {
   bloqueKey: BloqueKey
   respuestas: (number | null)[]
   onRespuesta: (qIdx: number, opIdx: number) => void
@@ -265,21 +375,23 @@ interface BloqueQuizProps {
   onReset: () => void
 }
 
-function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completando, onReset }: BloqueQuizProps) {
+function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completando, onReset }: QuizProps) {
   const preguntas = PREGUNTAS[bloqueKey]
   const todasRespondidas = respuestas.every(r => r !== null)
   const todasCorrectas = preguntas.every((p, i) => respuestas[i] === p.correcta)
+  const cfg = BLOQUES_CONFIG[bloqueKey]
 
   return (
-    <motion.div
-      variants={quizEntryVariants}
-      initial="hidden"
-      animate="show"
-      className="mt-6 pt-6 border-t border-white/[0.07] space-y-6"
-    >
-      <p className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-        Verificá tu comprensión
-      </p>
+    <div className="mt-6 space-y-5">
+      {/* Divider con label */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/[0.07]" />
+        <div className={cn('flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium', cfg.iconBg, cfg.iconText)}>
+          <Sparkles className="w-3 h-3" />
+          Verificá tu comprensión
+        </div>
+        <div className="flex-1 h-px bg-white/[0.07]" />
+      </div>
 
       {preguntas.map((p, qIdx) => {
         const respuesta = respuestas[qIdx]
@@ -287,22 +399,27 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
         const esCorrecta = respondida && respuesta === p.correcta
 
         return (
-          <div key={qIdx} className="space-y-2">
+          <div key={qIdx} className="space-y-3">
             <p className="text-sm text-white/80 font-medium leading-snug">
-              {qIdx + 1}. {p.pregunta}
+              <span className={cn('inline-block w-5 h-5 rounded-full text-center text-[11px] font-bold mr-2 leading-5', cfg.iconBg, cfg.iconText)}>
+                {qIdx + 1}
+              </span>
+              {p.pregunta}
             </p>
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-1 gap-2">
               {p.opciones.map((op, opIdx) => {
                 const seleccionada = respuesta === opIdx
                 const esLaCorrecta = opIdx === p.correcta
 
-                let bgClass = 'bg-white/[0.03] border-white/[0.07] hover:bg-white/[0.06] hover:border-white/15'
+                let style = 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] text-white/70'
                 if (respondida && seleccionada && esCorrecta)
-                  bgClass = 'bg-teal-600/15 border-teal-500/40'
+                  style = 'bg-teal-600/15 border-teal-500/40 text-teal-200'
                 else if (respondida && seleccionada && !esCorrecta)
-                  bgClass = 'bg-red-500/10 border-red-500/30'
-                else if (respondida && esLaCorrecta && !esCorrecta)
-                  bgClass = 'bg-teal-600/10 border-teal-500/20'
+                  style = 'bg-red-500/10 border-red-500/30 text-red-300'
+                else if (respondida && esLaCorrecta)
+                  style = 'bg-teal-600/10 border-teal-500/20 text-teal-300/80'
+                else if (respondida)
+                  style = 'bg-white/[0.02] border-white/[0.05] text-white/30'
 
                 return (
                   <button
@@ -310,73 +427,83 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
                     onClick={() => !respondida && onRespuesta(qIdx, opIdx)}
                     disabled={respondida}
                     className={cn(
-                      'w-full text-left text-sm px-3 py-2.5 rounded-lg border transition-all duration-150',
+                      'w-full text-left text-sm px-4 py-3 rounded-xl border transition-all duration-150',
                       'disabled:cursor-default',
-                      bgClass,
-                      !respondida ? 'text-white/70 cursor-pointer' : 'text-white/60',
+                      style,
                     )}
                   >
+                    <span className="inline-block w-4 h-4 rounded-full border border-current opacity-60 mr-2.5 align-middle text-[10px] text-center leading-[14px] flex-shrink-0 inline-flex items-center justify-center">
+                      {String.fromCharCode(65 + opIdx)}
+                    </span>
                     {op}
                   </button>
                 )
               })}
             </div>
-
-            {/* Feedback por pregunta */}
-            {respondida && !esCorrecta && (
-              <p className="text-xs text-red-400 mt-1">
-                Respuesta incorrecta. Revisá el contenido e intentá de nuevo.
-              </p>
-            )}
           </div>
         )
       })}
 
-      {/* Botón completar — aparece cuando todas están respondidas y son correctas */}
-      <AnimatePresence>
+      {/* Acciones */}
+      <AnimatePresence mode="wait">
         {todasRespondidas && todasCorrectas && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="completar"
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
           >
             <button
               onClick={onComplete}
               disabled={completando}
               className={cn(
-                'w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
-                'bg-teal-600 text-white hover:bg-teal-500',
-                'shadow-[0_0_20px_rgba(13,148,136,0.3)]',
-                'hover:shadow-[0_0_28px_rgba(13,148,136,0.45)]',
+                'w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200',
+                'bg-gradient-to-r from-teal-600 to-teal-500 text-white',
+                'hover:from-teal-500 hover:to-teal-400',
+                'shadow-[0_0_24px_rgba(13,148,136,0.35)] hover:shadow-[0_0_32px_rgba(13,148,136,0.5)]',
                 'disabled:opacity-60 disabled:cursor-wait',
               )}
             >
-              {completando ? 'Guardando...' : '¡Completé este bloque! →'}
+              {completando ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
+                  Guardando progreso...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  ¡Completé este bloque!
+                </span>
+              )}
             </button>
           </motion.div>
         )}
 
         {todasRespondidas && !todasCorrectas && (
           <motion.div
+            key="reintentar"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center"
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
           >
+            <p className="text-xs text-amber-300/80">Hay respuestas incorrectas. Revisá el contenido.</p>
             <button
               onClick={onReset}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors ml-3 flex-shrink-0"
             >
-              Revisá las respuestas incorrectas y volvé a intentarlo
+              Reintentar →
             </button>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Subcomponente: BloqueCard
+// BloqueCard — rediseñado
 // ─────────────────────────────────────────────
 
 interface BloqueCardProps {
@@ -392,6 +519,7 @@ interface BloqueCardProps {
   onComplete: () => void
   contentRef: (el: HTMLDivElement | null) => void
   onReset: () => void
+  isActive: boolean
 }
 
 function BloqueCard({
@@ -407,91 +535,137 @@ function BloqueCard({
   onComplete,
   contentRef,
   onReset,
+  isActive,
 }: BloqueCardProps) {
-  const config = BLOQUES_CONFIG[bloqueKey]
+  const cfg = BLOQUES_CONFIG[bloqueKey]
   const [expandido, setExpandido] = useState(true)
   const showQuiz = readProgress >= 80 && !completado && contenido !== null
   const locked = !unlocked
 
   return (
-    <motion.div variants={blockVariants} className="relative">
+    <motion.div
+      variants={blockVariants}
+      id={`bloque-${bloqueKey}`}
+      className="relative"
+    >
       <div
         className={cn(
-          'glass-card rounded-xl overflow-hidden transition-all duration-300',
-          completado && 'border-teal-500/20',
-          locked && 'opacity-70',
+          'relative rounded-2xl overflow-hidden border transition-all duration-300',
+          completado
+            ? 'border-teal-500/20 bg-surface-900/60'
+            : isActive
+            ? cn('border-white/[0.1] bg-surface-900/80', cfg.accent)
+            : 'border-white/[0.06] bg-surface-900/50',
+          locked && 'opacity-60',
         )}
       >
+        {/* Gradiente decorativo en la esquina superior izquierda */}
+        {!locked && (
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none',
+              `bg-gradient-to-br ${cfg.gradient}`,
+            )}
+          />
+        )}
+
         {/* ── Header ── */}
         <div
           className={cn(
-            'p-5',
-            unlocked && !completado && 'cursor-default',
+            'relative flex items-start gap-3 p-5',
             completado && 'cursor-pointer',
           )}
           onClick={() => completado && setExpandido(v => !v)}
         >
-          <div className="flex items-start gap-3">
-            {/* Ícono del bloque */}
-            <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', config.iconColor)}>
-              {completado ? <CheckCircle2 className="w-5 h-5" /> : config.icon}
+          {/* Número + ícono */}
+          <div className="flex-shrink-0 relative">
+            <div
+              className={cn(
+                'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300',
+                completado
+                  ? 'bg-teal-500/15 text-teal-400 shadow-[0_0_16px_rgba(20,184,166,0.2)]'
+                  : isActive
+                  ? cn(cfg.iconBg, cfg.iconText)
+                  : 'bg-white/[0.05] text-white/25',
+              )}
+            >
+              {completado ? <CheckCircle2 className="w-5 h-5" /> : cfg.icon}
             </div>
-
-            {/* Título + progreso */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-white/30 font-mono tabular-nums">
-                  {numero.toString().padStart(2, '0')}
-                </span>
-                <h3 className="text-sm font-semibold text-white">{config.label}</h3>
-              </div>
-
-              {/* Barra de lectura — solo en bloque activo */}
-              {unlocked && !completado && (
-                <ReadProgressBar value={readProgress} />
-              )}
+            {/* Número badge */}
+            <div className={cn(
+              'absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center',
+              'text-[9px] font-bold font-mono',
+              completado
+                ? 'bg-teal-500 text-white'
+                : isActive
+                ? 'bg-indigo-600 text-white'
+                : 'bg-white/10 text-white/30',
+            )}>
+              {numero}
             </div>
+          </div>
 
-            {/* Badge de estado */}
-            <div className="flex-shrink-0 flex items-center gap-1">
-              {completado && (
-                <Badge variant="success">Completado</Badge>
-              )}
-              {unlocked && !completado && (
-                <Badge variant="info">{Math.round(readProgress)}% leído</Badge>
-              )}
-              {locked && (
-                <Lock className="w-4 h-4 text-white/20" />
-              )}
-              {completado && (
-                <ChevronDown
-                  className={cn(
-                    'w-4 h-4 text-white/30 ml-1 transition-transform duration-200',
-                    !expandido && 'rotate-180',
-                  )}
-                />
-              )}
-            </div>
+          {/* Título y progreso */}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h3 className={cn(
+              'text-sm font-semibold leading-tight',
+              completado ? 'text-white/60' : 'text-white/90',
+            )}>
+              {cfg.label}
+            </h3>
+
+            {/* Barra de lectura */}
+            {unlocked && !completado && (
+              <ReadBar
+                value={readProgress}
+                color={cfg.iconText.replace('text-', 'bg-')}
+              />
+            )}
+
+            {completado && (
+              <p className="text-xs text-teal-400/70 mt-1">Completado ✓</p>
+            )}
+          </div>
+
+          {/* Badge / estado */}
+          <div className="flex-shrink-0 flex items-center gap-1.5 pt-0.5">
+            {!completado && unlocked && readProgress > 0 && (
+              <Badge variant="info">{Math.round(readProgress)}%</Badge>
+            )}
+            {completado ? (
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 text-white/25 transition-transform duration-200',
+                  !expandido && 'rotate-180',
+                )}
+              />
+            ) : locked ? (
+              <Lock className="w-4 h-4 text-white/20" />
+            ) : null}
           </div>
         </div>
 
         {/* ── Contenido ── */}
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {unlocked && (!completado || expandido) && (
             <motion.div
-              initial={completado ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={completado ? false : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="overflow-hidden"
             >
-              <div ref={contentRef} className="px-5 pb-5">
+              <div
+                ref={contentRef}
+                className="relative px-5 pb-5"
+              >
                 {/* Texto del bloque */}
                 {contenido ? (
                   <div className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">
                     {contenido.contenido}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="py-4 text-center space-y-1">
                     <p className="text-sm text-white/30 italic">
                       Contenido no disponible. El administrador aún no cargó este bloque.
                     </p>
@@ -501,17 +675,25 @@ function BloqueCard({
                   </div>
                 )}
 
-                {/* Quiz — aparece al 80% de lectura */}
+                {/* Quiz */}
                 <AnimatePresence>
                   {showQuiz && (
-                    <BloqueQuiz
-                      bloqueKey={bloqueKey}
-                      respuestas={respuestas}
-                      onRespuesta={onRespuesta}
-                      onComplete={onComplete}
-                      completando={completando}
-                      onReset={onReset}
-                    />
+                    <motion.div
+                      variants={quizVariants}
+                      initial="hidden"
+                      animate="show"
+                      exit="exit"
+                      className="overflow-hidden"
+                    >
+                      <BloqueQuiz
+                        bloqueKey={bloqueKey}
+                        respuestas={respuestas}
+                        onRespuesta={onRespuesta}
+                        onComplete={onComplete}
+                        completando={completando}
+                        onReset={onReset}
+                      />
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -523,18 +705,45 @@ function BloqueCard({
         <AnimatePresence>
           {locked && (
             <motion.div
-              exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.25 } }}
-              className="absolute inset-0 bg-surface-900/70 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center gap-2"
+              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+              className="absolute inset-0 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center gap-2"
+              style={{ background: 'rgba(7,15,30,0.6)' }}
             >
-              <Lock className="w-6 h-6 text-white/20" />
-              <p className="text-xs text-white/30 text-center px-4">
-                Completá el anterior para desbloquear
+              <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+                <Lock className="w-4 h-4 text-white/25" />
+              </div>
+              <p className="text-xs text-white/30 text-center px-6">
+                Completá el bloque anterior para desbloquear
               </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     </motion.div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Barra de scroll global (sticky top)
+// ─────────────────────────────────────────────
+
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  })
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 z-50 h-[3px] origin-left"
+      style={{
+        scaleX,
+        background: 'linear-gradient(90deg, #6366f1, #3b82f6, #14b8a6)',
+        boxShadow: '0 0 12px rgba(99,102,241,0.6)',
+      }}
+    />
   )
 }
 
@@ -559,12 +768,11 @@ export default function CulturaPage() {
   })
   const [completando, setCompletando] = useState<BloqueKey | null>(null)
   const [hasError, setHasError] = useState(false)
+  const [bloqueActivo, setBloqueActivo] = useState<BloqueKey | null>(null)
 
-  // Refs para medir el área de contenido de cada bloque
   const contentRefsObj = useRef<Partial<Record<BloqueKey, HTMLDivElement | null>>>({})
   const contentRefCallbacks = useRef<Partial<Record<BloqueKey, (el: HTMLDivElement | null) => void>>>({})
 
-  // Inicializar callbacks estables una vez por BloqueKey
   for (const key of BLOQUES_ORDEN) {
     if (!contentRefCallbacks.current[key]) {
       contentRefCallbacks.current[key] = (el: HTMLDivElement | null) => {
@@ -579,12 +787,10 @@ export default function CulturaPage() {
     setHasError(false)
     try {
       const supabase = createClient()
-
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
 
-      // Obtener empresa_id del perfil
       const { data: perfil, error: perfilError } = await supabase
         .from('usuarios')
         .select('empresa_id')
@@ -593,7 +799,6 @@ export default function CulturaPage() {
 
       if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
-      // Cargar contenido y progreso en paralelo
       const [contenidosRes, progresoRes] = await Promise.all([
         supabase
           .from('conocimiento')
@@ -630,9 +835,7 @@ export default function CulturaPage() {
     }
   }, [])
 
-  useEffect(() => {
-    cargarDatos()
-  }, [cargarDatos])
+  useEffect(() => { cargarDatos() }, [cargarDatos])
 
   // ── Scroll tracking ──
   const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -640,17 +843,26 @@ export default function CulturaPage() {
   const handleScroll = useCallback(() => {
     const vh = window.innerHeight
     const updates: Partial<Record<BloqueKey, number>> = {}
+    let closestBloque: BloqueKey | null = null
+    let closestDist = Infinity
 
     for (const bloque of BLOQUES_ORDEN) {
       const el = contentRefsObj.current[bloque]
       if (!el) continue
       const { top, height } = el.getBoundingClientRect()
-      // % del área que ya pasó por el viewport
       const scrolled = (vh - top) / height
       updates[bloque] = Math.min(100, Math.max(0, Math.round(scrolled * 100)))
+
+      // Determinar bloque más visible
+      const dist = Math.abs(top - vh / 3)
+      if (dist < closestDist) {
+        closestDist = dist
+        closestBloque = bloque
+      }
     }
 
     setReadProgress(prev => ({ ...prev, ...updates }))
+    if (closestBloque) setBloqueActivo(closestBloque)
   }, [])
 
   useEffect(() => {
@@ -659,18 +871,17 @@ export default function CulturaPage() {
       scrollThrottleRef.current = setTimeout(() => {
         scrollThrottleRef.current = null
         handleScroll()
-      }, 100)
+      }, 80)
     }
-
     window.addEventListener('scroll', onScroll, { passive: true })
-    handleScroll() // check estado inicial
+    handleScroll()
     return () => {
       window.removeEventListener('scroll', onScroll)
       if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
     }
   }, [handleScroll])
 
-  // ── Responder una pregunta ──
+  // ── Handlers quiz ──
   const handleRespuesta = (bloqueKey: BloqueKey, qIdx: number, opIdx: number) => {
     setRespuestas(prev => ({
       ...prev,
@@ -678,25 +889,21 @@ export default function CulturaPage() {
     }))
   }
 
-  // ── Reiniciar respuestas de un bloque ──
   const handleReset = (bloqueKey: BloqueKey) => {
     const preguntas = PREGUNTAS[bloqueKey]
     setRespuestas(prev => ({
       ...prev,
       [bloqueKey]: prev[bloqueKey].map((r, i) =>
-        r === preguntas[i].correcta ? r : null  // keep correct, reset incorrect
+        r === preguntas[i].correcta ? r : null
       ),
     }))
   }
 
-  // ── Completar un bloque ──
   const handleComplete = async (bloqueKey: BloqueKey) => {
     if (!userId || completando) return
     setCompletando(bloqueKey)
-
     try {
       const supabase = createClient()
-
       const { error } = await supabase.from('progreso_modulos').upsert(
         {
           usuario_id: userId,
@@ -709,7 +916,6 @@ export default function CulturaPage() {
       )
       if (error) throw error
 
-      // Actualizar estado local
       setProgreso(prev => ({
         ...prev,
         [bloqueKey]: {
@@ -721,15 +927,13 @@ export default function CulturaPage() {
         } as ProgresoModulo,
       }))
 
-      // Confetti burst con colores del design system
       confetti({
-        particleCount: 120,
-        spread: 70,
+        particleCount: 100,
+        spread: 65,
         origin: { y: 0.6 },
         colors: ['#3B4FD8', '#0D9488', '#6B7CF0', '#2DD4BF', '#ffffff'],
       })
-
-      toast.success('¡Bloque completado!')
+      toast.success('¡Bloque completado! 🎉')
     } catch (err) {
       console.error('Error guardando progreso:', err)
       toast.error('No se pudo guardar el progreso')
@@ -738,20 +942,26 @@ export default function CulturaPage() {
     }
   }
 
-  // ── Progreso global (X/5 bloques) ──
-  const totalCompletados = BLOQUES_ORDEN.filter(
-    b => progreso[b]?.completado,
-  ).length
-  const porcentajeGlobal = (totalCompletados / BLOQUES_ORDEN.length) * 100
+  // ── Scroll a bloque desde stepper ──
+  const scrollToBloque = (key: BloqueKey) => {
+    const el = document.getElementById(`bloque-${key}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 
-  // ── Derivar unlocked por bloque ──
+  // ── Derivados ──
+  const totalCompletados = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
+  const porcentajeGlobal = (totalCompletados / BLOQUES_ORDEN.length) * 100
+  const todoCompleto = totalCompletados === BLOQUES_ORDEN.length
+
   const isUnlocked = (bloque: BloqueKey): boolean => {
     const idx = BLOQUES_ORDEN.indexOf(bloque)
     if (idx === 0) return true
     return progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
   }
 
-  // ── Render: loading ──
+  // ── Loading ──
   if (loading) {
     return (
       <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
@@ -765,111 +975,205 @@ export default function CulturaPage() {
     )
   }
 
-  // ── Render: error ──
+  // ── Error ──
   if (hasError) {
     return (
       <div className="min-h-dvh gradient-bg flex items-center justify-center p-6">
-        <ErrorState
-          mensaje="No se pudo cargar el módulo de cultura."
-          onRetry={cargarDatos}
-        />
+        <ErrorState mensaje="No se pudo cargar el módulo de cultura." onRetry={cargarDatos} />
       </div>
     )
   }
 
-  // ── Render: principal ──
+  // ── Render principal ──
   return (
-    <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Encabezado */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="mb-6"
-        >
-          <h1 className="text-2xl font-semibold text-white">Cultura e identidad</h1>
-          <p className="text-sm text-white/40 mt-0.5">
-            {totalCompletados === BLOQUES_ORDEN.length
-              ? '¡Módulo completado!'
-              : `${totalCompletados} de ${BLOQUES_ORDEN.length} bloques completados`}
-          </p>
-        </motion.div>
+    <>
+      {/* Barra de desplazamiento global animada */}
+      <ScrollProgressBar />
 
-        {/* Barra de progreso global del módulo */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <ProgressBar
-            value={porcentajeGlobal}
-            label="Progreso del módulo"
-            showPercentage
-          />
-        </motion.div>
+      <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8 pt-6">
+        <div className="max-w-5xl mx-auto">
 
-        {/* Bloques */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="space-y-4"
-        >
-          {BLOQUES_ORDEN.map((bloqueKey, idx) => (
-            <BloqueCard
-              key={bloqueKey}
-              bloqueKey={bloqueKey}
-              numero={idx + 1}
-              contenido={contenidos[bloqueKey] ?? null}
-              unlocked={isUnlocked(bloqueKey)}
-              completado={progreso[bloqueKey]?.completado === true}
-              readProgress={readProgress[bloqueKey]}
-              respuestas={respuestas[bloqueKey]}
-              completando={completando === bloqueKey}
-              onRespuesta={(qIdx, opIdx) => handleRespuesta(bloqueKey, qIdx, opIdx)}
-              onComplete={() => handleComplete(bloqueKey)}
-              onReset={() => handleReset(bloqueKey)}
-              contentRef={contentRefCallbacks.current[bloqueKey]!}
-            />
-          ))}
-        </motion.div>
-
-        {/* Banner de módulo completado */}
-        {totalCompletados === BLOQUES_ORDEN.length && (
+          {/* ── Header con banner decorativo ── */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.3 }}
-            className="mt-6 rounded-xl border border-teal-500/25 bg-teal-500/10 px-5 py-4"
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className="relative rounded-2xl overflow-hidden mb-8 p-6"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(20,184,166,0.08) 50%, rgba(10,22,40,0.6) 100%)',
+              border: '1px solid rgba(99,102,241,0.2)',
+            }}
           >
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-teal-500/20 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+            {/* Glow decorativo */}
+            <div
+              className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20 pointer-events-none"
+              style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
+            />
+            <div
+              className="absolute -bottom-4 left-8 w-24 h-24 rounded-full opacity-15 pointer-events-none"
+              style={{ background: 'radial-gradient(circle, #14b8a6 0%, transparent 70%)' }}
+            />
+
+            <div className="relative flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-600/25 flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <span className="text-[11px] font-medium text-indigo-400/70 uppercase tracking-widest">
+                    Módulo 2
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-teal-200">
-                    ¡Completaste el módulo de Cultura!
-                  </p>
-                  <p className="text-xs text-teal-300/60 mt-0.5">
-                    Ya conocés la empresa. Ahora es momento de conocer tu rol.
-                  </p>
+                <h1 className="text-2xl font-bold text-white">Cultura e identidad</h1>
+                <p className="text-sm text-white/45 mt-1">
+                  {todoCompleto
+                    ? '¡Módulo completado! Conocés la empresa y sus valores.'
+                    : 'Conocé la historia, misión y forma de trabajar de la empresa.'}
+                </p>
+              </div>
+
+              {/* Círculo de progreso */}
+              <div className="flex-shrink-0 relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                  <motion.circle
+                    cx="32" cy="32" r="26"
+                    fill="none"
+                    stroke="url(#prog-gradient)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 26}`}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                  <defs>
+                    <linearGradient id="prog-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#6366f1" />
+                      <stop offset="100%" stopColor="#14b8a6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
                 </div>
               </div>
-              <Link
-                href="/empleado/rol"
-                className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium
-                  text-teal-300 hover:text-teal-200 transition-colors duration-150"
-              >
-                Ir a Mi Rol
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+            </div>
+
+            {/* Chips de progreso */}
+            <div className="relative flex items-center gap-2 mt-4 flex-wrap">
+              {BLOQUES_ORDEN.map((bKey, idx) => {
+                const completado = progreso[bKey]?.completado
+                const cfg = BLOQUES_CONFIG[bKey]
+                return (
+                  <button
+                    key={bKey}
+                    onClick={() => scrollToBloque(bKey)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200',
+                      completado
+                        ? 'bg-teal-500/15 text-teal-300 border border-teal-500/25'
+                        : idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado
+                        ? cn('border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20', 'bg-white/[0.04]')
+                        : 'bg-white/[0.02] text-white/20 border border-white/[0.05] cursor-not-allowed',
+                    )}
+                  >
+                    {completado ? (
+                      <CheckCircle2 className="w-3 h-3" />
+                    ) : (
+                      <span className="w-3 h-3 rounded-full border border-current opacity-60" />
+                    )}
+                    {cfg.label.split(' ')[0]}
+                  </button>
+                )
+              })}
+              <span className="ml-auto text-xs text-white/30 font-mono">
+                {totalCompletados}/{BLOQUES_ORDEN.length} bloques
+              </span>
             </div>
           </motion.div>
-        )}
+
+          {/* ── Layout: stepper + bloques ── */}
+          <div className="flex gap-6 items-start">
+
+            {/* Stepper lateral (solo desktop) */}
+            <StepperSidebar
+              progreso={progreso}
+              bloqueActivo={bloqueActivo}
+              onClickBloque={scrollToBloque}
+            />
+
+            {/* Bloques de contenido */}
+            <div className="flex-1 min-w-0">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-4"
+              >
+                {BLOQUES_ORDEN.map((bloqueKey, idx) => (
+                  <BloqueCard
+                    key={bloqueKey}
+                    bloqueKey={bloqueKey}
+                    numero={idx + 1}
+                    contenido={contenidos[bloqueKey] ?? null}
+                    unlocked={isUnlocked(bloqueKey)}
+                    completado={progreso[bloqueKey]?.completado === true}
+                    readProgress={readProgress[bloqueKey]}
+                    respuestas={respuestas[bloqueKey]}
+                    completando={completando === bloqueKey}
+                    onRespuesta={(qIdx, opIdx) => handleRespuesta(bloqueKey, qIdx, opIdx)}
+                    onComplete={() => handleComplete(bloqueKey)}
+                    onReset={() => handleReset(bloqueKey)}
+                    contentRef={contentRefCallbacks.current[bloqueKey]!}
+                    isActive={bloqueActivo === bloqueKey}
+                  />
+                ))}
+              </motion.div>
+
+              {/* Banner de módulo completado */}
+              <AnimatePresence>
+                {todoCompleto && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.2 }}
+                    className="mt-6 rounded-2xl overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(20,184,166,0.18) 0%, rgba(13,148,136,0.08) 100%)',
+                      border: '1px solid rgba(20,184,166,0.25)',
+                    }}
+                  >
+                    <div className="p-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(20,184,166,0.3)]">
+                          <Star className="w-5 h-5 text-teal-400 fill-teal-400/30" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-teal-200">
+                            ¡Completaste Cultura e identidad!
+                          </p>
+                          <p className="text-xs text-teal-300/60 mt-0.5">
+                            Conocés la empresa y sus valores. Ahora es el momento de conocer tu rol.
+                          </p>
+                        </div>
+                      </div>
+                      <Link
+                        href="/empleado/rol"
+                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold
+                          bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 hover:text-teal-200
+                          border border-teal-500/25 transition-all duration-150"
+                      >
+                        Ir a mi Rol
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
