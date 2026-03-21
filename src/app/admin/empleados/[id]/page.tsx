@@ -251,6 +251,13 @@ export default function EmpleadoDetallePage() {
   const [expandedAccesoId, setExpandedAccesoId] = useState<string | null>(null)
   const [accesoEdits, setAccesoEdits] = useState<Record<string, AccesoEditDraft>>({})
   const [showPassAcceso, setShowPassAcceso] = useState<Record<string, boolean>>({})
+  // Chip seleccionado localmente (antes de guardar en DB)
+  const [chipDraft, setChipDraft] = useState<{
+    nombre: string
+    usuario: string
+    password: string
+    showPass: boolean
+  } | null>(null)
   // Visibilidad de contraseñas en datos personales
   const [showPassCorp, setShowPassCorp] = useState(false)
   const [showPassBitlocker, setShowPassBitlocker] = useState(false)
@@ -607,23 +614,60 @@ export default function EmpleadoDetallePage() {
     setExpandedAccesoId(null)
   }
 
-  // ── Agregar nuevo acceso y expandirlo ──
+  // ── Agregar nuevo acceso vacío (botón "Agregar herramienta") ──
   async function agregarAcceso(nombreHerramienta = '') {
+    if (!empresaId) { toast.error('Error: empresa no cargada, recargá la página'); return }
     const supabase = createClient()
     const { data, error } = await supabase
       .from('accesos_herramientas')
       .insert({ usuario_id: id, empresa_id: empresaId, herramienta: nombreHerramienta, estado: 'pendiente' })
       .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
       .single()
-    if (error) { toast.error('No se pudo agregar la herramienta'); return }
+    if (error) {
+      console.error('[agregarAcceso]', error)
+      toast.error(`Error al agregar: ${error.message}`)
+      return
+    }
     const newAcceso = data as AccesoRow
     setAccesos(prev => [...prev, newAcceso])
-    // Inicializar borrador y expandir
     setAccesoEdits(prev => ({
       ...prev,
       [newAcceso.id]: { herramienta: newAcceso.herramienta, estado: newAcceso.estado, usuario_acceso: '', password_acceso: '', url: '', notas: '' },
     }))
     setExpandedAccesoId(newAcceso.id)
+  }
+
+  // ── Guardar chip desde el panel local (upsert) ──
+  async function guardarChipDraft() {
+    if (!chipDraft || !empresaId) return
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('accesos_herramientas')
+      .upsert(
+        {
+          usuario_id:      id,
+          empresa_id:      empresaId,
+          herramienta:     chipDraft.nombre,
+          estado:          chipDraft.usuario.trim() || chipDraft.password.trim() ? 'activo' : 'pendiente',
+          usuario_acceso:  chipDraft.usuario.trim() || null,
+          password_acceso: chipDraft.password.trim() || null,
+        },
+        { onConflict: 'usuario_id,herramienta', ignoreDuplicates: false }
+      )
+      .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
+      .single()
+    if (error) {
+      console.error('[guardarChipDraft]', error)
+      toast.error(`No se pudo guardar: ${error.message}`)
+      return
+    }
+    const saved = data as AccesoRow
+    setAccesos(prev => {
+      const existe = prev.find(a => a.id === saved.id)
+      return existe ? prev.map(a => a.id === saved.id ? saved : a) : [...prev, saved]
+    })
+    setChipDraft(null)
+    toast.success(`${chipDraft.nombre} configurado ✓`)
   }
 
   // ── Eliminar acceso ──
@@ -905,46 +949,141 @@ export default function EmpleadoDetallePage() {
                     <p className="text-[11px] text-white/30 mb-2 uppercase tracking-widest font-medium">Herramientas comunes</p>
                     <div className="flex flex-wrap gap-2">
                       {['Gmail', 'Slack', 'Notion', 'GitHub', 'Jira', 'Teams', 'Figma', 'Drive', 'Zoom', 'HubSpot'].map(nombre => {
-                        const existe = accesos.some(a => a.herramienta?.toLowerCase() === nombre.toLowerCase())
-                        const configurado = accesos.some(a => a.herramienta?.toLowerCase() === nombre.toLowerCase() && isConfigured(a))
+                        const acceso = accesos.find(a => a.herramienta?.toLowerCase() === nombre.toLowerCase())
+                        const existe = !!acceso
+                        const configurado = existe && isConfigured(acceso!)
+                        const esteChipAbierto = chipDraft?.nombre === nombre
                         return (
                           <button
                             key={nombre}
                             onClick={() => {
-                              if (!existe) {
-                                agregarAcceso(nombre)
+                              if (esteChipAbierto) {
+                                setChipDraft(null)
+                              } else if (existe) {
+                                // Ya existe → expandir su card de edición
+                                setChipDraft(null)
+                                toggleAcceso(acceso!.id)
                               } else {
-                                // Si ya existe, hacer scroll al acceso y expandirlo
-                                const acc = accesos.find(a => a.herramienta?.toLowerCase() === nombre.toLowerCase())
-                                if (acc) toggleAcceso(acc.id)
+                                // Nuevo → abrir panel local sin tocar DB
+                                setChipDraft({ nombre, usuario: '', password: '', showPass: false })
+                                setExpandedAccesoId(null)
                               }
                             }}
                             className={cn(
                               'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200',
-                              configurado
+                              esteChipAbierto
+                                ? 'bg-indigo-600/20 border-indigo-400/50 text-indigo-200 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+                                : configurado
                                 ? 'bg-teal-500/15 border-teal-500/40 text-teal-300 shadow-[0_0_10px_rgba(20,184,166,0.12)]'
                                 : existe
-                                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
                                 : 'bg-white/[0.03] border-white/[0.08] text-white/45 hover:bg-white/[0.07] hover:border-white/[0.18] hover:text-white/70',
                             )}
                           >
-                            {configurado && (
+                            {configurado && !esteChipAbierto && (
                               <span className="w-3.5 h-3.5 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
                                 <Check className="w-2 h-2 text-white" strokeWidth={3} />
                               </span>
                             )}
-                            {existe && !configurado && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 animate-pulse" />
+                            {existe && !configurado && !esteChipAbierto && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
                             )}
                             {nombre}
                           </button>
                         )
                       })}
                     </div>
+
+                    {/* Panel inline del chip seleccionado */}
+                    <AnimatePresence>
+                      {chipDraft && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.22, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 rounded-xl border border-indigo-500/25 bg-indigo-600/[0.06] p-4 space-y-3">
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold text-indigo-300">
+                                Configurar acceso: <span className="text-white">{chipDraft.nombre}</span>
+                              </p>
+                              <button
+                                onClick={() => setChipDraft(null)}
+                                className="text-white/30 hover:text-white/60 text-xs transition-colors"
+                              >✕</button>
+                            </div>
+
+                            {/* Toggle ON/OFF */}
+                            <div className="flex gap-2">
+                              <div className="flex-1 py-2 rounded-lg border text-center text-xs font-semibold bg-teal-500/15 border-teal-500/40 text-teal-300">
+                                ON — Activo al guardar
+                              </div>
+                            </div>
+
+                            {/* Usuario y contraseña */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[11px] font-medium text-white/40 mb-1">
+                                  👤 Usuario
+                                </label>
+                                <input
+                                  type="text"
+                                  value={chipDraft.usuario}
+                                  onChange={e => setChipDraft(d => d ? { ...d, usuario: e.target.value } : d)}
+                                  placeholder="usuario@empresa.com"
+                                  className={inputCls()}
+                                  autoFocus
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-white/40 mb-1">
+                                  🔑 Contraseña <span className="text-white/20 font-normal">(solo admins)</span>
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={chipDraft.showPass ? 'text' : 'password'}
+                                    value={chipDraft.password}
+                                    onChange={e => setChipDraft(d => d ? { ...d, password: e.target.value } : d)}
+                                    placeholder="Contraseña de acceso"
+                                    className={inputCls() + ' pr-9'}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setChipDraft(d => d ? { ...d, showPass: !d.showPass } : d)}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                                  >
+                                    {chipDraft.showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex items-center gap-3 pt-1">
+                              <Button variant="primary" size="sm" onClick={guardarChipDraft}>
+                                <Check className="w-3.5 h-3.5" />
+                                Guardar y activar
+                              </Button>
+                              <button
+                                onClick={() => setChipDraft(null)}
+                                className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <p className="text-[10px] text-white/20 mt-2">
-                      Verde = Configurado · Azul = Pendiente · Click para agregar o editar
+                      🟢 Verde = Configurado · 🟡 Amarillo = Pendiente · Click para agregar o editar
                     </p>
                   </div>
+
 
                   {/* Cards expandibles de accesos */}
                   <div className="space-y-2 mb-3">
