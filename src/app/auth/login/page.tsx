@@ -243,7 +243,12 @@ export default function LoginPage() {
       }
 
       // Redirigir según rol
-      router.push(usuario.rol === 'admin' ? '/admin' : '/empleado/perfil')
+      const destinos: Record<string, string> = {
+        dev: '/superadmin',
+        admin: '/admin',
+        empleado: '/empleado/perfil',
+      }
+      router.push(destinos[usuario.rol] ?? '/empleado/perfil')
     } catch {
       setAuthError('Error inesperado. Intentá de nuevo')
     } finally {
