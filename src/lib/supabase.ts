@@ -1,24 +1,15 @@
-import {
-  createBrowserClient,
-  createServerClient as createSSRServerClient,
-} from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createServerClient as createSSRServerClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-console.log('URL:', supabaseUrl)
-console.log('KEY:', supabaseAnonKey?.slice(0, 20))
-// ─────────────────────────────────────────────
 // Cliente para Client Components ('use client')
-// ─────────────────────────────────────────────
 export function createClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey)
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
 }
 
-// ─────────────────────────────────────────────
 // Cliente para Server Components y Server Actions
-// Usa import dinámico para evitar errores en contexto cliente
-// ─────────────────────────────────────────────
 export async function createServerSupabaseClient() {
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
