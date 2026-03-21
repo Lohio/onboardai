@@ -31,7 +31,7 @@ const ROLES_VALIDOS: UserRole[] = ['empleado', 'admin', 'dev']
 
 /** Devuelve la ruta de inicio según el rol del usuario */
 function homeByRol(rol: UserRole): string {
-  if (rol === 'dev') return '/dev'
+  if (rol === 'dev') return '/superadmin'  // ← cambiar /dev por /superadmin
   if (rol === 'admin') return '/admin'
   return '/empleado/perfil'
 }
@@ -163,7 +163,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 5. /dev/* → solo rol 'dev' ──────────────────────────────
-  if (pathname.startsWith('/dev')) {
+  if (pathname.startsWith('/superadmin')) {
     if (rol !== 'dev') {
       return NextResponse.redirect(new URL(homeByRol(rol), request.url))
     }

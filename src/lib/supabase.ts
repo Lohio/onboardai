@@ -6,6 +6,8 @@ import {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+console.log('URL:', supabaseUrl)
+console.log('KEY:', supabaseAnonKey?.slice(0, 20))
 // ─────────────────────────────────────────────
 // Cliente para Client Components ('use client')
 // ─────────────────────────────────────────────
