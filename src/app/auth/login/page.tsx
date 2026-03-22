@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Zap } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -219,6 +220,16 @@ export default function LoginPage() {
       if (!res.ok) {
         setAuthError(translateAuthError(json.error ?? ''))
         return
+      }
+
+      // Setear sesión en el cliente browser para que los componentes
+      // la encuentren en localStorage sin necesidad de otro roundtrip
+      if (json.access_token && json.refresh_token) {
+        const supabase = createClient()
+        await supabase.auth.setSession({
+          access_token: json.access_token,
+          refresh_token: json.refresh_token,
+        })
       }
 
       // Redirigir según rol
