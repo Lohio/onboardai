@@ -15,7 +15,8 @@
       "Bash(npm list:*)",
       "Read(//c/Users/Maxi/Downloads/**)",
       "Read(//c/Users/Maxi/Downloads//**)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git push:*)"
     ]
   }
 }
