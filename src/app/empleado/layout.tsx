@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
+import AgenteFlotante from '@/components/empleado/AgenteFlotante'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -39,6 +40,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   })
   const [empleadoNombre, setEmpleadoNombre] = useState('')
   const [empleadoPuesto, setEmpleadoPuesto] = useState('')
+  const [diasOnboarding, setDiasOnboarding] = useState(1)
+  const [accesosPendientes, setAccesosPendientes] = useState(0)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -75,17 +78,25 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       // Datos del empleado para el avatar
       const { data: usuarioData } = await supabase
         .from('usuarios')
-        .select('nombre, puesto, empresa_id')
+        .select('nombre, puesto, empresa_id, fecha_ingreso')
         .eq('id', user.id)
         .single()
 
       if (usuarioData) {
         setEmpleadoNombre(usuarioData.nombre ?? '')
         setEmpleadoPuesto(usuarioData.puesto ?? '')
+
+        // Calcular días de onboarding desde fecha_ingreso
+        if (usuarioData.fecha_ingreso) {
+          const dias = Math.max(1, Math.ceil(
+            (Date.now() - new Date(usuarioData.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)
+          ))
+          setDiasOnboarding(dias)
+        }
       }
 
-      // Consultar progreso y total real de bloques de cultura (en paralelo)
-      const [progresoRes, culturaCountRes] = await Promise.all([
+      // Consultar progreso, cultura y accesos pendientes en paralelo
+      const [progresoRes, culturaCountRes, accesosRes] = await Promise.all([
         supabase
           .from('progreso_modulos')
           .select('modulo, bloque, completado')
@@ -97,6 +108,11 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
               .eq('empresa_id', usuarioData.empresa_id)
               .eq('modulo', 'cultura')
           : Promise.resolve({ count: 0 }),
+        supabase
+          .from('accesos')
+          .select('*', { count: 'exact', head: true })
+          .eq('usuario_id', user.id)
+          .eq('estado', 'pendiente'),
       ])
 
       const progresoRows = progresoRes.data ?? []
@@ -105,6 +121,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       const estados = calcularEstadoModulos(progresoRows, totalCultura)
       setModulos(estados)
       setProgreso(calcularProgresoPct(estados))
+
+      // Accesos pendientes para el agente
+      const pendientes = (accesosRes as { count: number | null }).count ?? 0
+      setAccesosPendientes(pendientes)
     }
 
     cargarProgreso()
@@ -247,6 +267,34 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       <div className="flex-1 flex flex-col">
         {children}
       </div>
+
+      {/* Agente flotante proactivo (M1–M4) */}
+      {(() => {
+        const moduloActual =
+          pathname.startsWith('/empleado/perfil') ? 'perfil' as const
+          : pathname.startsWith('/empleado/cultura') ? 'cultura' as const
+          : pathname.startsWith('/empleado/rol') ? 'rol' as const
+          : pathname.startsWith('/empleado/asistente') ? 'asistente' as const
+          : null
+
+        const moduloKey =
+          moduloActual === 'perfil' ? 'M1'
+          : moduloActual === 'cultura' ? 'M2'
+          : moduloActual === 'rol' ? 'M3'
+          : moduloActual === 'asistente' ? 'M4'
+          : null
+
+        return (
+          <AgenteFlotante
+            modulo={moduloActual}
+            diasOnboarding={diasOnboarding}
+            progresoTotal={progreso}
+            accesosPendientes={accesosPendientes}
+            moduloCompletado={moduloKey ? modulos[moduloKey] : false}
+            nombreEmpleado={empleadoNombre}
+          />
+        )
+      })()}
 
     </div>
   )
