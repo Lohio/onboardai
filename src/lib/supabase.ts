@@ -9,7 +9,10 @@ export function createClient() {
   return createSupabaseClient(supabaseUrl, supabaseAnonKey)
 }
 
+// ─────────────────────────────────────────────
 // Cliente para Server Components y Server Actions
+// Usa import dinámico para evitar errores en contexto cliente
+// ─────────────────────────────────────────────
 export async function createServerSupabaseClient() {
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
