@@ -128,10 +128,10 @@ const BLOQUES_CONFIG: Record<BloqueKey, {
   historia: {
     label: 'Nuestra historia',
     icon: <BookOpen className="w-5 h-5" />,
-    gradient: 'from-indigo-600/20 via-indigo-600/5 to-transparent',
-    iconBg: 'bg-indigo-600/20',
-    iconText: 'text-indigo-400',
-    accent: 'border-indigo-500/30',
+    gradient: 'from-[#0EA5E9]/20 via-[#0EA5E9]/5 to-transparent',
+    iconBg: 'bg-[#0EA5E9]/20',
+    iconText: 'text-[#0EA5E9]',
+    accent: 'border-[#0EA5E9]/30',
   },
   mision: {
     label: 'Misión, visión y valores',
@@ -351,7 +351,7 @@ function ReadBar({ value, color }: { value: number; color: string }) {
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
         style={{
-          boxShadow: value > 0 ? `0 0 8px ${color.includes('indigo') ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.4)'}` : 'none',
+          boxShadow: value > 0 ? `0 0 8px ${color.includes('0EA5E9') ? 'rgba(14,165,233,0.6)' : 'rgba(14,165,233,0.4)'}` : 'none',
         }}
       />
     </div>
@@ -383,7 +383,7 @@ function StepperSidebar({
         </div>
         <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-teal-400"
+            className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-teal-400"
             animate={{ width: `${(completados / BLOQUES_ORDEN.length) * 100}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           />
@@ -629,10 +629,10 @@ function BloqueCard({
         className={cn(
           'relative rounded-2xl overflow-hidden border transition-all duration-300',
           completado
-            ? 'border-teal-500/20 bg-surface-900/60'
+            ? 'border-teal-500/20 bg-[#111110]/60'
             : isActive
-            ? cn('border-white/[0.1] bg-surface-900/80', cfg.accent)
-            : 'border-white/[0.06] bg-surface-900/50',
+            ? cn('border-white/[0.1] bg-[#111110]/80', cfg.accent)
+            : 'border-white/[0.06] bg-[#111110]/50',
           locked && 'opacity-60',
         )}
       >
@@ -675,7 +675,7 @@ function BloqueCard({
               completado
                 ? 'bg-teal-500 text-white'
                 : isActive
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-[#0EA5E9] text-white'
                 : 'bg-white/10 text-white/30',
             )}>
               {numero}
@@ -1006,7 +1006,7 @@ export default function CulturaPage() {
         particleCount: 100,
         spread: 65,
         origin: { y: 0.6 },
-        colors: ['#3B4FD8', '#0D9488', '#6B7CF0', '#2DD4BF', '#ffffff'],
+        colors: ['#0EA5E9', '#0D9488', '#38BDF8', '#2DD4BF', '#ffffff'],
       })
       toast.success('¡Bloque completado! 🎉')
     } catch (err) {
@@ -1092,10 +1092,10 @@ export default function CulturaPage() {
             <div className="relative flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-600/25 flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-indigo-400" />
+                  <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/25 flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 text-[#0EA5E9]" />
                   </div>
-                  <span className="text-[11px] font-medium text-indigo-400/70 uppercase tracking-widest">
+                  <span className="text-[11px] font-medium text-[#0EA5E9]/70 uppercase tracking-widest">
                     Módulo 2
                   </span>
                 </div>

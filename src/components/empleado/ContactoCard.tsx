@@ -47,8 +47,8 @@ const TIPO_CONFIG = {
     label:       'Manager',
     descripcion: 'Tu manager directo',
     Icon:        Briefcase,
-    avatarBg:    'bg-indigo-600/20',
-    avatarText:  'text-indigo-300',
+    avatarBg:    'bg-[#0EA5E9]/20',
+    avatarText:  'text-[#38BDF8]',
   },
   buddy: {
     label:       'Buddy',
@@ -140,7 +140,7 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
         'flex flex-col gap-2 min-h-[110px] p-3',
         'bg-white/[0.02] border border-white/[0.05]',
         esManager
-          ? 'border-l-2 border-l-indigo-500/50 rounded-r-xl'
+          ? 'border-l-2 border-l-[#0EA5E9]/50 rounded-r-xl'
           : 'rounded-xl',
       )}
     >
@@ -178,7 +178,7 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
               href={url}
               target={!url.startsWith('mailto:') ? '_blank' : undefined}
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-white/30 hover:text-indigo-300 transition-colors duration-150"
+              className="flex items-center gap-1 text-xs text-white/30 hover:text-[#38BDF8] transition-colors duration-150"
             >
               <HerramientaIcon h={herramienta} />
               <span>{getHerramientaLabel(herramienta)}</span>
@@ -186,7 +186,7 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
           ) : (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-xs text-white/30 hover:text-indigo-300 transition-colors duration-150"
+              className="flex items-center gap-1 text-xs text-white/30 hover:text-[#38BDF8] transition-colors duration-150"
               title="Copiar email"
             >
               {copied ? (

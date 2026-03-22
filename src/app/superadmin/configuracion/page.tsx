@@ -96,7 +96,7 @@ export default function ConfiguracionPage() {
       <motion.div variants={item} className="grid grid-cols-3 gap-4">
         {[
           { label: 'Empresas', value: stats.empresas, icon: Building2, color: 'text-violet-400' },
-          { label: 'Empleados', value: stats.empleados, icon: Users, color: 'text-indigo-400' },
+          { label: 'Empleados', value: stats.empleados, icon: Users, color: 'text-[#38BDF8]' },
           { label: 'Admins / Dev', value: stats.admins, icon: ShieldCheck, color: 'text-teal-400' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl border border-white/[0.07] p-4 flex items-center gap-3" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -127,7 +127,7 @@ export default function ConfiguracionPage() {
             {Object.entries(PLANES_INFO).map(([key, plan]) => (
               <div key={key} className="rounded-xl border border-white/[0.06] p-4" style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-sm font-semibold ${key === 'enterprise' ? 'text-amber-300' : key === 'pro' ? 'text-indigo-300' : 'text-white/60'}`}>
+                  <span className={`text-sm font-semibold ${key === 'enterprise' ? 'text-amber-300' : key === 'pro' ? 'text-[#7DD3FC]' : 'text-white/60'}`}>
                     {plan.nombre}
                   </span>
                   <span className="text-xs text-white/30">{plan.precio}</span>

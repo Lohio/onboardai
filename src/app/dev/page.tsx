@@ -183,7 +183,7 @@ export default function DevDashboard() {
 
   const m = metricas!
   const ROL_COLORS: Record<string, string> = {
-    empleado: 'bg-indigo-500',
+    empleado: 'bg-[#0EA5E9]',
     admin: 'bg-teal-500',
     dev: 'bg-amber-500',
   }

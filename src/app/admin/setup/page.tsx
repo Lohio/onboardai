@@ -125,7 +125,7 @@ export default function SetupPage() {
       localStorage.setItem('onboarding_setup_completo', 'true')
     }
 
-    toast.success('¡Setup completo! Bienvenido a OnboardAI')
+    toast.success('¡Setup completo! Bienvenido a Heero')
     router.push('/admin')
   }, [setupData, router])
 
@@ -141,7 +141,7 @@ export default function SetupPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin-fast" />
+          <div className="w-5 h-5 border-2 border-[#0EA5E9]/30 border-t-[#0EA5E9] rounded-full animate-spin-fast" />
           <span className="text-sm text-white/40">Cargando...</span>
         </div>
       </div>

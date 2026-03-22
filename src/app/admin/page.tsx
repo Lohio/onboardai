@@ -150,11 +150,11 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
       >
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div className="w-11 h-11 rounded-full flex-shrink-0 bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center overflow-hidden">
+          <div className="w-11 h-11 rounded-full flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/20 flex items-center justify-center overflow-hidden">
             {empleado.foto_url ? (
               <img src={empleado.foto_url} alt={empleado.nombre} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-indigo-300 text-sm font-semibold">{initials}</span>
+              <span className="text-[#7DD3FC] text-sm font-semibold">{initials}</span>
             )}
           </div>
 
@@ -509,7 +509,7 @@ export default function AdminDashboardPage() {
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
                 <defs>
                   <linearGradient id="empGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#3B4FD8" stopOpacity="0.4" />
+                    <stop stopColor="#0EA5E9" stopOpacity="0.4" />
                     <stop offset="1" stopColor="#0D9488" stopOpacity="0.2" />
                   </linearGradient>
                 </defs>
@@ -556,7 +556,7 @@ export default function AdminDashboardPage() {
                   <defs>
                     <linearGradient id="okGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
                       <stop stopColor="#0D9488" stopOpacity="0.35" />
-                      <stop offset="1" stopColor="#3B4FD8" stopOpacity="0.2" />
+                      <stop offset="1" stopColor="#0EA5E9" stopOpacity="0.2" />
                     </linearGradient>
                   </defs>
                   <circle cx="20" cy="20" r="14" stroke="url(#okGrad)" strokeWidth="1.5" />
@@ -589,8 +589,8 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => resolverAlerta(alerta.id)}
-                        className="text-[10px] font-medium text-indigo-400/70 hover:text-indigo-300
-                          border border-indigo-500/20 hover:border-indigo-500/40
+                        className="text-[10px] font-medium text-[#38BDF8]/70 hover:text-[#7DD3FC]
+                          border border-[#0EA5E9]/20 hover:border-[#0EA5E9]/40
                           px-3 min-h-[44px] rounded-md transition-colors duration-150 flex-shrink-0"
                       >
                         Resolver
@@ -649,7 +649,7 @@ export default function AdminDashboardPage() {
                             ? '#0D9488'
                             : entry.progreso >= 30
                             ? '#F59E0B'
-                            : '#3B4FD8'
+                            : '#0EA5E9'
                         }
                       />
                     ))}

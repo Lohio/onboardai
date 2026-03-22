@@ -370,7 +370,7 @@ export default function ConocimientoPage() {
                           'flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md',
                           'transition-colors duration-150',
                           estado === 'vacio'
-                            ? 'text-indigo-400/80 hover:text-indigo-300 border border-indigo-500/25 hover:border-indigo-400/40'
+                            ? 'text-[#38BDF8]/80 hover:text-[#7DD3FC] border border-[#0EA5E9]/25 hover:border-[#38BDF8]/40'
                             : 'text-white/35 hover:text-white/70 border border-white/[0.08] hover:border-white/[0.15]'
                         )}
                       >
@@ -468,13 +468,13 @@ export default function ConocimientoPage() {
                       value={alertaBloqueKey}
                       onChange={e => setAlertaBloqueKey(e.target.value)}
                       className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5
-                        text-white outline-none focus:border-indigo-500/40 transition-colors"
+                        text-white outline-none focus:border-[#0EA5E9]/40 transition-colors"
                     >
-                      <option value="" disabled className="bg-[#0f1f3d]">
+                      <option value="" disabled className="bg-[#111110]">
                         Seleccioná una sección...
                       </option>
                       {TODOS_LOS_BLOQUES.map(b => (
-                        <option key={`${b.modulo}-${b.bloque}`} value={`${b.modulo}-${b.bloque}`} className="bg-[#0f1f3d]">
+                        <option key={`${b.modulo}-${b.bloque}`} value={`${b.modulo}-${b.bloque}`} className="bg-[#111110]">
                           {b.label}
                         </option>
                       ))}
@@ -490,7 +490,7 @@ export default function ConocimientoPage() {
                       value={alertaContenido}
                       onChange={e => setAlertaContenido(e.target.value)}
                       className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-                        px-3 py-2 text-white/80 outline-none focus:border-indigo-500/40
+                        px-3 py-2 text-white/80 outline-none focus:border-[#0EA5E9]/40
                         resize-none font-mono transition-colors placeholder:text-white/20"
                       placeholder="Escribí la respuesta aquí..."
                       rows={6}

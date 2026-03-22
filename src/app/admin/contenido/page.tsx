@@ -52,7 +52,7 @@ const MODULOS: ModuloDef[] = [
     labelCorto: 'M2 Cultura',
     descripcion: 'Historia, misión, valores y reglas de trabajo.',
     icon: <BookOpen className="w-4 h-4" />,
-    color: 'text-indigo-400',
+    color: 'text-[#38BDF8]',
   },
   {
     key: 'rol',
@@ -261,11 +261,11 @@ export default function ContenidoPage() {
                 className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium
                   transition-all duration-150 cursor-pointer
                   ${activo
-                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/20'
+                    ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/20'
                     : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
                   }`}
               >
-                <span className={activo ? 'text-indigo-400' : 'text-white/25'}>
+                <span className={activo ? 'text-[#38BDF8]' : 'text-white/25'}>
                   {mod.icon}
                 </span>
                 <span className="hidden sm:inline">{mod.labelCorto}</span>
@@ -275,7 +275,7 @@ export default function ContenidoPage() {
                     className={`min-w-[18px] h-4.5 px-1 rounded-full text-[10px] font-bold
                       flex items-center justify-center
                       ${activo
-                        ? 'bg-indigo-500/30 text-indigo-300'
+                        ? 'bg-[#0EA5E9]/30 text-[#7DD3FC]'
                         : 'bg-white/[0.06] text-white/30'
                       }`}
                   >
@@ -437,8 +437,8 @@ export default function ContenidoPage() {
                                   transition-opacity duration-150 flex-shrink-0">
                                   <button
                                     onClick={() => setFormulario({ modulo: tabActivo, bloque: bl })}
-                                    className="p-1.5 rounded-lg text-white/30 hover:text-indigo-400
-                                      hover:bg-indigo-600/10 transition-colors duration-150"
+                                    className="p-1.5 rounded-lg text-white/30 hover:text-[#38BDF8]
+                                      hover:bg-[#0EA5E9]/10 transition-colors duration-150"
                                     aria-label="Editar bloque"
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />

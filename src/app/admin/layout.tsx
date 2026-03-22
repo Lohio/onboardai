@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Bot,
   LayoutDashboard,
   Users,
   BookOpen,
@@ -17,6 +16,7 @@ import {
   X,
   LogOut,
 } from 'lucide-react'
+import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
 
 // ─────────────────────────────────────────────
@@ -92,19 +92,19 @@ function NavItem({
           font-medium transition-all duration-150 group
           ${
             activo
-              ? 'bg-indigo-600/25 text-white border border-indigo-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+              ? 'bg-[#0EA5E9]/10 text-white border border-[#0EA5E9]/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
               : 'text-white/55 hover:text-white/85 hover:bg-white/[0.06] border border-transparent'
           }`}
       >
         {/* Indicador lateral para item activo */}
         {activo && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-indigo-400" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-[#0EA5E9]" />
         )}
 
         {/* Ícono con fondo */}
         <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150
           ${activo
-            ? 'bg-indigo-500/20 text-indigo-300'
+            ? 'bg-[#0EA5E9]/15 text-[#38BDF8]'
             : 'bg-white/[0.05] text-white/40 group-hover:bg-white/[0.08] group-hover:text-white/65'
           }`}
         >
@@ -182,14 +182,9 @@ function SidebarContent({
     <div className="flex flex-col h-full">
       {/* ── Logo / marca ── */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.06]">
-        <div className="w-9 h-9 rounded-xl bg-indigo-600/25 border border-indigo-500/30
-          flex items-center justify-center flex-shrink-0
-          shadow-[0_0_16px_rgba(59,79,216,0.2)]">
-          <Bot className="w-[18px] h-[18px] text-indigo-300" />
-        </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white/90 leading-none">OnboardAI</p>
-          <p className="text-[11px] text-white/35 mt-0.5">Panel de administración</p>
+          <HeeroLogo size="sm" />
+          <p className="text-[11px] text-white/35 mt-1.5">Panel de administración</p>
         </div>
         {onClose && (
           <button
@@ -234,9 +229,9 @@ function SidebarContent({
       <div className="px-3 py-3 border-t border-white/[0.06]">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl
           hover:bg-white/[0.04] transition-colors duration-150 cursor-default">
-          <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30
+          <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/25
             flex items-center justify-center flex-shrink-0">
-            <span className="text-indigo-300 text-xs font-bold">{initials}</span>
+            <span className="text-[#38BDF8] text-xs font-bold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white/80 truncate">{adminNombre || 'Admin'}</p>
@@ -324,12 +319,12 @@ function AdminHeader({
       <div ref={menuRef} className="relative">
         <button
           onClick={() => setMenuAbierto(prev => !prev)}
-          className="w-7 h-7 rounded-full bg-indigo-600/25 border border-indigo-500/25
-            flex items-center justify-center hover:bg-indigo-600/40 hover:border-indigo-500/50
+          className="w-7 h-7 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/25
+            flex items-center justify-center hover:bg-[#0EA5E9]/25 hover:border-[#0EA5E9]/40
             transition-colors duration-150 cursor-pointer"
           aria-label="Menú de usuario"
         >
-          <span className="text-indigo-300 text-[11px] font-semibold">{initials}</span>
+          <span className="text-[#38BDF8] text-[11px] font-semibold">{initials}</span>
         </button>
 
         <AnimatePresence>
@@ -340,8 +335,8 @@ function AdminHeader({
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               className="absolute right-0 top-full mt-2 w-48 z-50
-                rounded-xl border border-white/[0.08] bg-[#0f1f3d]/95 backdrop-blur-xl
-                shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
+                rounded-xl border border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
+                shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
             >
               {/* Info del usuario */}
               <div className="px-3 py-3 border-b border-white/[0.06]">
@@ -478,7 +473,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-dvh gradient-bg flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin-fast" />
+          <div className="w-5 h-5 border-2 border-[#0EA5E9]/30 border-t-[#0EA5E9] rounded-full animate-spin-fast" />
           <span className="text-sm text-white/40">Cargando...</span>
         </div>
       </div>
@@ -527,7 +522,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Drawer */}
             <motion.aside
               className="fixed left-0 top-0 h-full w-64 md:hidden z-50
-                border-r border-white/[0.06] bg-surface-900/95 backdrop-blur-xl"
+                border-r border-white/[0.06] bg-[#111110]/95 backdrop-blur-xl"
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}

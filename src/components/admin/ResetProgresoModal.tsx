@@ -35,7 +35,7 @@ const MODULO_CONFIG: Record<
     label: 'M2 — Cultura',
     descripcion: 'Se eliminan todos los bloques completados del módulo de cultura e identidad.',
     icon: <BookOpen className="w-4 h-4" />,
-    color: 'text-indigo-400',
+    color: 'text-[#38BDF8]',
   },
   rol: {
     label: 'M3 — Rol y herramientas',
@@ -160,7 +160,7 @@ export function ResetProgresoModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           className="w-full max-w-md rounded-2xl border border-white/[0.08]
-            bg-[#0f1f3d]/95 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]
+            bg-[#111110]/95 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]
             pointer-events-auto"
           initial={{ scale: 0.94, y: 12, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}

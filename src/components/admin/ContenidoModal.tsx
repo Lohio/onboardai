@@ -357,7 +357,7 @@ export function ContenidoModal({
           transition={{ type: 'spring', stiffness: 400, damping: 32 }}
         >
           <div
-            className="relative bg-[#111e38] border border-white/[0.12]
+            className="relative bg-[#111110] border border-white/[0.12]
               rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.6)]
               w-full max-w-2xl max-h-[88vh] flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -395,7 +395,7 @@ export function ContenidoModal({
                     onChange={e => setTitulo(e.target.value)}
                     placeholder="Título de la sección"
                     className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-                      px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+                      px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
                       transition-colors placeholder:text-white/20"
                   />
 
@@ -470,19 +470,19 @@ function SelectorTipo({
               'flex flex-col items-center gap-2 py-3 px-3 rounded-xl text-center',
               'border transition-all duration-150 group',
               activo
-                ? 'bg-indigo-600/15 border-indigo-500/50'
-                : 'border-white/[0.07] bg-white/[0.02] hover:border-indigo-500/40 hover:bg-indigo-500/[0.07]'
+                ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]/40'
+                : 'border-white/[0.07] bg-white/[0.02] hover:border-[#0EA5E9]/40 hover:bg-[#0EA5E9]/[0.07]'
             )}
           >
             <div className={cn(
               'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150',
               activo
-                ? 'bg-indigo-500/20 border border-indigo-500/30'
-                : 'bg-white/[0.06] border border-white/[0.08] group-hover:bg-indigo-500/15 group-hover:border-indigo-500/25'
+                ? 'bg-[#0EA5E9]/15 border border-[#0EA5E9]/20'
+                : 'bg-white/[0.06] border border-white/[0.08] group-hover:bg-[#0EA5E9]/10 group-hover:border-[#0EA5E9]/20'
             )}>
               <Icon className={cn(
                 'w-4 h-4 transition-colors duration-150',
-                activo ? 'text-indigo-300' : 'text-white/40 group-hover:text-indigo-300'
+                activo ? 'text-[#7DD3FC]' : 'text-white/40 group-hover:text-[#7DD3FC]'
               )} />
             </div>
             <div>
@@ -507,11 +507,11 @@ function BtnAgregarBloque() {
   return (
     <div className="flex items-center gap-3 mt-3 p-3
       rounded-xl border border-dashed border-white/[0.08]
-      hover:border-indigo-500/30 hover:bg-indigo-600/5
+      hover:border-[#0EA5E9]/20 hover:bg-[#0EA5E9]/[0.05]
       cursor-pointer transition-all duration-150 group">
-      <div className="w-6 h-6 rounded-md bg-indigo-600/20
+      <div className="w-6 h-6 rounded-md bg-[#0EA5E9]/12
         flex items-center justify-center flex-shrink-0">
-        <Plus className="w-3.5 h-3.5 text-indigo-400" />
+        <Plus className="w-3.5 h-3.5 text-[#38BDF8]" />
       </div>
       <span className="text-xs text-white/35 group-hover:text-white/60">
         Agregar otro bloque de contenido
@@ -547,7 +547,7 @@ function FormTexto({
         value={contenido}
         onChange={e => setContenido(e.target.value)}
         className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-xl
-          px-3 py-2.5 text-white/80 outline-none focus:border-indigo-500/40
+          px-3 py-2.5 text-white/80 outline-none focus:border-[#0EA5E9]/40
           resize-none font-mono transition-colors placeholder:text-white/20"
         placeholder={'# Título\n\nEscribí el contenido acá...\n\n**negrita** *itálica*\n- lista'}
         style={{ minHeight: '280px' }}
@@ -610,8 +610,8 @@ function Dropzone({
         className={cn(
           'rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-150',
           dragOver
-            ? 'border-indigo-400/50 bg-indigo-500/[0.07]'
-            : 'border-white/[0.10] hover:border-indigo-400/30 hover:bg-white/[0.02]'
+            ? 'border-[#0EA5E9]/50 bg-[#0EA5E9]/[0.07]'
+            : 'border-white/[0.10] hover:border-[#0EA5E9]/30 hover:bg-white/[0.02]'
         )}
       >
         {uploadStatus === 'idle' && (
@@ -623,7 +623,7 @@ function Dropzone({
         )}
         {uploadStatus === 'uploading' && (
           <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#0EA5E9]/20 border-t-[#0EA5E9] rounded-full animate-spin" />
             <p className="text-sm text-white/40">Subiendo{uploadedFile ? ` "${uploadedFile.name}"` : ''}...</p>
           </div>
         )}
@@ -724,7 +724,7 @@ function FormImagen({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: 
             onChange={e => setUrl(e.target.value)}
             placeholder="https://..."
             className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-              px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+              px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
               transition-colors placeholder:text-white/20"
           />
           {previewUrl && (
@@ -767,7 +767,7 @@ function FormVideo({
           onChange={e => setUrl(e.target.value)}
           placeholder="https://youtube.com/watch?v=... o https://vimeo.com/..."
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-            px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+            px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
             transition-colors placeholder:text-white/20"
         />
         <p className="text-[10px] text-white/25 mt-1.5">Soporta links de YouTube y Vimeo</p>
@@ -825,7 +825,7 @@ function FormPdf({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: For
             onChange={e => setUrl(e.target.value)}
             placeholder="https://docs.google.com/... o URL directa al PDF"
             className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-              px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+              px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
               transition-colors placeholder:text-white/20"
           />
           {esGoogleDrive && (
@@ -871,7 +871,7 @@ function FormLink({
           onChange={e => setUrl(e.target.value)}
           placeholder="https://..."
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-            px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+            px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
             transition-colors placeholder:text-white/20"
         />
       </div>
@@ -886,7 +886,7 @@ function FormLink({
           onChange={e => setDescripcion(e.target.value)}
           placeholder="¿Qué encontrarán en este link?"
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-            px-3 py-2.5 text-white outline-none focus:border-indigo-500/40
+            px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
             transition-colors placeholder:text-white/20"
         />
       </div>
@@ -899,10 +899,10 @@ function FormLink({
           value={plataforma}
           onChange={e => setPlataforma(e.target.value as LinkPlataforma)}
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
-            px-3 py-2.5 text-white outline-none focus:border-indigo-500/40 transition-colors"
+            px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40 transition-colors"
         >
           {LINK_PLATAFORMAS.map(p => (
-            <option key={p.value} value={p.value} className="bg-[#0f1f3d]">
+            <option key={p.value} value={p.value} className="bg-[#111110]">
               {p.label}
             </option>
           ))}

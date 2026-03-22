@@ -205,13 +205,13 @@ function HeroAvatar({
       onClick={() => inputRef.current?.click()}
     >
       <div
-        className="w-14 h-14 rounded-full overflow-hidden bg-indigo-900/50 flex items-center justify-center"
+        className="w-14 h-14 rounded-full overflow-hidden bg-[#0EA5E9]/10 flex items-center justify-center"
         style={{ border: '4px solid #0a1628' }}
       >
         {src ? (
           <img src={src} alt={nombre} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-indigo-300 text-xl font-semibold">{initials}</span>
+          <span className="text-[#7DD3FC] text-xl font-semibold">{initials}</span>
         )}
       </div>
 
@@ -240,11 +240,11 @@ function HeroAvatar({
 
 function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
   return (
-    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 flex items-center justify-center">
       {src ? (
         <img src={src} alt={nombre} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-indigo-300 text-xs font-semibold">{getInitials(nombre)}</span>
+        <span className="text-[#7DD3FC] text-xs font-semibold">{getInitials(nombre)}</span>
       )}
     </div>
   )
@@ -558,7 +558,7 @@ export default function PerfilPage() {
                   className="absolute inset-0 pointer-events-none animate-pulse opacity-50"
                   style={{
                     background:
-                      'radial-gradient(ellipse at 110% 50%, rgba(59,79,216,0.15) 0%, transparent 55%)',
+                      'radial-gradient(ellipse at 110% 50%, rgba(14,165,233,0.15) 0%, transparent 55%)',
                   }}
                 />
               </div>
@@ -607,10 +607,10 @@ export default function PerfilPage() {
                   )}
                   <button
                     onClick={handleCopyEmail}
-                    className="flex items-center gap-1.5 text-xs text-white/45 hover:text-indigo-300 transition-colors duration-150 group"
+                    className="flex items-center gap-1.5 text-xs text-white/45 hover:text-[#7DD3FC] transition-colors duration-150 group"
                     title="Copiar email"
                   >
-                    <Mail className="w-3.5 h-3.5 text-white/30 group-hover:text-indigo-400 transition-colors flex-shrink-0" />
+                    <Mail className="w-3.5 h-3.5 text-white/30 group-hover:text-[#0EA5E9] transition-colors flex-shrink-0" />
                     <span className="font-mono">{perfil.email}</span>
                     <span className="ml-0.5">
                       {emailCopied ? (
@@ -660,7 +660,7 @@ export default function PerfilPage() {
                       placeholder="Contá algo sobre vos..."
                       className={cn(
                         'w-full text-sm text-white/80 bg-surface-800/60 rounded-lg',
-                        'border border-white/10 focus:border-indigo-500/40',
+                        'border border-white/10 focus:border-[#0EA5E9]/40',
                         'p-2.5 resize-none outline-none',
                         'placeholder:text-white/25 transition-colors duration-150',
                       )}
@@ -707,13 +707,13 @@ export default function PerfilPage() {
                   const iconBg = completado
                     ? 'bg-teal-500/15'
                     : activo
-                    ? 'bg-indigo-600/20'
+                    ? 'bg-[#0EA5E9]/20'
                     : 'bg-white/[0.03]'
 
                   const iconText = completado
                     ? 'text-teal-400'
                     : activo
-                    ? 'text-indigo-400'
+                    ? 'text-[#38BDF8]'
                     : 'text-white/20'
 
                   const estadoLabel = completado
@@ -725,7 +725,7 @@ export default function PerfilPage() {
                   const estadoColor = completado
                     ? 'text-teal-400'
                     : activo
-                    ? 'text-indigo-400'
+                    ? 'text-[#38BDF8]'
                     : 'text-white/20'
 
                   return (
@@ -788,7 +788,7 @@ export default function PerfilPage() {
 
                       <a
                         href={`mailto:${miembro.email}`}
-                        className="text-white/25 hover:text-indigo-400 transition-colors duration-150 p-1.5 rounded flex-shrink-0"
+                        className="text-white/25 hover:text-[#38BDF8] transition-colors duration-150 p-1.5 rounded flex-shrink-0"
                         title={`Escribir a ${miembro.nombre}`}
                       >
                         <Mail className="w-4 h-4" />

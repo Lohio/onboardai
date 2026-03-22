@@ -91,7 +91,7 @@ function SidebarContent({ nombre, pathname, onClose }: {
           <Globe className="w-[18px] h-[18px] text-violet-300" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white/90 leading-none">OnboardAI</p>
+          <p className="text-sm font-bold text-white/90 leading-none">Heero</p>
           <p className="text-[11px] text-violet-400/70 mt-0.5 font-medium">SuperAdmin</p>
         </div>
         {onClose && (

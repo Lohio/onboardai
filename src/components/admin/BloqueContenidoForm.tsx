@@ -51,7 +51,7 @@ function fieldCls(hasError: boolean): string {
   return cn(
     'w-full px-3 py-2 rounded-lg text-sm bg-white/[0.04] border text-white/85',
     'placeholder:text-white/20 outline-none transition-colors duration-150',
-    'focus:bg-white/[0.06] focus:border-indigo-500/60',
+    'focus:bg-white/[0.06] focus:border-[#0EA5E9]/60',
     hasError ? 'border-red-500/50' : 'border-white/[0.08]',
   )
 }
@@ -146,9 +146,9 @@ export function BloqueContenidoForm({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className="rounded-xl border border-indigo-500/20 bg-indigo-600/[0.05] p-4 space-y-3"
+      className="rounded-xl border border-[#0EA5E9]/15 bg-[#0EA5E9]/[0.05] p-4 space-y-3"
     >
-      <p className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">
+      <p className="text-xs font-semibold text-[#7DD3FC] uppercase tracking-wider">
         {esEdicion ? 'Editar bloque' : 'Nuevo bloque'}
       </p>
 

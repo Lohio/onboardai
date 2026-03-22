@@ -83,7 +83,7 @@ function FieldInput({
     <div className="relative">
       <div className={cn(
         'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-150',
-        hasError ? 'text-red-400' : isFilled ? 'text-indigo-400' : 'text-white/25'
+        hasError ? 'text-red-400' : isFilled ? 'text-[#38BDF8]' : 'text-white/25'
       )}>
         {icon}
       </div>
@@ -100,7 +100,7 @@ function FieldInput({
           'bg-surface-800/80 rounded-lg',
           'border transition-all duration-150',
           'outline-none',
-          'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50',
+          'focus:ring-2 focus:ring-[#0EA5E9]/30 focus:border-[#0EA5E9]/40',
           rightElement ? 'pl-10 pr-10' : 'pl-10 pr-4',
           hasError
             ? 'border-red-500/40 bg-red-500/5'
@@ -263,7 +263,7 @@ export default function RegisterPage() {
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] opacity-[0.15]"
         style={{
           background:
-            'radial-gradient(ellipse at center, rgba(59,79,216,0.8) 0%, transparent 70%)',
+            'radial-gradient(ellipse at center, rgba(14,165,233,0.8) 0%, transparent 70%)',
           filter: 'blur(50px)',
         }}
       />
@@ -280,21 +280,21 @@ export default function RegisterPage() {
             className="inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-4 mx-auto"
             style={{
               background:
-                'linear-gradient(135deg, rgba(59,79,216,0.3) 0%, rgba(107,124,240,0.15) 100%)',
-              border: '1px solid rgba(59,79,216,0.4)',
-              boxShadow: '0 0 24px rgba(59,79,216,0.2)',
+                'linear-gradient(135deg, rgba(14,165,233,0.3) 0%, rgba(107,124,240,0.15) 100%)',
+              border: '1px solid rgba(14,165,233,0.4)',
+              boxShadow: '0 0 24px rgba(14,165,233,0.2)',
             }}
             whileHover={{ scale: 1.05, rotate: 3 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            <Zap className="w-5 h-5 text-indigo-400" fill="currentColor" />
+            <Zap className="w-5 h-5 text-[#38BDF8]" fill="currentColor" />
           </motion.div>
 
           <h1 className="text-xl font-semibold tracking-tight text-white mb-1">
             Registrá tu empresa
           </h1>
           <p className="text-sm text-white/40">
-            Creá tu cuenta de OnboardAI en segundos
+            Creá tu cuenta de Heero en segundos
           </p>
         </motion.div>
 
@@ -450,7 +450,7 @@ export default function RegisterPage() {
           ¿Ya tenés cuenta?{' '}
           <Link
             href="/auth/login"
-            className="text-indigo-400/70 hover:text-indigo-300 transition-colors duration-150"
+            className="text-[#38BDF8]/70 hover:text-[#7DD3FC] transition-colors duration-150"
           >
             Iniciá sesión
           </Link>

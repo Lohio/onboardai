@@ -171,7 +171,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh gradient-bg flex">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-white/[0.06] bg-surface-900/40">
+      <aside className="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-white/[0.06] bg-[#111110]/40">
         <SidebarContent
           pathname={pathname}
           devNombre={devNombre}
@@ -213,7 +213,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
             />
             <motion.aside
               className="fixed left-0 top-0 h-full w-56 md:hidden z-50
-                border-r border-white/[0.06] bg-surface-900/95 backdrop-blur-xl"
+                border-r border-white/[0.06] bg-[#111110]/95 backdrop-blur-xl"
               initial={{ x: -240 }}
               animate={{ x: 0 }}
               exit={{ x: -240 }}

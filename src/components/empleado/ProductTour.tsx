@@ -44,7 +44,7 @@ const PASOS: PasoTour[] = [
     posicion: 'center',
     titulo: '¡Bienvenido/a a tu onboarding! 👋',
     descripcion:
-      'En los próximos minutos te voy a mostrar cómo funciona OnboardAI para que tu primer día sea lo más fácil posible.',
+      'En los próximos minutos te voy a mostrar cómo funciona Heero para que tu primer día sea lo más fácil posible.',
   },
   {
     elementId: 'tour-navbar-modulos',
@@ -90,7 +90,7 @@ const TOOLTIP_MARGIN  = 14
 const TOOLTIP_H_EST   = 190 // altura estimada del tooltip para cálculo 'top'
 
 // Colores confetti
-const CONFETTI_COLORS = ['#3B4FD8', '#0D9488', '#F59E0B', '#EC4899', '#8B5CF6', '#10B981']
+const CONFETTI_COLORS = ['#0EA5E9', '#0D9488', '#F59E0B', '#EC4899', '#8B5CF6', '#10B981']
 
 // ─────────────────────────────────────────────
 // Generador de confetti (estable entre renders)
@@ -141,7 +141,7 @@ function TooltipContenido({
   return (
     <>
       {/* Número de paso */}
-      <p style={{ color: 'rgba(99,102,241,0.65)', fontSize: '11px', marginBottom: '6px' }}>
+      <p style={{ color: 'rgba(14,165,233,0.65)', fontSize: '11px', marginBottom: '6px' }}>
         Paso {pasoActual + 1} de {total}
       </p>
 
@@ -183,9 +183,9 @@ function TooltipContenido({
               borderRadius: '9999px',
               background:
                 i === pasoActual
-                  ? 'rgba(99,102,241,1)'
+                  ? 'rgba(14,165,233,1)'
                   : i < pasoActual
-                  ? 'rgba(99,102,241,0.35)'
+                  ? 'rgba(14,165,233,0.35)'
                   : 'rgba(255,255,255,0.1)',
               transition: 'width 0.25s ease, background 0.25s ease',
             }}
@@ -221,7 +221,7 @@ function TooltipContenido({
             fontSize: '12px',
             fontWeight: 500,
             color: '#fff',
-            background: '#3B4FD8',
+            background: '#0EA5E9',
             border: 'none',
             cursor: 'pointer',
           }}
@@ -447,8 +447,8 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
 
   // Estilos reutilizables del tooltip/modal
   const estiloContenedor = {
-    background:   '#111e38',
-    border:       '0.5px solid rgba(59,79,216,0.45)',
+    background:   '#111110',
+    border:       '0.5px solid rgba(14,165,233,0.45)',
     borderRadius: '14px',
     padding:      '20px',
     boxShadow:    '0 8px 32px rgba(0,0,0,0.5)',
@@ -551,8 +551,8 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
                 transition={{ type: 'spring', stiffness: 280, damping: 28 }}
                 style={{
                   position: 'absolute',
-                  border:      '2px solid rgba(59,79,216,0.8)',
-                  boxShadow:   '0 0 0 4px rgba(59,79,216,0.15)',
+                  border:      '2px solid rgba(14,165,233,0.8)',
+                  boxShadow:   '0 0 0 4px rgba(14,165,233,0.15)',
                   pointerEvents: 'none',
                 }}
               />

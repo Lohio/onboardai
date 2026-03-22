@@ -44,7 +44,7 @@ function tiempoRelativo(iso: string): string {
 function planBadge(plan: string | null) {
   const cfg: Record<string, string> = {
     free:       'bg-white/[0.06] text-white/40 border-white/[0.08]',
-    pro:        'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+    pro:        'bg-[#0EA5E9]/10 text-[#7DD3FC] border-[#0EA5E9]/20',
     enterprise: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   }
   const p = plan ?? 'free'
@@ -177,7 +177,7 @@ export default function SuperadminDashboard() {
       value: kpis.empleados,
       sub:   'en toda la plataforma',
       icon: <Users className="w-5 h-5" />,
-      color: 'border-indigo-500/25 bg-indigo-600/8',
+      color: 'border-[#0EA5E9]/20 bg-[#0EA5E9]/[0.08]',
     },
     {
       label: 'Onboarding global',
@@ -315,7 +315,7 @@ export default function SuperadminDashboard() {
       {/* Panel de accesos rápidos */}
       <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { href: '/superadmin/empleados', label: 'Ver todos los empleados', sub: 'Cross-empresa', icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
+          { href: '/superadmin/empleados', label: 'Ver todos los empleados', sub: 'Cross-empresa', icon: Users, color: 'text-[#38BDF8]', bg: 'bg-[#0EA5E9]/10 border-[#0EA5E9]/15' },
           { href: '/superadmin/analitica', label: 'Analítica global',          sub: 'Métricas y gráficos', icon: BarChart3, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
           { href: '/superadmin/configuracion', label: 'Configuración',          sub: 'Planes y gestión', icon: ShieldCheck, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
         ].map(card => (

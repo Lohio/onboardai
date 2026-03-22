@@ -23,7 +23,7 @@ type FiltroPlan   = 'todos' | 'free' | 'pro' | 'enterprise'
 function planBadge(plan: string | null) {
   const cfg: Record<string, string> = {
     free:       'bg-white/[0.06] text-white/40 border-white/[0.08]',
-    pro:        'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
+    pro:        'bg-[#0EA5E9]/10 text-[#7DD3FC] border-[#0EA5E9]/20',
     enterprise: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
   }
   const p = plan ?? 'free'

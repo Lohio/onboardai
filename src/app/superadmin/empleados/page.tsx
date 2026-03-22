@@ -155,8 +155,8 @@ export default function EmpleadosGlobalPage() {
             <div key={e.id} className="grid grid-cols-[1fr_180px_140px_160px_80px] gap-4 px-5 py-3.5 items-center hover:bg-white/[0.02] transition-colors">
               {/* Nombre */}
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-indigo-600/25 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
-                  <span className="text-indigo-300 text-[11px] font-bold">{e.nombre?.slice(0, 2).toUpperCase() || 'E'}</span>
+                <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#7DD3FC] text-[11px] font-bold">{e.nombre?.slice(0, 2).toUpperCase() || 'E'}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white/85 truncate">{e.nombre}</p>
@@ -179,7 +179,7 @@ export default function EmpleadosGlobalPage() {
                 </div>
                 {e.onboarding_pct === 100
                   ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
-                  : <Circle className={cn('w-3.5 h-3.5 flex-shrink-0', e.onboarding_pct > 0 ? 'text-indigo-400/60' : 'text-white/15')} />
+                  : <Circle className={cn('w-3.5 h-3.5 flex-shrink-0', e.onboarding_pct > 0 ? 'text-[#38BDF8]/60' : 'text-white/15')} />
                 }
               </div>
             </div>

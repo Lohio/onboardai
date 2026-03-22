@@ -37,7 +37,7 @@ const textareaCls = [
   'bg-surface-800/80 rounded-lg p-3 resize-none',
   'border border-white/[0.07] hover:border-white/15',
   'transition-all duration-150 outline-none',
-  'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50',
+  'focus:ring-2 focus:ring-[#0EA5E9]/30 focus:border-[#0EA5E9]/40',
 ].join(' ')
 
 // ─────────────────────────────────────────────

@@ -85,12 +85,12 @@ function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
       <div
         className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center self-end mb-5
           ${esUsuario
-            ? 'bg-indigo-600/20 border border-indigo-500/30'
+            ? 'bg-[#0EA5E9]/20 border border-[#0EA5E9]/30'
             : 'bg-teal-500/15 border border-teal-500/20'
           }`}
       >
         {esUsuario
-          ? <span className="text-[10px] font-semibold text-indigo-300">{initials}</span>
+          ? <span className="text-[10px] font-semibold text-[#7DD3FC]">{initials}</span>
           : <Bot className="w-3.5 h-3.5 text-teal-400" />
         }
       </div>
@@ -101,7 +101,7 @@ function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
         <div
           className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed
             ${esUsuario
-              ? 'bg-[#1e2e6e] border border-indigo-500/40 text-white/88 rounded-tr-sm'
+              ? 'bg-[#0c2a3d] border border-[#0EA5E9]/40 text-white/88 rounded-tr-sm'
               : 'bg-white/[0.04] border border-white/[0.08] text-white/78 rounded-tl-sm'
             }`}
         >
@@ -145,7 +145,7 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
         <p className="text-xs text-white/30">
           Preguntame sobre la empresa, tus tareas, procesos o cualquier duda que tengas.
         </p>
-        <p className="text-[11px] text-indigo-400/50 mt-1">
+        <p className="text-[11px] text-[#0EA5E9]/50 mt-1">
           También podés chatear desde el ícono flotante en cualquier módulo.
         </p>
       </div>
@@ -385,7 +385,7 @@ export default function AsistentePage() {
           <button
             onClick={() => enviar()}
             disabled={!input.trim() || enviando}
-            className="w-8 h-8 rounded-lg bg-indigo-600/80 hover:bg-indigo-600
+            className="w-8 h-8 rounded-lg bg-[#0EA5E9]/80 hover:bg-[#0EA5E9]
               disabled:opacity-30 disabled:cursor-not-allowed
               flex items-center justify-center flex-shrink-0
               transition-colors duration-150 mb-0.5"

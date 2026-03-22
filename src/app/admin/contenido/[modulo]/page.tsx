@@ -54,7 +54,7 @@ const MODULO_MAP: Record<ModuloKey, ModuloDef> = {
     label: 'M2 · Cultura e Identidad',
     descripcion: 'Historia, misión, valores y reglas de trabajo.',
     icon: <BookOpen className="w-4 h-4" />,
-    accentColor: 'text-indigo-400',
+    accentColor: 'text-[#38BDF8]',
   },
   rol: {
     key: 'rol',
@@ -325,7 +325,7 @@ export default function ModuloContenidoPage() {
         <p className="text-sm text-white/40">Módulo no encontrado</p>
         <Link
           href="/admin/contenido"
-          className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+          className="text-sm text-[#38BDF8] hover:text-[#7DD3FC] transition-colors"
         >
           ← Volver al contenido
         </Link>
@@ -461,9 +461,9 @@ export default function ModuloContenidoPage() {
                     className={`group relative flex items-start gap-3 px-4 py-4 rounded-xl
                       border transition-all duration-150 select-none
                       ${draggingIdx === idx
-                        ? 'opacity-40 border-indigo-500/40 bg-indigo-600/[0.08] scale-[0.99]'
+                        ? 'opacity-40 border-[#0EA5E9]/40 bg-[#0EA5E9]/[0.08] scale-[0.99]'
                         : dragOverIdx === idx && draggingIdx !== idx
-                          ? 'border-indigo-500/50 bg-indigo-600/[0.06] shadow-[0_0_0_1px_rgba(99,102,241,0.3)]'
+                          ? 'border-[#0EA5E9]/50 bg-[#0EA5E9]/[0.06] shadow-[0_0_0_1px_rgba(14,165,233,0.3)]'
                           : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.08]'
                       }`}
                   >
@@ -496,8 +496,8 @@ export default function ModuloContenidoPage() {
                       opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                       <button
                         onClick={() => setFormulario(bl)}
-                        className="p-1.5 rounded-lg text-white/30 hover:text-indigo-400
-                          hover:bg-indigo-600/10 transition-colors duration-150"
+                        className="p-1.5 rounded-lg text-white/30 hover:text-[#38BDF8]
+                          hover:bg-[#0EA5E9]/10 transition-colors duration-150"
                         aria-label="Editar bloque"
                       >
                         <Edit3 className="w-3.5 h-3.5" />

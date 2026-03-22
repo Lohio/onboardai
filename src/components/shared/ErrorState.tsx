@@ -26,7 +26,7 @@ export function ErrorState({
       <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true">
         <defs>
           <linearGradient id="errGrad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#3B4FD8" stopOpacity="0.4" />
+            <stop stopColor="#0EA5E9" stopOpacity="0.4" />
             <stop offset="1" stopColor="#0D9488" stopOpacity="0.25" />
           </linearGradient>
         </defs>
@@ -47,8 +47,8 @@ export function ErrorState({
 
       <button
         onClick={onRetry}
-        className="min-h-[44px] px-6 rounded-lg border border-indigo-500/30 text-sm text-indigo-400
-          hover:bg-indigo-600/10 hover:border-indigo-500/50 transition-colors duration-150"
+        className="min-h-[44px] px-6 rounded-lg border border-[#0EA5E9]/20 text-sm text-[#38BDF8]
+          hover:bg-[#0EA5E9]/[0.08] hover:border-[#0EA5E9]/40 transition-colors duration-150"
       >
         Reintentar
       </button>

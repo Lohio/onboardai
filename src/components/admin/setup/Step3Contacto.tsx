@@ -122,14 +122,14 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
     <div className="glass-card rounded-2xl p-6 sm:p-8">
       {/* Ícono y título */}
       <div className="flex flex-col items-center text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30
+        <div className="w-16 h-16 rounded-2xl bg-[#0EA5E9]/12 border border-[#0EA5E9]/20
           flex items-center justify-center mb-4
-          shadow-[0_0_32px_rgba(59,79,216,0.2)]">
-          <MessageSquare className="w-8 h-8 text-indigo-400" />
+          shadow-[0_0_32px_rgba(14,165,233,0.2)]">
+          <MessageSquare className="w-8 h-8 text-[#38BDF8]" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-1">Herramientas de contacto</h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Elegí cómo van a poder contactar a sus compañeros los empleados desde OnboardAI.
+          Elegí cómo van a poder contactar a sus compañeros los empleados desde Heero.
           Podés seleccionar más de una.
         </p>
       </div>
@@ -147,7 +147,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
                 'w-full flex items-center gap-4 p-4 rounded-xl text-left',
                 'border transition-all duration-150',
                 isSelected
-                  ? 'border-indigo-500/50 bg-indigo-600/10'
+                  ? 'border-[#0EA5E9]/40 bg-[#0EA5E9]/[0.08]'
                   : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.03]'
               )}
             >
@@ -155,7 +155,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
               <div className={cn(
                 'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
                 isSelected
-                  ? 'bg-indigo-500/20 text-indigo-300'
+                  ? 'bg-[#0EA5E9]/15 text-[#7DD3FC]'
                   : 'bg-white/[0.05] text-white/40'
               )}>
                 <HerramientaIcon h={opcion.value} cls="w-5 h-5" />
@@ -177,7 +177,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
                 'w-4 h-4 rounded flex items-center justify-center flex-shrink-0',
                 'border-2 transition-all duration-150',
                 isSelected
-                  ? 'border-indigo-400 bg-indigo-400'
+                  ? 'border-[#0EA5E9] bg-[#0EA5E9]'
                   : 'border-white/20 bg-transparent'
               )}>
                 {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
@@ -194,14 +194,14 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
             'w-full flex items-center gap-4 p-4 rounded-xl text-left',
             'border transition-all duration-150',
             otraSeleccionada
-              ? 'border-indigo-500/50 bg-indigo-600/10'
+              ? 'border-[#0EA5E9]/40 bg-[#0EA5E9]/[0.08]'
               : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.03]'
           )}
         >
           <div className={cn(
             'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
             otraSeleccionada
-              ? 'bg-indigo-500/20 text-indigo-300'
+              ? 'bg-[#0EA5E9]/15 text-[#7DD3FC]'
               : 'bg-white/[0.05] text-white/40'
           )}>
             <Plus className="w-5 h-5" />
@@ -221,7 +221,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
             'w-4 h-4 rounded flex items-center justify-center flex-shrink-0',
             'border-2 transition-all duration-150',
             otraSeleccionada
-              ? 'border-indigo-400 bg-indigo-400'
+              ? 'border-[#0EA5E9] bg-[#0EA5E9]'
               : 'border-white/20 bg-transparent'
           )}>
             {otraSeleccionada && <Check className="w-2.5 h-2.5 text-white" />}
@@ -239,7 +239,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
               className="w-full px-4 py-2.5 rounded-lg text-sm
                 bg-white/[0.04] border border-white/[0.10]
                 text-white placeholder:text-white/25
-                focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06]
+                focus:outline-none focus:border-[#0EA5E9]/40 focus:bg-white/[0.06]
                 transition-all duration-150"
               autoFocus
             />

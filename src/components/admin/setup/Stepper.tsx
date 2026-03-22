@@ -35,7 +35,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                   isCompleted
                     ? 'bg-teal-500 text-white'
                     : isActive
-                      ? 'bg-indigo-600 text-white shadow-[0_0_16px_rgba(59,79,216,0.4)]'
+                      ? 'bg-[#0EA5E9] text-white shadow-[0_0_16px_rgba(14,165,233,0.4)]'
                       : 'bg-white/[0.06] text-white/30'
                 )}
               >
@@ -51,7 +51,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                   isCompleted
                     ? 'text-teal-400'
                     : isActive
-                      ? 'text-indigo-300'
+                      ? 'text-[#7DD3FC]'
                       : 'text-white/25'
                 )}
               >

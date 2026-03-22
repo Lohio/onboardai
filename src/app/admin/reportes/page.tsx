@@ -192,13 +192,13 @@ function EmpleadoReporteCard({
         {/* Fila superior: avatar + nombre + badge */}
         <div className="flex items-start gap-2.5">
           {/* Avatar */}
-          <div className="w-9 h-9 rounded-full flex-shrink-0 bg-indigo-600/20 border border-indigo-500/20
+          <div className="w-9 h-9 rounded-full flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/20
             flex items-center justify-center overflow-hidden">
             {emp.foto_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={emp.foto_url} alt={emp.nombre} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-indigo-300 text-xs font-semibold">{initials}</span>
+              <span className="text-[#7DD3FC] text-xs font-semibold">{initials}</span>
             )}
           </div>
 
@@ -546,7 +546,7 @@ export default function ReportesPage() {
             meta={90}
             empleados={por90d}
             onNavigate={id => router.push(`/admin/empleados/${id}`)}
-            iconColor="text-indigo-400"
+            iconColor="text-[#38BDF8]"
           />
         </motion.div>
       </motion.div>
@@ -593,8 +593,8 @@ export default function ReportesPage() {
         <Link href="/admin/reportes/encuestas" className="block">
           <div className="glass-card rounded-xl p-4 flex items-center gap-4
             hover:border-white/[0.12] hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
-              <MessageSquare className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/15 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-5 h-5 text-[#38BDF8]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white/80">Encuestas de pulso</p>

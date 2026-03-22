@@ -69,7 +69,7 @@ export default function AnaliticaPage() {
   }, [])
 
   const modulos = [
-    { key: 'm2', label: 'M2 — Cultura',  icon: BookOpen,      color: 'text-indigo-400', bar: '#6366f1', pct: globalStats.m2Pct },
+    { key: 'm2', label: 'M2 — Cultura',  icon: BookOpen,      color: 'text-[#38BDF8]', bar: '#6366f1', pct: globalStats.m2Pct },
     { key: 'm3', label: 'M3 — Rol',      icon: Wrench,        color: 'text-teal-400',   bar: '#14b8a6', pct: globalStats.m3Pct },
     { key: 'm4', label: 'M4 — Asistente',icon: MessageSquare, color: 'text-amber-400',  bar: '#f59e0b', pct: globalStats.m4Pct },
   ]
@@ -110,13 +110,13 @@ export default function AnaliticaPage() {
             <p className="text-xs text-violet-400/70">Empresas activas</p>
           </div>
         </div>
-        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-600/8 p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5 text-indigo-400" />
+        <div className="rounded-2xl border border-[#0EA5E9]/15 bg-[#0EA5E9]/[0.08] p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/12 flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-[#38BDF8]" />
           </div>
           <div>
             <p className="text-2xl font-bold text-white">{loading ? '—' : globalStats.empleados}</p>
-            <p className="text-xs text-indigo-400/70">Empleados en onboarding</p>
+            <p className="text-xs text-[#38BDF8]/70">Empleados en onboarding</p>
           </div>
         </div>
       </motion.div>

@@ -96,14 +96,14 @@ function FilaEmpleado({
         transition-colors duration-100 cursor-pointer
         border-l-2 group
         ${seleccionado
-          ? 'bg-indigo-600/[0.10] border-l-indigo-500'
+          ? 'bg-[#0EA5E9]/[0.10] border-l-[#0EA5E9]'
           : 'border-l-transparent hover:bg-white/[0.03]'
         }`}
     >
       {/* Avatar */}
-      <div className="w-8 h-8 rounded-full flex-shrink-0 bg-indigo-600/20 border border-indigo-500/20
+      <div className="w-8 h-8 rounded-full flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/20
         flex items-center justify-center">
-        <span className="text-indigo-300 text-[11px] font-semibold">{initials}</span>
+        <span className="text-[#7DD3FC] text-[11px] font-semibold">{initials}</span>
       </div>
 
       {/* Nombre + área */}
@@ -192,9 +192,9 @@ function DetalleEmpleado({
       <div className="p-6 space-y-6">
         {/* Avatar + datos principales */}
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-full flex-shrink-0 bg-indigo-600/25 border border-indigo-500/25
+          <div className="w-14 h-14 rounded-full flex-shrink-0 bg-[#0EA5E9]/25 border border-[#0EA5E9]/25
             flex items-center justify-center">
-            <span className="text-indigo-300 text-lg font-semibold">{initials}</span>
+            <span className="text-[#7DD3FC] text-lg font-semibold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-semibold text-white/90 truncate">{emp.nombre}</h2>
@@ -546,7 +546,7 @@ export default function EmpleadosPage() {
                 placeholder="Buscar por nombre o email..."
                 className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
                   text-white/85 placeholder:text-white/20 outline-none
-                  focus:border-indigo-500/60 focus:bg-white/[0.06] transition-colors duration-150"
+                  focus:border-[#0EA5E9]/60 focus:bg-white/[0.06] transition-colors duration-150"
               />
             </div>
 
@@ -560,11 +560,11 @@ export default function EmpleadosPage() {
                     onChange={e => setAreaFiltro(e.target.value)}
                     className="w-full h-8 pl-7 pr-2 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
                       text-white/65 appearance-none outline-none
-                      focus:border-indigo-500/60 transition-colors duration-150 cursor-pointer"
+                      focus:border-[#0EA5E9]/60 transition-colors duration-150 cursor-pointer"
                   >
-                    <option value="" className="bg-[#0f1f3d]">Todas las áreas</option>
+                    <option value="" className="bg-[#111110]">Todas las áreas</option>
                     {areas.map(a => (
-                      <option key={a} value={a} className="bg-[#0f1f3d]">{a}</option>
+                      <option key={a} value={a} className="bg-[#111110]">{a}</option>
                     ))}
                   </select>
                 </div>

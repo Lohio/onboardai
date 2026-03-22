@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'OnboardAI — Onboarding inteligente',
-  description: 'Plataforma de onboarding inteligente para PyMEs latinoamericanas.',
+  title: 'Heero — Onboarding inteligente',
+  description: 'Plataforma de onboarding inteligente para startups latinoamericanas.',
 }
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
           position="top-right"
           toastOptions={{
             style: {
-              background: '#141d32',
+              background: '#1a1a19',
               color: '#e8eaf0',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '10px',
@@ -31,10 +31,10 @@ export default function RootLayout({
               padding: '10px 14px',
             },
             success: {
-              iconTheme: { primary: '#0D9488', secondary: '#141d32' },
+              iconTheme: { primary: '#0EA5E9', secondary: '#1a1a19' },
             },
             error: {
-              iconTheme: { primary: '#EF4444', secondary: '#141d32' },
+              iconTheme: { primary: '#EF4444', secondary: '#1a1a19' },
             },
           }}
         />

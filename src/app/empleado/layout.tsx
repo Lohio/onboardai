@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
 import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
 import AgenteFlotante from '@/components/empleado/AgenteFlotante'
@@ -134,17 +135,14 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-dvh flex flex-col">
       {/* ── Header de progreso (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#0f1f3d]/80 backdrop-blur-xl">
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#111110]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 h-12">
           {/* Logo */}
           <Link
             href="/empleado/perfil"
-            className="flex items-center gap-2 flex-shrink-0 hover:opacity-75 transition-opacity duration-150"
+            className="flex-shrink-0 hover:opacity-75 transition-opacity duration-150"
           >
-            <div className="w-6 h-6 rounded-md bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center">
-              <Bot className="w-3.5 h-3.5 text-indigo-400" />
-            </div>
-            <span className="text-xs font-semibold text-white/55 hidden sm:block">OnboardAI</span>
+            <HeeroLogo size="sm" />
           </Link>
 
           <div className="h-4 w-px bg-white/[0.07] hidden sm:block flex-shrink-0" />
@@ -162,25 +160,25 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                   className={`flex items-center gap-1.5 px-2 min-h-[36px] rounded-md
                     transition-colors duration-150 ${
                       esActual
-                        ? 'bg-indigo-600/15'
+                        ? 'bg-[#0EA5E9]/10'
                         : 'hover:bg-white/[0.04]'
                     }`}
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
                       completado
-                        ? 'bg-teal-500'
+                        ? 'bg-[#22c55e]'
                         : esActual
-                        ? 'bg-indigo-400'
+                        ? 'bg-[#0EA5E9]'
                         : 'bg-white/15'
                     }`}
                   />
                   <span
                     className={`text-[11px] font-medium ${
                       esActual
-                        ? 'text-indigo-300'
+                        ? 'text-[#38BDF8]'
                         : completado
-                        ? 'text-teal-400/60'
+                        ? 'text-[#22c55e]/60'
                         : 'text-white/30'
                     }`}
                   >
@@ -197,7 +195,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="w-20 sm:w-28 h-1 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-teal-500"
+                className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#38BDF8]"
                 initial={{ width: '0%' }}
                 animate={{ width: `${progreso}%` }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -212,12 +210,12 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           <div ref={menuRef} className="relative flex-shrink-0">
             <button
               onClick={() => setMenuAbierto(prev => !prev)}
-              className="w-7 h-7 rounded-full bg-indigo-600/25 border border-indigo-500/25
-                flex items-center justify-center hover:bg-indigo-600/40 hover:border-indigo-500/50
+              className="w-7 h-7 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/25
+                flex items-center justify-center hover:bg-[#0EA5E9]/25 hover:border-[#0EA5E9]/40
                 transition-colors duration-150 cursor-pointer"
               aria-label="Menú de usuario"
             >
-              <span className="text-indigo-300 text-[11px] font-semibold">
+              <span className="text-[#38BDF8] text-[11px] font-semibold">
                 {empleadoNombre
                   ? empleadoNombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
                   : 'U'}
@@ -232,8 +230,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   className="absolute right-0 top-full mt-2 w-48 z-50
-                    rounded-xl border border-white/[0.08] bg-[#0f1f3d]/95 backdrop-blur-xl
-                    shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
+                    rounded-xl border border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
+                    shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
                   {/* Info del usuario */}
                   <div className="px-3 py-3 border-b border-white/[0.06]">

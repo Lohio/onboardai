@@ -31,7 +31,7 @@ const PLAN_OPTIONS = ['free', 'pro', 'enterprise']
 function planBadge(plan: string | null) {
   const cfg: Record<string, string> = {
     free:       'bg-white/[0.06] text-white/40 border-white/[0.08]',
-    pro:        'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
+    pro:        'bg-[#0EA5E9]/10 text-[#7DD3FC] border-[#0EA5E9]/20',
     enterprise: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
   }
   const p = plan ?? 'free'
@@ -127,7 +127,7 @@ export default function EmpresaDetallePage() {
   )
 
   const modulosConfig = [
-    { key: 'cultura',   label: 'M2 — Cultura',    icon: BookOpen,       color: 'text-indigo-400' },
+    { key: 'cultura',   label: 'M2 — Cultura',    icon: BookOpen,       color: 'text-[#38BDF8]' },
     { key: 'rol',       label: 'M3 — Rol',         icon: Wrench,         color: 'text-teal-400'   },
     { key: 'asistente', label: 'M4 — Asistente',   icon: MessageSquare,  color: 'text-amber-400'  },
   ]
@@ -257,7 +257,7 @@ export default function EmpresaDetallePage() {
         {/* Empleados con progreso */}
         <div className="rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)' }}>
           <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.06]">
-            <Users className="w-4 h-4 text-indigo-400" />
+            <Users className="w-4 h-4 text-[#38BDF8]" />
             <h2 className="text-sm font-semibold text-white/80">Empleados</h2>
             <span className="ml-auto text-xs text-white/30">{empleados.length}/{empresa.max_empleados ?? '∞'}</span>
           </div>
@@ -267,8 +267,8 @@ export default function EmpresaDetallePage() {
               const pct = calcPct(progreso[e.id] ?? [])
               return (
                 <div key={e.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
-                    <span className="text-indigo-300 text-[11px] font-bold">{e.nombre?.slice(0, 2).toUpperCase() || 'E'}</span>
+                  <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/12 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[#7DD3FC] text-[11px] font-bold">{e.nombre?.slice(0, 2).toUpperCase() || 'E'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white/80 truncate">{e.nombre}</p>

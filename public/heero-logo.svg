@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
+  <!-- Ícono: H estilizada con acento sky -->
+  <rect x="0" y="6" width="3.5" height="20" rx="1.75" fill="white"/>
+  <rect x="0" y="14.25" width="13" height="3.5" rx="1.75" fill="white"/>
+  <rect x="9.5" y="6" width="3.5" height="20" rx="1.75" fill="white"/>
+  <!-- Punto acento celeste -->
+  <circle cx="16.5" cy="24.5" r="2" fill="#0EA5E9"/>
+  <!-- Logotipo "heero" -->
+  <text x="24" y="23" font-family="'Instrument Sans', system-ui, sans-serif" font-size="16" font-weight="500" letter-spacing="-0.03em" fill="white">heero</text>
+</svg>

@@ -78,8 +78,8 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
             href={bloque.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300
-              border border-indigo-500/25 hover:border-indigo-400/40
+            className="flex items-center gap-1.5 text-xs text-[#38BDF8] hover:text-[#7DD3FC]
+              border border-[#0EA5E9]/20 hover:border-[#0EA5E9]/40
               px-2.5 py-1.5 rounded-md transition-colors duration-150 flex-shrink-0"
           >
             <ExternalLink className="w-3 h-3" />
@@ -97,8 +97,8 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
       return (
         <div className="p-4 rounded-lg bg-white/[0.03] border border-white/[0.08]">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-md bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-              <Link2 className="w-4 h-4 text-indigo-400" />
+            <div className="w-8 h-8 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/15 flex items-center justify-center flex-shrink-0">
+              <Link2 className="w-4 h-4 text-[#38BDF8]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white/80 font-medium truncate">{bloque.titulo}</p>

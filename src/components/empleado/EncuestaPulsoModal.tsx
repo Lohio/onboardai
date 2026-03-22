@@ -135,7 +135,7 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="w-full max-w-md bg-[#0f1f3d] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl"
+          className="w-full max-w-md bg-[#111110] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl"
         >
           {completado ? (
             /* Estado de éxito */
@@ -155,7 +155,7 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/[0.06]">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-400/70 mb-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#38BDF8]/70 mb-1">
                     Encuesta de pulso
                   </p>
                   <h2 className="text-base font-semibold text-white">{titulo}</h2>
@@ -212,7 +212,7 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
                     placeholder="¿Querés agregar algo más?"
                     className="w-full px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
                       text-white/80 placeholder:text-white/20 resize-none
-                      focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20
+                      focus:outline-none focus:border-[#0EA5E9]/40 focus:ring-1 focus:ring-[#0EA5E9]/20
                       transition-colors disabled:opacity-50"
                   />
                 </div>
@@ -239,7 +239,7 @@ export function EncuestaPulsoModal({ encuesta, onClose, onCompletada }: Props) {
                   className={`flex-[2] flex items-center justify-center gap-2 py-2.5 text-sm font-semibold
                     rounded-xl transition-all duration-150
                     ${completo && !enviando
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      ? 'bg-[#0EA5E9] hover:bg-[#38BDF8] text-white'
                       : 'bg-white/[0.04] text-white/25 cursor-not-allowed'
                     }`}
                 >

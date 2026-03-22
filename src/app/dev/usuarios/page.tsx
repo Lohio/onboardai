@@ -133,9 +133,9 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
     >
       {/* Identidad */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="w-8 h-8 rounded-full bg-indigo-600/25 border border-indigo-500/25
+        <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/20
           flex items-center justify-center flex-shrink-0">
-          <span className="text-indigo-300 text-[10px] font-semibold">
+          <span className="text-[#7DD3FC] text-[10px] font-semibold">
             {usuario.nombre[0].toUpperCase()}
           </span>
         </div>
@@ -157,9 +157,9 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
             className={selectCls + (esMismoCuenta ? ' opacity-50 cursor-not-allowed' : '')}
             title={esMismoCuenta ? 'No podés cambiar tu propio rol' : 'Cambiar rol'}
           >
-            <option value="empleado" className="bg-[#0f1f3d]">Empleado</option>
-            <option value="admin" className="bg-[#0f1f3d]">Admin</option>
-            <option value="dev" className="bg-[#0f1f3d]">Dev</option>
+            <option value="empleado" className="bg-[#111110]">Empleado</option>
+            <option value="admin" className="bg-[#111110]">Admin</option>
+            <option value="dev" className="bg-[#111110]">Dev</option>
           </select>
         </div>
 
@@ -173,9 +173,9 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
             className={selectCls}
             title="Cambiar empresa"
           >
-            <option value="" className="bg-[#0f1f3d]">Sin empresa</option>
+            <option value="" className="bg-[#111110]">Sin empresa</option>
             {empresas.map(e => (
-              <option key={e.id} value={e.id} className="bg-[#0f1f3d]">{e.nombre}</option>
+              <option key={e.id} value={e.id} className="bg-[#111110]">{e.nombre}</option>
             ))}
           </select>
         </div>
@@ -203,7 +203,7 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-xl bg-[#0f1f3d]/95 backdrop-blur-sm
+            className="absolute inset-0 rounded-xl bg-[#111110]/95 backdrop-blur-sm
               border border-red-500/30 flex items-center justify-center gap-3 px-4"
           >
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -334,10 +334,10 @@ export default function UsuariosPage() {
           onChange={e => setFiltroRol(e.target.value as '' | UserRole)}
           className={selectCls}
         >
-          <option value="" className="bg-[#0f1f3d]">Todos los roles</option>
-          <option value="empleado" className="bg-[#0f1f3d]">Empleado</option>
-          <option value="admin" className="bg-[#0f1f3d]">Admin</option>
-          <option value="dev" className="bg-[#0f1f3d]">Dev</option>
+          <option value="" className="bg-[#111110]">Todos los roles</option>
+          <option value="empleado" className="bg-[#111110]">Empleado</option>
+          <option value="admin" className="bg-[#111110]">Admin</option>
+          <option value="dev" className="bg-[#111110]">Dev</option>
         </select>
         {empresas.length > 0 && (
           <select
@@ -345,9 +345,9 @@ export default function UsuariosPage() {
             onChange={e => setFiltroEmpresa(e.target.value)}
             className={selectCls}
           >
-            <option value="" className="bg-[#0f1f3d]">Todas las empresas</option>
+            <option value="" className="bg-[#111110]">Todas las empresas</option>
             {empresas.map(e => (
-              <option key={e.id} value={e.id} className="bg-[#0f1f3d]">{e.nombre}</option>
+              <option key={e.id} value={e.id} className="bg-[#111110]">{e.nombre}</option>
             ))}
           </select>
         )}

@@ -253,7 +253,7 @@ export default function ConfiguracionPage() {
                     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
                     'border transition-all duration-150',
                     isSelected
-                      ? 'bg-indigo-600/10 border-indigo-500/30'
+                      ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]/30'
                       : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
                   )}
                 >
@@ -262,7 +262,7 @@ export default function ConfiguracionPage() {
                     'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0',
                     'transition-colors duration-150',
                     isSelected
-                      ? 'border-indigo-400 bg-indigo-400'
+                      ? 'border-[#38BDF8] bg-[#38BDF8]'
                       : 'border-white/20 bg-transparent'
                   )}>
                     {isSelected && <Check className="w-2 h-2 text-white" />}
@@ -271,7 +271,7 @@ export default function ConfiguracionPage() {
                   {/* Ícono + label */}
                   <span className={cn(
                     'flex-shrink-0 transition-colors duration-150',
-                    isSelected ? 'text-indigo-300' : 'text-white/30'
+                    isSelected ? 'text-[#7DD3FC]' : 'text-white/30'
                   )}>
                     <OpcionIcon h={op.value} />
                   </span>
@@ -297,7 +297,7 @@ export default function ConfiguracionPage() {
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
                 'border transition-all duration-150',
                 otraSeleccionada
-                  ? 'bg-indigo-600/10 border-indigo-500/30'
+                  ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]/30'
                   : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
               )}
             >
@@ -305,7 +305,7 @@ export default function ConfiguracionPage() {
                 'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0',
                 'transition-colors duration-150',
                 otraSeleccionada
-                  ? 'border-indigo-400 bg-indigo-400'
+                  ? 'border-[#38BDF8] bg-[#38BDF8]'
                   : 'border-white/20 bg-transparent'
               )}>
                 {otraSeleccionada && <Check className="w-2 h-2 text-white" />}
@@ -313,7 +313,7 @@ export default function ConfiguracionPage() {
 
               <span className={cn(
                 'flex-shrink-0 transition-colors duration-150',
-                otraSeleccionada ? 'text-indigo-300' : 'text-white/30'
+                otraSeleccionada ? 'text-[#7DD3FC]' : 'text-white/30'
               )}>
                 <Plus className="w-4 h-4" />
               </span>
@@ -347,7 +347,7 @@ export default function ConfiguracionPage() {
                     className="w-full px-3 py-2 rounded-lg text-sm
                       bg-white/[0.04] border border-white/[0.10]
                       text-white placeholder:text-white/25
-                      focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06]
+                      focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
                       transition-all duration-150"
                     autoFocus
                   />

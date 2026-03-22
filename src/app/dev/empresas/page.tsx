@@ -151,7 +151,7 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
       {/* Drawer */}
       <motion.aside
         className="fixed right-0 top-0 h-full w-full max-w-sm z-50
-          border-l border-white/[0.08] bg-[#0f1f3d]/95 backdrop-blur-xl
+          border-l border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
           flex flex-col shadow-[−24px_0_64px_rgba(0,0,0,0.4)]"
         initial={{ x: 400 }}
         animate={{ x: 0 }}
@@ -205,10 +205,10 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
               onChange={e => set('plan', e.target.value)}
               className={inputCls() + ' appearance-none cursor-pointer'}
             >
-              <option value="free" className="bg-[#0f1f3d]">Free</option>
-              <option value="starter" className="bg-[#0f1f3d]">Starter</option>
-              <option value="pro" className="bg-[#0f1f3d]">Pro</option>
-              <option value="enterprise" className="bg-[#0f1f3d]">Enterprise</option>
+              <option value="free" className="bg-[#111110]">Free</option>
+              <option value="starter" className="bg-[#111110]">Starter</option>
+              <option value="pro" className="bg-[#111110]">Pro</option>
+              <option value="enterprise" className="bg-[#111110]">Enterprise</option>
             </select>
           </div>
         </div>
@@ -326,7 +326,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
           </button>
           <button
             onClick={() => onEdit(empresa)}
-            className="p-1.5 text-white/30 hover:text-indigo-400 transition-colors rounded-md hover:bg-white/[0.04]"
+            className="p-1.5 text-white/30 hover:text-[#38BDF8] transition-colors rounded-md hover:bg-white/[0.04]"
             title="Editar"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -360,9 +360,9 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
                 <div className="space-y-1.5">
                   {empresa.admins.map(a => (
                     <div key={a.id} className="flex items-center gap-2 text-xs">
-                      <div className="w-5 h-5 rounded-full bg-indigo-600/25 border border-indigo-500/25
+                      <div className="w-5 h-5 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/20
                         flex items-center justify-center flex-shrink-0">
-                        <span className="text-indigo-300 text-[9px] font-bold">
+                        <span className="text-[#7DD3FC] text-[9px] font-bold">
                           {a.nombre[0].toUpperCase()}
                         </span>
                       </div>
@@ -389,9 +389,9 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
                     className="flex-1 h-8 px-2 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
                       text-white/70 appearance-none outline-none focus:border-amber-500/60"
                   >
-                    <option value="" className="bg-[#0f1f3d]">Seleccionar usuario...</option>
+                    <option value="" className="bg-[#111110]">Seleccionar usuario...</option>
                     {candidatos.map(u => (
-                      <option key={u.id} value={u.id} className="bg-[#0f1f3d]">
+                      <option key={u.id} value={u.id} className="bg-[#111110]">
                         {u.nombre} ({u.email})
                       </option>
                     ))}
@@ -418,7 +418,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-xl bg-[#0f1f3d]/95 backdrop-blur-sm
+            className="absolute inset-0 rounded-xl bg-[#111110]/95 backdrop-blur-sm
               border border-red-500/30 flex flex-col items-center justify-center gap-3 p-4"
           >
             <AlertTriangle className="w-5 h-5 text-red-400" />

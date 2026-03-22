@@ -304,7 +304,7 @@ function ConfigCard({
                 className={inputCls() + ' appearance-none cursor-pointer'}
               >
                 {def.opciones.map(op => (
-                  <option key={op.value} value={op.value} className="bg-[#0f1f3d]">
+                  <option key={op.value} value={op.value} className="bg-[#111110]">
                     {op.label}
                   </option>
                 ))}

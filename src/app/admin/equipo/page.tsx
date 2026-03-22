@@ -88,9 +88,9 @@ function EmpleadoCard({ emp }: { emp: EmpleadoRow }) {
       transition={{ type: 'spring', stiffness: 280, damping: 24 }}
       className="glass-card rounded-xl p-4 flex items-start gap-3"
     >
-      <div className="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/20
+      <div className="w-10 h-10 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/20
         flex items-center justify-center flex-shrink-0">
-        <span className="text-indigo-300 text-sm font-semibold">{getInitials(emp.nombre)}</span>
+        <span className="text-[#7DD3FC] text-sm font-semibold">{getInitials(emp.nombre)}</span>
       </div>
       <div className="flex-1 min-w-0 space-y-1">
         <p className="text-sm font-medium text-white/85 truncate">{emp.nombre}</p>
@@ -145,13 +145,13 @@ function Campo({
 
 const inputCls = `w-full h-10 bg-white/[0.04] border border-white/[0.08] rounded-lg
   px-3 text-sm text-white/80 placeholder:text-white/20
-  focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.06]
+  focus:outline-none focus:border-[#0EA5E9]/40 focus:bg-white/[0.06]
   transition-colors duration-150`
 
 const selectCls = `w-full h-10 bg-white/[0.04] border border-white/[0.08] rounded-lg
   px-3 text-sm text-white/80
-  focus:outline-none focus:border-indigo-500/40
-  transition-colors duration-150 bg-[#0f1f3d]`
+  focus:outline-none focus:border-[#0EA5E9]/40
+  transition-colors duration-150 bg-[#111110]`
 
 // ─────────────────────────────────────────────
 // Drawer de alta de empleado
@@ -259,7 +259,7 @@ function DrawerAlta({
               onClick={copiarCredenciales}
               className="w-full flex items-center justify-center gap-2 h-9 rounded-lg
                 border border-white/[0.08] text-xs text-white/50
-                hover:border-indigo-500/30 hover:text-indigo-400
+                hover:border-[#0EA5E9]/30 hover:text-[#38BDF8]
                 transition-colors duration-150"
             >
               {copiado ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -268,7 +268,7 @@ function DrawerAlta({
           </div>
           <button
             onClick={onClose}
-            className="w-full h-10 rounded-lg bg-indigo-600/80 hover:bg-indigo-600
+            className="w-full h-10 rounded-lg bg-[#0EA5E9]/80 hover:bg-[#0EA5E9]
               text-sm text-white font-medium transition-colors duration-150"
           >
             Cerrar
@@ -426,7 +426,7 @@ function DrawerAlta({
               rows={3}
               className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-lg
                 px-3 py-2.5 text-sm text-white/80 placeholder:text-white/20
-                focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.06]
+                focus:outline-none focus:border-[#0EA5E9]/40 focus:bg-white/[0.06]
                 transition-colors duration-150 resize-none`}
             />
           </Campo>
@@ -446,7 +446,7 @@ function DrawerAlta({
         <button
           type="submit"
           disabled={enviando || !form.nombre || !form.email || !form.password}
-          className="flex-1 h-10 rounded-lg bg-indigo-600/90 hover:bg-indigo-600
+          className="flex-1 h-10 rounded-lg bg-[#0EA5E9]/90 hover:bg-[#0EA5E9]
             disabled:opacity-40 disabled:cursor-not-allowed
             text-sm text-white font-medium transition-colors duration-150
             flex items-center justify-center gap-2"
@@ -546,7 +546,7 @@ export default function EquipoPage() {
         <button
           onClick={() => setDrawerAbierto(true)}
           className="flex items-center gap-2 h-9 px-4 rounded-lg
-            bg-indigo-600/80 hover:bg-indigo-600 text-sm text-white font-medium
+            bg-[#0EA5E9]/80 hover:bg-[#0EA5E9] text-sm text-white font-medium
             transition-colors duration-150"
         >
           <UserPlus className="w-4 h-4" />
@@ -564,7 +564,7 @@ export default function EquipoPage() {
           <svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
             <defs>
               <linearGradient id="teamGrad" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#3B4FD8" stopOpacity="0.4" />
+                <stop stopColor="#0EA5E9" stopOpacity="0.4" />
                 <stop offset="1" stopColor="#0D9488" stopOpacity="0.2" />
               </linearGradient>
             </defs>
@@ -606,7 +606,7 @@ export default function EquipoPage() {
             {/* Panel derecho */}
             <motion.div
               className="fixed right-0 top-0 h-full w-full max-w-md z-50
-                border-l border-white/[0.07] bg-[#0c1a33]/98 backdrop-blur-xl"
+                border-l border-white/[0.07] bg-[#111110]/98 backdrop-blur-xl"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}

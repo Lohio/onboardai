@@ -338,7 +338,7 @@ export default function EncuestasAdminPage() {
                   onClick={() => setTab(t)}
                   className={`px-3 py-1 text-xs rounded-lg transition-colors font-medium
                     ${tab === t
-                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                      ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/30'
                       : 'text-white/40 hover:text-white/60 hover:bg-white/[0.04]'
                     }`}
                 >

@@ -47,7 +47,7 @@ function inputCls(error: boolean): string {
   return [
     'w-full h-9 px-3 rounded-lg text-sm bg-white/[0.04] border text-white/85',
     'placeholder:text-white/20 outline-none transition-colors duration-150',
-    'focus:bg-white/[0.06] focus:border-indigo-500/60',
+    'focus:bg-white/[0.06] focus:border-[#0EA5E9]/60',
     error ? 'border-red-500/50' : 'border-white/[0.08]',
   ].join(' ')
 }
@@ -139,7 +139,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           className="w-full max-w-lg rounded-2xl border border-white/[0.08]
-            bg-[#0f1f3d]/95 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]
+            bg-[#111110]/95 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]
             pointer-events-auto"
           initial={{ scale: 0.94, y: 16, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -271,8 +271,8 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
                     onChange={e => set('rol', e.target.value)}
                     className={inputCls(false) + ' appearance-none cursor-pointer'}
                   >
-                    <option value="empleado" className="bg-[#0f1f3d]">Empleado</option>
-                    <option value="admin" className="bg-[#0f1f3d]">Admin</option>
+                    <option value="empleado" className="bg-[#111110]">Empleado</option>
+                    <option value="admin" className="bg-[#111110]">Admin</option>
                   </select>
                 </div>
               </div>

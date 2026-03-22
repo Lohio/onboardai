@@ -123,7 +123,7 @@ function BurbujaMensaje({ mensaje }: { mensaje: MensajeChat }) {
   return (
     <div className={cn('flex gap-2', esUser ? 'justify-end' : 'justify-start')}>
       {!esUser && (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-600 to-teal-600
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#0EA5E9] to-teal-600
           flex items-center justify-center flex-shrink-0 mt-0.5">
           <Bot className="w-3 h-3 text-white" />
         </div>
@@ -132,7 +132,7 @@ function BurbujaMensaje({ mensaje }: { mensaje: MensajeChat }) {
         className={cn(
           'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed',
           esUser
-            ? 'bg-indigo-600 text-white rounded-tr-sm'
+            ? 'bg-[#0EA5E9] text-white rounded-tr-sm'
             : 'bg-white/[0.07] text-white/85 rounded-tl-sm border border-white/[0.06]'
         )}
       >
@@ -407,7 +407,7 @@ export default function AgenteFlotante({
             <div
               className="relative rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
               style={{
-                background: '#111e38',
+                background: '#111110',
                 border: '0.5px solid rgba(255,255,255,0.12)',
               }}
             >
@@ -415,7 +415,7 @@ export default function AgenteFlotante({
               <div
                 className="absolute bottom-[-6px] right-5 w-3 h-3 rotate-45"
                 style={{
-                  background: '#111e38',
+                  background: '#111110',
                   border: '0.5px solid rgba(255,255,255,0.12)',
                   borderTop: 'none',
                   borderLeft: 'none',
@@ -440,7 +440,7 @@ export default function AgenteFlotante({
                 <button
                   onClick={() => handleCtaPrimario(hintActivo.ctaPrimario)}
                   className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium
-                    bg-indigo-600 hover:bg-indigo-500 text-white
+                    bg-[#0EA5E9] hover:bg-[#38BDF8] text-white
                     transition-colors duration-150 cursor-pointer"
                 >
                   {hintActivo.ctaPrimario}
@@ -472,7 +472,7 @@ export default function AgenteFlotante({
               w-[calc(100vw-32px)] sm:w-80 max-h-[500px]"
             style={{
               transformOrigin: 'bottom right',
-              background: '#111e38',
+              background: '#111110',
               border: '0.5px solid rgba(255,255,255,0.12)',
               borderRadius: '16px',
               boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
@@ -481,7 +481,7 @@ export default function AgenteFlotante({
             {/* ── Header ── */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-teal-600
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0EA5E9] to-teal-600
                   flex items-center justify-center">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
@@ -496,7 +496,7 @@ export default function AgenteFlotante({
                   {/* Badge del módulo actual */}
                   {moduloBadge && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
-                      bg-indigo-500/15 text-indigo-300/80 border border-indigo-500/20 leading-none">
+                      bg-[#0EA5E9]/15 text-[#38BDF8]/80 border border-[#0EA5E9]/20 leading-none">
                       {moduloBadge}
                     </span>
                   )}
@@ -536,9 +536,9 @@ export default function AgenteFlotante({
               {mensajes.length === 0 ? (
                 /* Estado vacío con sugerencias contextuales */
                 <div className="flex flex-col items-center justify-center h-full py-6 gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600/30 to-teal-600/30
-                    flex items-center justify-center border border-indigo-500/20">
-                    <Bot className="w-5 h-5 text-indigo-400" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0EA5E9]/30 to-teal-600/30
+                    flex items-center justify-center border border-[#0EA5E9]/20">
+                    <Bot className="w-5 h-5 text-[#38BDF8]" />
                   </div>
                   <p className="text-xs text-white/35 text-center leading-relaxed max-w-[200px]">
                     Hola, soy tu guía de onboarding. ¿En qué te puedo ayudar?
@@ -581,7 +581,7 @@ export default function AgenteFlotante({
                   disabled={enviando}
                   className="flex-1 resize-none bg-white/[0.06] border border-white/[0.08]
                     rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25
-                    focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40
+                    focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/40 focus:border-[#0EA5E9]/40
                     transition-all duration-150 max-h-24 leading-relaxed disabled:opacity-50"
                   style={{ scrollbarWidth: 'none' }}
                 />
@@ -589,7 +589,7 @@ export default function AgenteFlotante({
                   onClick={() => enviarMensaje(inputValue)}
                   disabled={!inputValue.trim() || enviando}
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
-                    bg-indigo-600 hover:bg-indigo-500
+                    bg-[#0EA5E9] hover:bg-[#38BDF8]
                     disabled:opacity-40 disabled:cursor-not-allowed
                     transition-colors duration-150 cursor-pointer"
                   aria-label="Enviar mensaje"
@@ -628,8 +628,8 @@ export default function AgenteFlotante({
         className="fixed bottom-4 right-4 z-50 w-12 h-12 rounded-full
           flex items-center justify-center cursor-pointer border-2 border-white/20"
         style={{
-          background: 'linear-gradient(135deg, #3B4FD8 0%, #0D9488 100%)',
-          boxShadow: '0 4px 20px rgba(59,79,216,0.4)',
+          background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)',
+          boxShadow: '0 4px 20px rgba(14,165,233,0.4)',
         }}
         aria-label={panelAbierto ? 'Cerrar asistente' : 'Abrir asistente'}
       >
@@ -644,7 +644,7 @@ export default function AgenteFlotante({
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
               className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-teal-400 rounded-full
-                border-2 border-[#0a1628] animate-pulse"
+                border-2 border-[#111110] animate-pulse"
             />
           )}
         </AnimatePresence>

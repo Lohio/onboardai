@@ -28,7 +28,7 @@ const inputCls = [
   'bg-surface-800/80 rounded-lg px-3',
   'border border-white/[0.07] hover:border-white/15',
   'transition-all duration-150 outline-none',
-  'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50',
+  'focus:ring-2 focus:ring-[#0EA5E9]/30 focus:border-[#0EA5E9]/40',
 ].join(' ')
 
 const selectCls = [
@@ -36,7 +36,7 @@ const selectCls = [
   'bg-surface-800/80 rounded-lg pl-3 pr-8',
   'border border-white/[0.07] hover:border-white/15',
   'transition-all duration-150 outline-none',
-  'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50',
+  'focus:ring-2 focus:ring-[#0EA5E9]/30 focus:border-[#0EA5E9]/40',
 ].join(' ')
 
 // ─────────────────────────────────────────────
@@ -130,10 +130,10 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
     <div className="glass-card rounded-2xl p-6 sm:p-8">
       {/* Ícono decorativo */}
       <div className="flex flex-col items-center text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30
+        <div className="w-16 h-16 rounded-2xl bg-[#0EA5E9]/12 border border-[#0EA5E9]/20
           flex items-center justify-center mb-4
-          shadow-[0_0_32px_rgba(59,79,216,0.2)]">
-          <Building2 className="w-8 h-8 text-indigo-400" />
+          shadow-[0_0_32px_rgba(14,165,233,0.2)]">
+          <Building2 className="w-8 h-8 text-[#38BDF8]" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-1">Tu empresa</h2>
         <p className="text-sm text-white/45 max-w-sm">
@@ -158,7 +158,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-lg font-bold text-indigo-300">{iniciales}</span>
+                <span className="text-lg font-bold text-[#7DD3FC]">{iniciales}</span>
               )}
             </div>
 
@@ -215,7 +215,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
             >
               <option value="" disabled>Seleccioná una industria</option>
               {INDUSTRIAS.map(i => (
-                <option key={i} value={i} className="bg-[#0f1f3d]">{i}</option>
+                <option key={i} value={i} className="bg-[#111110]">{i}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
@@ -239,7 +239,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
             >
               <option value="" disabled>Seleccioná un rango</option>
               {TAMANOS.map(t => (
-                <option key={t} value={t} className="bg-[#0f1f3d]">{t}</option>
+                <option key={t} value={t} className="bg-[#111110]">{t}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />

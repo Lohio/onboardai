@@ -67,7 +67,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; href: string; col
     label: 'Perfil',
     icon: <User className="w-4 h-4" />,
     href: '/empleado/perfil',
-    color: 'indigo',
+    color: 'sky',
   },
   {
     id: 'M2',
@@ -146,11 +146,11 @@ function TabContentSkeleton() {
 
 function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
   return (
-    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center">
+    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/20 flex items-center justify-center">
       {src ? (
         <img src={src} alt={nombre} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-indigo-300 text-xs font-semibold">{getInitials(nombre)}</span>
+        <span className="text-[#7DD3FC] text-xs font-semibold">{getInitials(nombre)}</span>
       )}
     </div>
   )
@@ -193,12 +193,12 @@ function TabPerfil({
       {/* Hero mini */}
       <div className="flex items-center gap-3">
         <div
-          className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-indigo-900/50 border-2 border-indigo-500/20 flex items-center justify-center"
+          className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-[#0EA5E9]/10 border-2 border-[#0EA5E9]/20 flex items-center justify-center"
         >
           {datos.foto_url ? (
             <img src={datos.foto_url} alt={datos.nombre} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-indigo-300 text-xl font-semibold">{getInitials(datos.nombre)}</span>
+            <span className="text-[#7DD3FC] text-xl font-semibold">{getInitials(datos.nombre)}</span>
           )}
         </div>
         <div>
@@ -242,7 +242,7 @@ function TabPerfil({
               </div>
               <a
                 href={`mailto:${m.email}`}
-                className="text-white/20 hover:text-indigo-400 transition-colors p-1"
+                className="text-white/20 hover:text-[#0EA5E9] transition-colors p-1"
               >
                 <Mail className="w-3.5 h-3.5" />
               </a>
@@ -404,7 +404,7 @@ function TabAsistente({
       {/* Stats */}
       {conversaciones !== null && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03]">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          <Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" />
           <p className="text-xs text-white/50">
             {conversaciones === 0
               ? 'Todavía no iniciaste ninguna conversación'
@@ -731,7 +731,7 @@ export default function EmpleadoHome() {
         >
           <h1 className="text-2xl font-semibold text-white">
             Buen{new Date().getHours() < 12 ? 'os días' : new Date().getHours() < 18 ? 'as tardes' : 'as noches'},{' '}
-            <span className="text-indigo-300">{datosBase.nombre.split(' ')[0]}</span> 👋
+            <span className="text-[#7DD3FC]">{datosBase.nombre.split(' ')[0]}</span> 👋
           </h1>
           <div className="flex items-center gap-3 mt-1">
             {dias !== null && (
@@ -781,7 +781,7 @@ export default function EmpleadoHome() {
                     'relative flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl transition-all duration-200',
                     'text-[11px] font-medium',
                     activo
-                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                      ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/30'
                       : desbloqueado
                       ? 'bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70'
                       : 'bg-white/[0.02] text-white/20 border border-white/[0.04] cursor-not-allowed',
@@ -789,7 +789,7 @@ export default function EmpleadoHome() {
                 >
                   {/* Badge completado */}
                   {completado && (
-                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-teal-500 border-2 border-surface-900 flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-teal-500 border-2 border-[#111110] flex items-center justify-center">
                       <span className="text-[8px] text-white font-bold">✓</span>
                     </span>
                   )}
@@ -798,7 +798,7 @@ export default function EmpleadoHome() {
                   )}
                   <span className={cn(
                     'transition-colors',
-                    activo ? 'text-indigo-400' : completado ? 'text-teal-400' : 'text-current',
+                    activo ? 'text-[#0EA5E9]' : completado ? 'text-teal-400' : 'text-current',
                   )}>
                     {tab.icon}
                   </span>
@@ -863,7 +863,7 @@ export default function EmpleadoHome() {
                   estadoArray,
                   false,
                 )
-                  ? 'bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 hover:text-indigo-200 border border-indigo-500/25'
+                  ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] hover:bg-[#0EA5E9]/30 hover:text-[#38BDF8] border border-[#0EA5E9]/25'
                   : 'bg-white/[0.03] text-white/25 cursor-not-allowed border border-white/[0.05] pointer-events-none',
               )}
             >

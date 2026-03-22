@@ -877,16 +877,16 @@ export default function RolPage() {
               )}
 
               {/* CTA al chat */}
-              <div className="mt-4 flex items-center gap-3 p-4 rounded-2xl border border-indigo-500/15"
+              <div className="mt-4 flex items-center gap-3 p-4 rounded-2xl border border-[#0EA5E9]/15"
                 style={{ background: 'rgba(99,102,241,0.06)' }}>
-                <div className="w-9 h-9 rounded-xl bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-4 h-4 text-indigo-400" />
+                <div className="w-9 h-9 rounded-xl bg-[#0EA5E9]/12 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="w-4 h-4 text-[#38BDF8]" />
                 </div>
                 <p className="text-xs text-white/50 flex-1">
                   ¿Tenés dudas sobre tu rol? Preguntale al asistente de onboarding.
                 </p>
                 <a href="/empleado/asistente"
-                  className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex-shrink-0">
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC] transition-colors flex-shrink-0">
                   Ir al chat <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>

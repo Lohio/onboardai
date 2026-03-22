@@ -42,7 +42,7 @@ function buildEmailHtml({
           <!-- Header -->
           <tr>
             <td style="padding:32px 32px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
-              <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);">OnboardAI</p>
+              <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);">Heero</p>
               <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">
                 ¡Tu onboarding en ${nombreEmpresa} está listo!
               </h1>
@@ -56,14 +56,14 @@ function buildEmailHtml({
                 Hola <strong style="color:#ffffff;">${nombreEmpleado}</strong>,
               </p>
               <p style="margin:0 0 24px;font-size:15px;color:rgba(255,255,255,0.65);line-height:1.6;">
-                Tu acceso a <strong style="color:#ffffff;">OnboardAI</strong> ya está activado. Podés ingresar ahora y explorar la cultura de <strong>${nombreEmpresa}</strong> y conocer a tu equipo antes de tu primer día oficial.
+                Tu acceso a <strong style="color:#ffffff;">Heero</strong> ya está activado. Podés ingresar ahora y explorar la cultura de <strong>${nombreEmpresa}</strong> y conocer a tu equipo antes de tu primer día oficial.
               </p>
 
               <!-- CTA -->
               <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 28px;">
                 <tr>
                   <td>
-                    <a href="${loginUrl}" style="display:inline-block;padding:12px 28px;background:#3B4FD8;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;">
+                    <a href="${loginUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;">
                       Ingresar a OnboardAI →
                     </a>
                   </td>
@@ -71,7 +71,7 @@ function buildEmailHtml({
               </table>
 
               <!-- Info ingreso -->
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:rgba(59,79,216,0.08);border:1px solid rgba(59,79,216,0.2);border-radius:10px;margin:0 0 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:10px;margin:0 0 24px;">
                 <tr>
                   <td style="padding:16px 20px;">
                     <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);">Tu primer día oficial</p>

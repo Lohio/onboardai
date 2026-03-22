@@ -165,7 +165,7 @@ function inputCls(error?: boolean): string {
   return [
     'w-full h-9 px-3 rounded-lg text-sm bg-white/[0.04] border text-white/85',
     'placeholder:text-white/20 outline-none transition-colors duration-150',
-    'focus:bg-white/[0.06] focus:border-indigo-500/60',
+    'focus:bg-white/[0.06] focus:border-[#0EA5E9]/60',
     error ? 'border-red-500/50' : 'border-white/[0.08]',
   ].join(' ')
 }
@@ -182,7 +182,7 @@ function renderLinea(line: string, key: number): React.ReactNode {
 }
 
 const MODULOS_CONFIG = [
-  { key: 'cultura' as const, label: 'M2 — Cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-indigo-400' },
+  { key: 'cultura' as const, label: 'M2 — Cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-[#38BDF8]' },
   { key: 'rol' as const, label: 'M3 — Rol y herramientas', icon: <Wrench className="w-3.5 h-3.5" />, color: 'text-teal-400' },
   { key: 'asistente' as const, label: 'M4 — Asistente IA', icon: <MessageSquare className="w-3.5 h-3.5" />, color: 'text-amber-400' },
 ]
@@ -705,12 +705,12 @@ export default function EmpleadoDetallePage() {
 
         {/* Avatar + nombre */}
         <div className="flex-1 min-w-0 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-indigo-600/25 border border-indigo-500/25
+          <div className="w-9 h-9 rounded-full bg-[#0EA5E9]/25 border border-[#0EA5E9]/25
             flex items-center justify-center flex-shrink-0 overflow-hidden">
             {empleado.foto_url
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={empleado.foto_url} alt={empleado.nombre} className="w-full h-full object-cover" />
-              : <span className="text-indigo-300 text-xs font-semibold">{initials}</span>
+              : <span className="text-[#7DD3FC] text-xs font-semibold">{initials}</span>
             }
           </div>
           <div className="min-w-0">
@@ -731,7 +731,7 @@ export default function EmpleadoDetallePage() {
             onClick={generarReporte}
             disabled={generando}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium
-              bg-indigo-600 hover:bg-indigo-500 text-white transition-colors duration-150
+              bg-[#0EA5E9] hover:bg-[#38BDF8] text-white transition-colors duration-150
               disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {generando
@@ -754,7 +754,7 @@ export default function EmpleadoDetallePage() {
             className={cn(
               'flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors duration-150',
               tab === t.key
-                ? 'border-indigo-400 text-white'
+                ? 'border-[#38BDF8] text-white'
                 : 'border-transparent text-white/40 hover:text-white/70',
             )}
           >
@@ -861,10 +861,10 @@ export default function EmpleadoDetallePage() {
                   <div>
                     <label className="block text-xs font-medium text-white/45 mb-1.5">Modalidad</label>
                     <select value={form.modalidad} onChange={e => setField('modalidad', e.target.value)} className={inputCls() + ' appearance-none cursor-pointer'}>
-                      <option value="" className="bg-[#0f1f3d]">Sin definir</option>
-                      <option value="presencial" className="bg-[#0f1f3d]">Presencial</option>
-                      <option value="remoto" className="bg-[#0f1f3d]">Remoto</option>
-                      <option value="hibrido" className="bg-[#0f1f3d]">Híbrido</option>
+                      <option value="" className="bg-[#111110]">Sin definir</option>
+                      <option value="presencial" className="bg-[#111110]">Presencial</option>
+                      <option value="remoto" className="bg-[#111110]">Remoto</option>
+                      <option value="hibrido" className="bg-[#111110]">Híbrido</option>
                     </select>
                   </div>
                 </div>
@@ -880,18 +880,18 @@ export default function EmpleadoDetallePage() {
                     <div>
                       <label className="block text-xs font-medium text-white/45 mb-1.5">Manager</label>
                       <select value={form.manager_id} onChange={e => setField('manager_id', e.target.value)} className={inputCls() + ' appearance-none cursor-pointer'}>
-                        <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
+                        <option value="" className="bg-[#111110]">Sin asignar</option>
                         {colaboradores.map(c => (
-                          <option key={c.id} value={c.id} className="bg-[#0f1f3d]">{c.nombre} — {c.email}</option>
+                          <option key={c.id} value={c.id} className="bg-[#111110]">{c.nombre} — {c.email}</option>
                         ))}
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-white/45 mb-1.5">Buddy</label>
                       <select value={form.buddy_id} onChange={e => setField('buddy_id', e.target.value)} className={inputCls() + ' appearance-none cursor-pointer'}>
-                        <option value="" className="bg-[#0f1f3d]">Sin asignar</option>
+                        <option value="" className="bg-[#111110]">Sin asignar</option>
                         {colaboradores.map(c => (
-                          <option key={c.id} value={c.id} className="bg-[#0f1f3d]">{c.nombre} — {c.email}</option>
+                          <option key={c.id} value={c.id} className="bg-[#111110]">{c.nombre} — {c.email}</option>
                         ))}
                       </select>
                     </div>
@@ -972,7 +972,7 @@ export default function EmpleadoDetallePage() {
                             className={cn(
                               'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200',
                               esteChipAbierto
-                                ? 'bg-indigo-600/20 border-indigo-400/50 text-indigo-200 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+                                ? 'bg-[#0EA5E9]/20 border-[#38BDF8]/50 text-[#BAE6FD] shadow-[0_0_10px_rgba(14,165,233,0.2)]'
                                 : configurado
                                 ? 'bg-teal-500/15 border-teal-500/40 text-teal-300 shadow-[0_0_10px_rgba(20,184,166,0.12)]'
                                 : existe
@@ -1004,10 +1004,10 @@ export default function EmpleadoDetallePage() {
                           transition={{ duration: 0.22, ease: 'easeInOut' }}
                           className="overflow-hidden"
                         >
-                          <div className="mt-3 rounded-xl border border-indigo-500/25 bg-indigo-600/[0.06] p-4 space-y-3">
+                          <div className="mt-3 rounded-xl border border-[#0EA5E9]/25 bg-[#0EA5E9]/[0.06] p-4 space-y-3">
                             {/* Header */}
                             <div className="flex items-center justify-between">
-                              <p className="text-xs font-semibold text-indigo-300">
+                              <p className="text-xs font-semibold text-[#7DD3FC]">
                                 Configurar acceso: <span className="text-white">{chipDraft.nombre}</span>
                               </p>
                               <button
@@ -1104,7 +1104,7 @@ export default function EmpleadoDetallePage() {
                               className={cn(
                                 'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-all duration-150',
                                 expandido
-                                  ? 'rounded-xl rounded-b-none bg-indigo-600/10 border border-b-0 border-indigo-500/30'
+                                  ? 'rounded-xl rounded-b-none bg-[#0EA5E9]/10 border border-b-0 border-[#0EA5E9]/30'
                                   : configurado
                                   ? 'rounded-xl bg-teal-500/10 border border-teal-500/25 hover:bg-teal-500/15'
                                   : 'rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05]',
@@ -1159,7 +1159,7 @@ export default function EmpleadoDetallePage() {
                                   transition={{ duration: 0.22, ease: 'easeInOut' }}
                                   className="overflow-hidden"
                                 >
-                                  <div className="border border-t-0 border-indigo-500/20 rounded-b-xl bg-indigo-600/[0.04]">
+                                  <div className="border border-t-0 border-[#0EA5E9]/20 rounded-b-xl bg-[#0EA5E9]/[0.04]">
                                     {/* Toggle ON/OFF de estado — prominente */}
                                     <div className="px-4 pt-4 pb-3 border-b border-white/[0.05]">
                                       <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Estado del acceso</p>
@@ -1289,9 +1289,9 @@ export default function EmpleadoDetallePage() {
                       Rol <Badge variant="info" className="ml-2">Solo admins</Badge>
                     </label>
                     <select value={form.rol} onChange={e => setField('rol', e.target.value)} className={inputCls() + ' appearance-none cursor-pointer'}>
-                      <option value="empleado" className="bg-[#0f1f3d]">Empleado</option>
-                      <option value="admin" className="bg-[#0f1f3d]">Admin</option>
-                      {rolAdmin === 'dev' && <option value="dev" className="bg-[#0f1f3d]">Dev</option>}
+                      <option value="empleado" className="bg-[#111110]">Empleado</option>
+                      <option value="admin" className="bg-[#111110]">Admin</option>
+                      {rolAdmin === 'dev' && <option value="dev" className="bg-[#111110]">Dev</option>}
                     </select>
                   </div>
                 )}
@@ -1303,7 +1303,7 @@ export default function EmpleadoDetallePage() {
                     value={form.bio} onChange={e => setField('bio', e.target.value)} rows={3}
                     className="w-full px-3 py-2.5 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
                       text-white/85 placeholder:text-white/20 outline-none resize-none
-                      focus:bg-white/[0.06] focus:border-indigo-500/60 transition-colors duration-150"
+                      focus:bg-white/[0.06] focus:border-[#0EA5E9]/60 transition-colors duration-150"
                     placeholder="Breve descripción del empleado..."
                   />
                 </div>
@@ -1321,7 +1321,7 @@ export default function EmpleadoDetallePage() {
                   <div className="glass-card rounded-xl p-5">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-indigo-400" />
+                        <CalendarDays className="w-4 h-4 text-[#38BDF8]" />
                         <h2 className="text-sm font-semibold text-white/70">Pre-boarding</h2>
                       </div>
                       {empleado.preboarding_activo && <Badge variant="success">Activo</Badge>}
@@ -1370,7 +1370,7 @@ export default function EmpleadoDetallePage() {
                             {pct >= 100
                               ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500" />
                               : pct > 0
-                                ? <Circle className="w-3.5 h-3.5 text-indigo-400" />
+                                ? <Circle className="w-3.5 h-3.5 text-[#38BDF8]" />
                                 : <Circle className="w-3.5 h-3.5 text-white/20" />
                             }
                             <span className={`text-xs ${mod.color}`}>{mod.label}</span>
@@ -1516,8 +1516,8 @@ export default function EmpleadoDetallePage() {
                     <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/[0.06]" />
                     {timeline.map((evento, idx) => (
                       <div key={evento.id} className="flex items-start gap-3 pb-3 last:pb-0">
-                        <div className="flex-shrink-0 mt-0.5 relative z-10 bg-[#0f1f3d]">
-                          {evento.tipo === 'ingreso' && <Circle className="w-3.5 h-3.5 text-indigo-400" />}
+                        <div className="flex-shrink-0 mt-0.5 relative z-10 bg-[#111110]">
+                          {evento.tipo === 'ingreso' && <Circle className="w-3.5 h-3.5 text-[#38BDF8]" />}
                           {evento.tipo === 'bloque' && <BookOpen className="w-3.5 h-3.5 text-teal-400" />}
                           {evento.tipo === 'tarea' && <CheckSquare className="w-3.5 h-3.5 text-amber-400" />}
                         </div>
@@ -1579,11 +1579,11 @@ export default function EmpleadoDetallePage() {
                       {reporte ? (
                         <div className="space-y-1">
                           {reporte.split('\n').map((line, i) => renderLinea(line, i))}
-                          {generando && <span className="inline-block w-1 h-4 bg-indigo-400 animate-pulse ml-0.5" />}
+                          {generando && <span className="inline-block w-1 h-4 bg-[#38BDF8] animate-pulse ml-0.5" />}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-white/40 text-sm">
-                          <div className="w-4 h-4 border-2 border-white/20 border-t-indigo-400 rounded-full animate-spin-fast" />
+                          <div className="w-4 h-4 border-2 border-white/20 border-t-[#38BDF8] rounded-full animate-spin-fast" />
                           Iniciando generación...
                         </div>
                       )}
