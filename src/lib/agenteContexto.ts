@@ -115,6 +115,21 @@ export function getMensajeProactivo(params: AgenteParams): MensajeProactivo | nu
     }
   }
 
+  // ── Caso general: días 7–29 sin completar el módulo actual ────
+  const nombreModulo =
+    modulo === 'perfil' ? 'Perfil'
+    : modulo === 'cultura' ? 'Cultura'
+    : modulo === 'rol' ? 'Rol'
+    : 'este módulo'
+
+  if (diasOnboarding >= 7 && diasOnboarding < 30 && !moduloCompletado) {
+    return {
+      mensaje: `Llevás ${diasOnboarding} días en la empresa. El módulo de ${nombreModulo} te va a ayudar a integrarte más rápido. ¿Seguimos donde lo dejaste?`,
+      ctaPrimario: 'Continuar',
+      ctaSecundario: 'Ahora no',
+    }
+  }
+
   // Ninguna condición aplica — no mostrar hint
   return null
 }

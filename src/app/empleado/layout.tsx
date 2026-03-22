@@ -17,7 +17,6 @@ const MODULOS = [
   { key: 'M1', href: '/empleado/perfil' },
   { key: 'M2', href: '/empleado/cultura' },
   { key: 'M3', href: '/empleado/rol' },
-  { key: 'M4', href: '/empleado/asistente' },
 ] as const
 
 type ModuloKey = (typeof MODULOS)[number]['key']
@@ -36,10 +35,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     M1: false,
     M2: false,
     M3: false,
-    M4: false,
   })
   const [empleadoNombre, setEmpleadoNombre] = useState('')
   const [empleadoPuesto, setEmpleadoPuesto] = useState('')
+  const [empleadoId, setEmpleadoId] = useState('')
   const [diasOnboarding, setDiasOnboarding] = useState(1)
   const [accesosPendientes, setAccesosPendientes] = useState(0)
   const [menuAbierto, setMenuAbierto] = useState(false)
@@ -74,6 +73,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         router.push('/auth/login')
         return
       }
+
+      setEmpleadoId(user.id)
 
       // Datos del empleado para el avatar
       const { data: usuarioData } = await supabase
@@ -278,10 +279,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           : null
 
         const moduloKey =
-          moduloActual === 'perfil' ? 'M1'
-          : moduloActual === 'cultura' ? 'M2'
-          : moduloActual === 'rol' ? 'M3'
-          : moduloActual === 'asistente' ? 'M4'
+          moduloActual === 'perfil' ? 'M1' as const
+          : moduloActual === 'cultura' ? 'M2' as const
+          : moduloActual === 'rol' ? 'M3' as const
           : null
 
         return (
@@ -292,6 +292,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             accesosPendientes={accesosPendientes}
             moduloCompletado={moduloKey ? modulos[moduloKey] : false}
             nombreEmpleado={empleadoNombre}
+            userId={empleadoId}
           />
         )
       })()}

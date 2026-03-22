@@ -40,11 +40,12 @@ export function calcularEstadoModulos(
 }
 
 /**
- * Calcula el porcentaje de progreso global (0-100) a partir del estado de módulos.
+ * Calcula el porcentaje de progreso global (0-100) sobre 3 módulos (M1, M2, M3).
+ * M4 (asistente) queda fuera del cómputo de progreso principal.
  */
 export function calcularProgresoPct(estado: EstadoModulos): number {
-  const completados = Object.values(estado).filter(Boolean).length
-  return Math.round((completados / 4) * 100)
+  const completados = [estado.M1, estado.M2, estado.M3].filter(Boolean).length
+  return Math.round((completados / 3) * 100)
 }
 
 /**

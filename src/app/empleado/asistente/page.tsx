@@ -138,12 +138,15 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
       <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
         <Bot className="w-7 h-7 text-teal-400/70" />
       </div>
-      <div className="text-center space-y-1 max-w-sm">
+      <div className="text-center space-y-1.5 max-w-sm">
         <p className="text-sm font-medium text-white/60">
           Hola{nombre ? `, ${nombre.split(' ')[0]}` : ''}! Soy tu asistente de onboarding.
         </p>
         <p className="text-xs text-white/30">
           Preguntame sobre la empresa, tus tareas, procesos o cualquier duda que tengas.
+        </p>
+        <p className="text-[11px] text-indigo-400/50 mt-1">
+          También podés chatear desde el ícono flotante en cualquier módulo.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
@@ -328,8 +331,8 @@ export default function AsistentePage() {
           <Bot className="w-4 h-4 text-teal-400" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white/80">Asistente de onboarding</p>
-          <p className="text-[11px] text-white/30">Powered by Claude</p>
+          <p className="text-sm font-medium text-white/80">Historial de conversaciones</p>
+          <p className="text-[11px] text-white/30">Tus preguntas anteriores al asistente</p>
         </div>
         {/* Dot de estado activo */}
         <div className="ml-auto flex items-center gap-1.5">
