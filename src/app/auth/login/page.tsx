@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Zap } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -208,37 +207,17 @@ export default function LoginPage() {
     setAuthError(null)
 
     try {
-      const supabase = createClient()
-
-      const {
-        data: { user },
-        error: signInError,
-      } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      // Login server-side para evitar problemas con el cliente browser de Supabase
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       })
 
-      if (signInError) {
-        setAuthError(translateAuthError(signInError.message))
-        return
-      }
+      const json = await res.json()
 
-      if (!user) {
-        setAuthError('No se pudo obtener la sesión. Intentá de nuevo')
-        return
-      }
-
-      // Obtener rol desde la tabla usuarios
-      const { data: usuario, error: userError } = await supabase
-        .from('usuarios')
-        .select('rol')
-        .eq('id', user.id)
-        .single()
-
-      if (userError || !usuario) {
-        setAuthError(
-          'No se encontró tu perfil. Contactá a tu administrador'
-        )
+      if (!res.ok) {
+        setAuthError(translateAuthError(json.error ?? ''))
         return
       }
 
@@ -248,7 +227,7 @@ export default function LoginPage() {
         admin: '/admin',
         empleado: '/empleado/perfil',
       }
-      router.push(destinos[usuario.rol] ?? '/empleado/perfil')
+      router.push(destinos[json.rol] ?? '/empleado/perfil')
     } catch {
       setAuthError('Error inesperado. Intentá de nuevo')
     } finally {
