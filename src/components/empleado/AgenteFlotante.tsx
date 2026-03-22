@@ -617,6 +617,7 @@ export default function AgenteFlotante({
 
       {/* ── Botón flotante ─────────────────────────────────────── */}
       <motion.button
+        id="tour-agente-btn"
         onClick={() => {
           setPanelAbierto(prev => !prev)
           setHintVisible(false)

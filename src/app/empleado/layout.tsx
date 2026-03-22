@@ -150,7 +150,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           <div className="h-4 w-px bg-white/[0.07] hidden sm:block flex-shrink-0" />
 
           {/* Indicadores de módulos */}
-          <div className="flex items-center gap-0.5 flex-shrink-0">
+          <div id="tour-navbar-modulos" className="flex items-center gap-0.5 flex-shrink-0">
             {MODULOS.map((mod, idx) => {
               const completado = modulos[mod.key]
               const esActual = pathname.startsWith(mod.href)

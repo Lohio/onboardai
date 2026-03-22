@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn, getInitials, formatFecha, diasDesde } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
+import ProductTour from '@/components/empleado/ProductTour'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
 
 // Total de bloques requeridos para completar M2 — Cultura
@@ -534,7 +535,7 @@ export default function PerfilPage() {
         >
 
           {/* ── Bloque A: Hero Card ── */}
-          <motion.section variants={blockVariants}>
+          <motion.section id="tour-hero-card" variants={blockVariants}>
             <Card padding="none" className="overflow-hidden">
 
               {/* Banner decorativo */}
@@ -682,7 +683,7 @@ export default function PerfilPage() {
           </motion.section>
 
           {/* ── Bloque B: Mi onboarding ── */}
-          <motion.section variants={blockVariants}>
+          <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
             <Card>
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
@@ -900,6 +901,9 @@ export default function PerfilPage() {
 
         </motion.div>
       </div>
+
+      {/* Tour de bienvenida — se activa solo la primera vez */}
+      <ProductTour nombreEmpleado={perfil.nombre ?? ''} />
     </div>
   )
 }
