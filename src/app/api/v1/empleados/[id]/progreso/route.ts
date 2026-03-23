@@ -46,7 +46,7 @@ export const GET = withHandler(
     // Obtener progreso de módulos del empleado
     const { data: progreso, error } = await sa
       .from('progreso_modulos')
-      .select('modulo, bloque, completado, completado_at')
+      .select('modulo, completado, completado_at')
       .eq('usuario_id', id)
       .order('modulo', { ascending: true })
 
@@ -54,7 +54,15 @@ export const GET = withHandler(
       return ApiError.internal(error.message)
     }
 
-    return NextResponse.json({ progreso: progreso ?? [] })
+    // Mapear columnas reales a la forma que define la spec:
+    // modulo → modulo_id, completado_at → updated_at
+    const payload = (progreso ?? []).map((row) => ({
+      modulo_id: row.modulo,
+      completado: row.completado,
+      updated_at: row.completado_at,
+    }))
+
+    return NextResponse.json({ progreso: payload })
   }
 )
 
