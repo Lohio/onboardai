@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { withHandler } from '@/lib/api/withHandler'
+import { preboardingSchema } from '@/lib/schemas/admin'
+import { ApiError } from '@/lib/errors'
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -109,29 +111,14 @@ function buildEmailHtml({
 // Activa preboarding_activo y envía email al empleado
 // ─────────────────────────────────────────────
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createServerSupabaseClient()
-
-    // Verificar sesión y rol del caller
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const { data: admin } = await supabase
-      .from('usuarios')
-      .select('empresa_id, rol')
-      .eq('id', user.id)
-      .single()
-
-    if (!admin || !['admin', 'dev'].includes(admin.rol)) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-    }
-
-    // Parsear body
-    const body = await request.json() as { usuarioId?: string }
-    if (!body.usuarioId) {
-      return NextResponse.json({ error: 'usuarioId requerido' }, { status: 400 })
-    }
+export const POST = withHandler(
+  {
+    auth: 'session',
+    rol: ['admin', 'dev'],
+    schema: preboardingSchema,
+  },
+  async ({ body, supabase, user, req }) => {
+    // body.usuarioId ya validado como UUID por Zod
 
     // Obtener datos del empleado y su empresa
     const { data: empleado } = await supabase
@@ -140,13 +127,12 @@ export async function POST(request: Request) {
       .eq('id', body.usuarioId)
       .single()
 
-    if (!empleado) {
-      return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 })
-    }
+    if (!empleado) return ApiError.notFound('Empleado')
 
     // Admin solo puede activar preboarding en empleados de su empresa
-    if (admin.rol !== 'dev' && empleado.empresa_id !== admin.empresa_id) {
-      return NextResponse.json({ error: 'Sin acceso a este empleado' }, { status: 403 })
+    // Dev puede acceder a cualquier empresa
+    if (user!.rol !== 'dev' && empleado.empresa_id !== user!.empresaId) {
+      return ApiError.forbidden()
     }
 
     // Obtener nombre de la empresa
@@ -173,7 +159,7 @@ export async function POST(request: Request) {
     }
 
     // Construir URL de login (usar dominio de la request en prod, localhost en dev)
-    const origin = request.headers.get('origin') ?? 'http://localhost:3000'
+    const origin = req.headers.get('origin') ?? 'http://localhost:3000'
     const loginUrl = `${origin}/auth/login`
 
     // Construir email
@@ -216,8 +202,5 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true, preboarding_activo: true })
-  } catch (err) {
-    console.error('[preboarding] Error interno:', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
-}
+)

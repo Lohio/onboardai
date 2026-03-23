@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
 
 // Días del onboarding en que se disparan encuestas
@@ -36,18 +37,17 @@ function preguntasPorDia(dia: number): { p1: string; p2: string; p3: string } {
 // diasOnboarding se calcula server-side desde fecha_ingreso (nunca del cliente).
 // ─────────────────────────────────────────────
 
-export async function POST() {
-  try {
-    const supabase = await createServerSupabaseClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return ApiError.unauthorized()
-
+export const POST = withHandler(
+  {
+    auth: 'session',
+    rateLimit: RATE_LIMITS.encuesta,
+  },
+  async ({ supabase, user }) => {
     // Obtener empresa_id y fecha_ingreso desde la DB (no del cliente)
     const { data: usuario } = await supabase
       .from('usuarios')
       .select('empresa_id, fecha_ingreso')
-      .eq('id', user.id)
+      .eq('id', user!.id)
       .single()
 
     if (!usuario) return ApiError.notFound('Usuario')
@@ -61,7 +61,7 @@ export async function POST() {
     const { data: existentes } = await supabase
       .from('encuestas_pulso')
       .select('dia_onboarding')
-      .eq('usuario_id', user.id)
+      .eq('usuario_id', user!.id)
 
     const diasExistentes = new Set((existentes ?? []).map((e) => e.dia_onboarding))
 
@@ -75,7 +75,7 @@ export async function POST() {
         const preguntas = preguntasPorDia(dia)
         return {
           empresa_id: usuario.empresa_id,
-          usuario_id: user.id,
+          usuario_id: user!.id,
           dia_onboarding: dia,
           pregunta_1: preguntas.p1,
           pregunta_2: preguntas.p2,
@@ -90,15 +90,12 @@ export async function POST() {
     const { data: pendiente } = await supabase
       .from('encuestas_pulso')
       .select('id, dia_onboarding, pregunta_1, pregunta_2, pregunta_3')
-      .eq('usuario_id', user.id)
+      .eq('usuario_id', user!.id)
       .eq('completada', false)
       .order('dia_onboarding', { ascending: true })
       .limit(1)
       .single()
 
     return NextResponse.json({ encuesta: pendiente ?? null })
-  } catch (err) {
-    console.error('[encuesta-check] Error:', err)
-    return ApiError.internal()
   }
-}
+)

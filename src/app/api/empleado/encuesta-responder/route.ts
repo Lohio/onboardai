@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { encuestaResponderSchema } from '@/lib/schemas/empleado'
 import { ApiError } from '@/lib/errors'
 
 // ─────────────────────────────────────────────
@@ -7,35 +9,14 @@ import { ApiError } from '@/lib/errors'
 // Guarda las respuestas de una encuesta de pulso
 // ─────────────────────────────────────────────
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createServerSupabaseClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return ApiError.unauthorized()
-
-    const body = await request.json() as {
-      encuestaId?: string
-      respuesta1?: number
-      respuesta2?: number
-      respuesta3?: number
-      comentario?: string
-    }
-
-    if (
-      !body.encuestaId ||
-      body.respuesta1 === undefined ||
-      body.respuesta2 === undefined ||
-      body.respuesta3 === undefined
-    ) {
-      return ApiError.badRequest('Datos incompletos')
-    }
-
-    // Validar rango de respuestas (1-5)
-    const respuestas = [body.respuesta1, body.respuesta2, body.respuesta3]
-    if (respuestas.some(r => r < 1 || r > 5 || !Number.isInteger(r))) {
-      return ApiError.badRequest('Las respuestas deben ser valores enteros entre 1 y 5')
-    }
+export const POST = withHandler(
+  {
+    auth: 'session',
+    schema: encuestaResponderSchema,
+    rateLimit: RATE_LIMITS.encuesta,
+  },
+  async ({ body, supabase, user }) => {
+    // body ya validado por Zod: encuestaId (uuid), respuesta1/2/3 (int 1-5), comentario? (string max 2000)
 
     // Verificar que la encuesta pertenece al usuario y no fue completada
     const { data: encuesta } = await supabase
@@ -46,7 +27,7 @@ export async function POST(request: Request) {
 
     if (!encuesta) return ApiError.notFound('Encuesta')
 
-    if (encuesta.usuario_id !== user.id) return ApiError.forbidden()
+    if (encuesta.usuario_id !== user!.id) return ApiError.forbidden()
 
     if (encuesta.completada) return ApiError.conflict('Encuesta ya respondida')
 
@@ -67,9 +48,5 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error('[encuesta-responder] Error:', err)
-    return ApiError.internal()
   }
-}
-
+)
