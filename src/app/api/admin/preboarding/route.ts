@@ -155,7 +155,7 @@ export const POST = withHandler(
       .eq('id', empleado.id)
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
+      return ApiError.internal(updateError.message)
     }
 
     // Construir URL de login (usar dominio de la request en prod, localhost en dev)
