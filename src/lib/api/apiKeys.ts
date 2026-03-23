@@ -44,13 +44,16 @@ export function hashApiKey(key: string): string {
   return crypto.createHash('sha256').update(key).digest('hex')
 }
 
+// Regex para validar que el sufijo de la key sea exactamente 32 caracteres hex en minúsculas
+const HEX_RE = /^[0-9a-f]{32}$/
+
 // Verifica una API key y retorna el registro y empresa_id, o null si es inválida.
 // Usa service role para bypassear RLS (acceso de solo lectura controlado).
 export async function verifyApiKey(
   rawKey: string
 ): Promise<{ record: ApiKeyRecord; empresaId: string } | null> {
-  // Validar formato: oai_live_ (9 chars) + 32 hex chars = 41 chars total
-  if (!rawKey.startsWith('oai_live_') || rawKey.length !== 41) {
+  // Validar formato: oai_live_ (9 chars) + 32 hex chars en minúsculas
+  if (!rawKey.startsWith('oai_live_') || !HEX_RE.test(rawKey.slice(9))) {
     return null
   }
 
