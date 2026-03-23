@@ -27,6 +27,6 @@ if (typeof window === 'undefined' && !_env.success) {
 }
 
 export const env =
-  typeof window === 'undefined'
-    ? (process.env as z.infer<typeof envSchema>)
+  typeof window === 'undefined' && _env.success
+    ? _env.data
     : ({} as z.infer<typeof envSchema>)
