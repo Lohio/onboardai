@@ -20,7 +20,6 @@ export const crearEmpleadoSchema = z.object({
 export const actualizarEmpleadoSchema = crearEmpleadoSchema
   .omit({ password: true, email: true })
   .partial()
-  .strict()
 
 // Schema para operaciones de preboarding
 export const preboardingSchema = z.object({
