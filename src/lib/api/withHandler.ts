@@ -13,6 +13,7 @@ import { generateRequestId } from '@/lib/api/requestId'
 import { logRequest } from '@/lib/api/logger'
 import { UserRole } from '@/types'
 import { ApiContext } from '@/types/api'
+import { RateLimitOptions, checkRateLimit } from '@/lib/api/withRateLimit'
 
 // ─────────────────────────────────────────────
 // Opciones de configuración del handler
@@ -30,6 +31,8 @@ interface HandlerOptions<TBody = unknown> {
   bodyType?: 'json' | 'formdata' | 'none'
   // CORS (para API pública, fase 2)
   cors?: boolean
+  // Configuración de rate limiting (DB-based, compatible con Vercel serverless)
+  rateLimit?: RateLimitOptions
 }
 
 // ─────────────────────────────────────────────
@@ -119,6 +122,31 @@ export function withHandler<TBody = unknown>(
             status = 403
             return ApiError.forbidden(requestId)
           }
+        }
+      }
+
+      // ── Rate limiting ────────────────────────────────────────────────
+      if (options.rateLimit) {
+        const ip =
+          req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+          req.headers.get('x-real-ip') ??
+          'unknown'
+
+        const rateLimitResponse = await checkRateLimit(
+          options.rateLimit,
+          {
+            supabase,
+            userId,
+            empresaId,
+            ip,
+            endpoint: new URL(req.url).pathname,
+          },
+          requestId
+        )
+
+        if (rateLimitResponse) {
+          status = 429
+          return rateLimitResponse
         }
       }
 
