@@ -1,1 +1,10 @@
-{"framework": "nextjs"}
+{
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/bot/recordatorios",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+

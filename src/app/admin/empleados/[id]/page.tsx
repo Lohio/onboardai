@@ -637,25 +637,42 @@ export default function EmpleadoDetallePage() {
     setExpandedAccesoId(newAcceso.id)
   }
 
-  // ── Guardar chip desde el panel local (upsert) ──
+  // ── Guardar chip desde el panel local (insert o update según existencia) ──
   async function guardarChipDraft() {
     if (!chipDraft || !empresaId) return
     const supabase = createClient()
-    const { data, error } = await supabase
+
+    const payload = {
+      estado:          chipDraft.usuario.trim() || chipDraft.password.trim() ? 'activo' : 'pendiente',
+      usuario_acceso:  chipDraft.usuario.trim()   || null,
+      password_acceso: chipDraft.password.trim()  || null,
+    }
+
+    // Verificar si ya existe un acceso para esta herramienta y usuario
+    const { data: existente } = await supabase
       .from('accesos_herramientas')
-      .upsert(
-        {
-          usuario_id:      id,
-          empresa_id:      empresaId,
-          herramienta:     chipDraft.nombre,
-          estado:          chipDraft.usuario.trim() || chipDraft.password.trim() ? 'activo' : 'pendiente',
-          usuario_acceso:  chipDraft.usuario.trim() || null,
-          password_acceso: chipDraft.password.trim() || null,
-        },
-        { onConflict: 'usuario_id,herramienta', ignoreDuplicates: false }
-      )
-      .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
-      .single()
+      .select('id')
+      .eq('usuario_id', id)
+      .eq('herramienta', chipDraft.nombre)
+      .maybeSingle()
+
+    let queryResult
+    if (existente) {
+      queryResult = await supabase
+        .from('accesos_herramientas')
+        .update(payload)
+        .eq('id', existente.id)
+        .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
+        .single()
+    } else {
+      queryResult = await supabase
+        .from('accesos_herramientas')
+        .insert({ usuario_id: id, empresa_id: empresaId, herramienta: chipDraft.nombre, ...payload })
+        .select('id, herramienta, estado, url, notas, usuario_acceso, password_acceso')
+        .single()
+    }
+
+    const { data, error } = queryResult
     if (error) {
       console.error('[guardarChipDraft]', error)
       toast.error(`No se pudo guardar: ${error.message}`)

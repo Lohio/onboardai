@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Check, Mail, Video, Plus } from 'lucide-react'
+import { Save, Check, Mail, Video, Plus, MessageSquareMore, Trash2, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -72,6 +72,23 @@ export default function ConfiguracionPage() {
   const [savedOk, setSavedOk] = useState(false)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
 
+  // Bot — Teams webhook
+  const [teamsWebhookUrl, setTeamsWebhookUrl]   = useState('')
+  const [originalTeamsUrl, setOriginalTeamsUrl] = useState('')
+  const [savingBot, setSavingBot]               = useState(false)
+  const [savedBot, setSavedBot]                 = useState(false)
+
+  // Bot — vinculaciones
+  interface BotVinculacion {
+    id:           string
+    plataforma:   'teams' | 'gchat'
+    chat_email:   string | null
+    chat_user_id: string
+    created_at:   string
+    usuarios:     { nombre: string | null }[] | null
+  }
+  const [vinculaciones, setVinculaciones] = useState<BotVinculacion[]>([])
+
   // Herramientas estándar seleccionadas
   const [seleccionadas, setSeleccionadas] = useState<string[]>(['email'])
   // Estado original para detectar cambios pendientes
@@ -128,11 +145,26 @@ export default function ConfiguracionPage() {
 
       setEmpresaId(adminData.empresa_id)
 
-      const { data: empresaData } = await supabase
-        .from('empresas')
-        .select('herramientas_contacto')
-        .eq('id', adminData.empresa_id)
-        .single()
+      // Cargar config de empresa + vinculaciones del bot en paralelo
+      const [empresaRes, vinRes] = await Promise.all([
+        supabase
+          .from('empresas')
+          .select('herramientas_contacto, teams_webhook_url')
+          .eq('id', adminData.empresa_id)
+          .single(),
+        supabase
+          .from('bot_vinculaciones')
+          .select('id, plataforma, chat_email, chat_user_id, created_at, usuarios(nombre)')
+          .eq('empresa_id', adminData.empresa_id)
+          .order('created_at', { ascending: false }),
+      ])
+
+      const empresaData = empresaRes.data
+      if (empresaData?.teams_webhook_url) {
+        setTeamsWebhookUrl(empresaData.teams_webhook_url)
+        setOriginalTeamsUrl(empresaData.teams_webhook_url)
+      }
+      setVinculaciones((vinRes.data ?? []) as BotVinculacion[])
 
       if (empresaData?.herramientas_contacto) {
         const arr: string[] = empresaData.herramientas_contacto
@@ -180,6 +212,35 @@ export default function ConfiguracionPage() {
       toast.error('Error al guardar')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleEliminarVinculacion(id: string) {
+    const supabase = createClient()
+    const { error } = await supabase.from('bot_vinculaciones').delete().eq('id', id)
+    if (error) { toast.error('Error al eliminar vinculación'); return }
+    setVinculaciones(prev => prev.filter(v => v.id !== id))
+    toast.success('Vinculación eliminada')
+  }
+
+  async function handleGuardarBot() {
+    if (!empresaId) return
+    setSavingBot(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('empresas')
+        .update({ teams_webhook_url: teamsWebhookUrl.trim() || null })
+        .eq('id', empresaId)
+      if (error) throw error
+      setOriginalTeamsUrl(teamsWebhookUrl.trim())
+      setSavedBot(true)
+      setTimeout(() => setSavedBot(false), 2500)
+      toast.success('Configuración del bot guardada')
+    } catch {
+      toast.error('Error al guardar')
+    } finally {
+      setSavingBot(false)
     }
   }
 
@@ -426,6 +487,174 @@ export default function ConfiguracionPage() {
           </div>
         </Card>
       </motion.div>
+
+      {/* ── Integración de chat (Teams / GChat) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.15 }}
+      >
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <MessageSquareMore className="w-4 h-4 text-[#38BDF8]" />
+            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              Integración de chat
+            </h2>
+          </div>
+          <p className="text-xs text-white/40 mb-5">
+            Activá el bot de Heero en Teams o Google Chat para que tus empleados puedan
+            hacer consultas de onboarding directamente desde su plataforma de mensajería.
+          </p>
+
+          {/* Microsoft Teams */}
+          <div className="space-y-3 mb-5">
+            <div className="flex items-center gap-2">
+              <TeamsIcon className="w-4 h-4 text-[#7DD3FC]" />
+              <h3 className="text-sm font-medium text-white/80">Microsoft Teams</h3>
+            </div>
+            <p className="text-xs text-white/40">
+              Creá un Outgoing Webhook en Teams y pegá su token en la variable
+              de entorno <code className="text-[#38BDF8] bg-white/[0.06] px-1 rounded">TEAMS_WEBHOOK_TOKEN</code>.
+              Luego copiá la URL del webhook entrante que Teams genera para tu canal
+              y guardala acá para recibir notificaciones proactivas.
+            </p>
+            <div className="space-y-2">
+              <label className="block text-xs text-white/40">
+                URL del webhook entrante (para recordatorios)
+              </label>
+              <input
+                type="url"
+                value={teamsWebhookUrl}
+                onChange={e => setTeamsWebhookUrl(e.target.value)}
+                placeholder="https://outlook.office.com/webhook/..."
+                className="w-full px-3 py-2 rounded-lg text-sm
+                  bg-white/[0.04] border border-white/[0.10] text-white
+                  placeholder:text-white/25
+                  focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
+                  transition-all duration-150"
+              />
+              <p className="text-[11px] text-white/25">
+                En Teams: Settings → Apps → Incoming Webhook → copiar URL
+              </p>
+            </div>
+          </div>
+
+          {/* Google Chat */}
+          <div className="space-y-3 mb-5 pt-5 border-t border-white/[0.06]">
+            <h3 className="text-sm font-medium text-white/80">Google Chat</h3>
+            <p className="text-xs text-white/40">
+              Para activar el bot en Google Chat necesitás configurar un proyecto
+              en Google Cloud Console y agregar las credenciales de service account
+              en la variable <code className="text-[#38BDF8] bg-white/[0.06] px-1 rounded">GCHAT_SERVICE_ACCOUNT_JSON</code>.
+            </p>
+            <ol className="space-y-1.5 text-xs text-white/40 list-decimal list-inside">
+              <li>Creá un proyecto en Google Cloud Console</li>
+              <li>Activá la API de Google Chat</li>
+              <li>Creá una Service Account y descargá el JSON de credenciales</li>
+              <li>Configurá el bot en la sección "Chat API" del proyecto</li>
+              <li>Agregá el JSON como variable de entorno en Vercel</li>
+            </ol>
+            <a
+              href="https://developers.google.com/chat/how-tos/bots-develop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-[#38BDF8]/70 hover:text-[#38BDF8] transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Ver documentación de Google Chat
+            </a>
+          </div>
+
+          {/* Nota informativa */}
+          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] mb-5">
+            <p className="text-xs text-white/40 leading-relaxed">
+              <span className="text-white/60 font-medium">Vinculación automática:</span>{' '}
+              Los empleados se vinculan automáticamente cuando el bot los identifica
+              por email. También pueden vincularse desde su perfil en Heero.
+            </p>
+          </div>
+
+          {/* Botón guardar config del bot */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
+            <AnimatePresence>
+              {savedBot && (
+                <motion.span
+                  initial={{ opacity: 0, x: 4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-1.5 text-xs text-[#22c55e]"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Guardado
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={savingBot}
+              disabled={teamsWebhookUrl.trim() === originalTeamsUrl}
+              onClick={handleGuardarBot}
+            >
+              <Save className="w-3.5 h-3.5" />
+              Guardar
+            </Button>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* ── Empleados vinculados al bot ── */}
+      {vinculaciones.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.2 }}
+        >
+          <Card>
+            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+              Empleados vinculados al bot
+            </h2>
+            <div className="space-y-2">
+              {vinculaciones.map(vin => (
+                <div
+                  key={vin.id}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                    bg-white/[0.02] border border-white/[0.06]"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white/80 truncate">
+                      {vin.usuarios?.[0]?.nombre ?? '—'}
+                    </p>
+                    <p className="text-xs text-white/35 mt-0.5 truncate">
+                      {vin.chat_email ?? vin.chat_user_id}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                    vin.plataforma === 'teams'
+                      ? 'bg-[#0EA5E9]/10 text-[#38BDF8] border-[#0EA5E9]/20'
+                      : 'bg-green-500/10 text-green-400 border-green-500/20'
+                  }`}>
+                    {vin.plataforma === 'teams' ? 'Teams' : 'Google Chat'}
+                  </span>
+                  <p className="text-xs text-white/25 flex-shrink-0 hidden sm:block">
+                    {new Date(vin.created_at).toLocaleDateString('es-AR')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleEliminarVinculacion(vin.id)}
+                    className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                      text-white/25 hover:text-red-400 hover:bg-red-500/10
+                      transition-colors duration-150"
+                    aria-label="Eliminar vinculación"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
     </div>
   )
