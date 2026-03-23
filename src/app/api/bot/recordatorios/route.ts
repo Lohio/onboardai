@@ -1,7 +1,8 @@
 // Cron de recordatorios proactivos del bot (días 7, 30 y 60)
 // Invocado diariamente por Vercel Cron a las 9:00 AM UTC
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { withHandler } from '@/lib/api/withHandler'
 
 // Cliente con service role — necesario para leer usuarios cross-empresa
 function getAdminClient() {
@@ -115,97 +116,90 @@ async function enviarMensajeTeams(
 // GET /api/bot/recordatorios
 // ─────────────────────────────────────────────
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  // Verificar CRON_SECRET
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    return NextResponse.json(
-      { error: 'CRON_SECRET no configurado' },
-      { status: 503 }
-    )
-  }
+export const GET = withHandler(
+  {
+    auth: 'cron',      // withHandler verifica Bearer CRON_SECRET
+    bodyType: 'none',
+  },
+  async () => {
+    // withHandler ya verificó el CRON_SECRET — usar cliente admin para queries cross-empresa
+    const supabase = getAdminClient()
+    const hoy      = new Date()
 
-  const authHeader = req.headers.get('authorization') ?? ''
-  if (authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
-
-  const supabase = getAdminClient()
-  const hoy      = new Date()
-
-  // Calcular fechas objetivo (hoy menos 7, 30 y 60 días)
-  const fechas: Record<7 | 30 | 60, string> = {
-    7:  new Date(hoy.getTime() - 7  * 86400000).toISOString().slice(0, 10),
-    30: new Date(hoy.getTime() - 30 * 86400000).toISOString().slice(0, 10),
-    60: new Date(hoy.getTime() - 60 * 86400000).toISOString().slice(0, 10),
-  }
-
-  let enviados = 0
-  const errores: string[] = []
-
-  for (const [diaStr, fecha] of Object.entries(fechas)) {
-    const dia = parseInt(diaStr) as 7 | 30 | 60
-
-    // Buscar empleados cuya fecha_ingreso sea exactamente esta fecha
-    const { data: empleados, error } = await supabase
-      .from('usuarios')
-      .select('id, nombre, empresa_id, empresas(nombre), fecha_ingreso')
-      .eq('rol', 'empleado')
-      .gte('fecha_ingreso', `${fecha}T00:00:00.000Z`)
-      .lte('fecha_ingreso', `${fecha}T23:59:59.999Z`)
-
-    if (error) {
-      errores.push(`Día ${dia}: ${error.message}`)
-      continue
+    // Calcular fechas objetivo (hoy menos 7, 30 y 60 días)
+    const fechas: Record<7 | 30 | 60, string> = {
+      7:  new Date(hoy.getTime() - 7  * 86400000).toISOString().slice(0, 10),
+      30: new Date(hoy.getTime() - 30 * 86400000).toISOString().slice(0, 10),
+      60: new Date(hoy.getTime() - 60 * 86400000).toISOString().slice(0, 10),
     }
 
-    for (const row of (empleados ?? [])) {
-      const empleado: Empleado = {
-        id:             row.id,
-        nombre:         row.nombre ?? 'empleado',
-        empresa_id:     row.empresa_id,
-        empresa_nombre: (row.empresas as unknown as { nombre: string }[] | null)?.[0]?.nombre ?? 'tu empresa',
-        fecha_ingreso:  row.fecha_ingreso,
+    let enviados = 0
+    const errores: string[] = []
+
+    for (const [diaStr, fecha] of Object.entries(fechas)) {
+      const dia = parseInt(diaStr) as 7 | 30 | 60
+
+      // Buscar empleados cuya fecha_ingreso sea exactamente esta fecha
+      const { data: empleados, error } = await supabase
+        .from('usuarios')
+        .select('id, nombre, empresa_id, empresas(nombre), fecha_ingreso')
+        .eq('rol', 'empleado')
+        .gte('fecha_ingreso', `${fecha}T00:00:00.000Z`)
+        .lte('fecha_ingreso', `${fecha}T23:59:59.999Z`)
+
+      if (error) {
+        errores.push(`Día ${dia}: ${error.message}`)
+        continue
       }
 
-      // Buscar vinculaciones del empleado
-      const { data: vinculaciones } = await supabase
-        .from('bot_vinculaciones')
-        .select('usuario_id, plataforma, chat_user_id')
-        .eq('usuario_id', empleado.id)
-
-      if (!vinculaciones || vinculaciones.length === 0) continue
-
-      const texto = mensajePorDia(dia, empleado.nombre, empleado.empresa_nombre)
-
-      for (const vin of vinculaciones as Vinculacion[]) {
-        if (vin.plataforma === 'gchat') {
-          // chat_user_id tiene formato "users/123"; el DM space está asociado al user
-          // En producción deberías guardar el spaceName real en la vinculación
-          await enviarMensajeGchat(vin.chat_user_id, texto)
-          enviados++
+      for (const row of (empleados ?? [])) {
+        const empleado: Empleado = {
+          id:             row.id,
+          nombre:         row.nombre ?? 'empleado',
+          empresa_id:     row.empresa_id,
+          empresa_nombre: (row.empresas as unknown as { nombre: string }[] | null)?.[0]?.nombre ?? 'tu empresa',
+          fecha_ingreso:  row.fecha_ingreso,
         }
 
-        if (vin.plataforma === 'teams') {
-          // Buscar el teams_webhook_url de la empresa
-          const { data: empresaData } = await supabase
-            .from('empresas')
-            .select('teams_webhook_url')
-            .eq('id', empleado.empresa_id)
-            .maybeSingle()
+        // Buscar vinculaciones del empleado
+        const { data: vinculaciones } = await supabase
+          .from('bot_vinculaciones')
+          .select('usuario_id, plataforma, chat_user_id')
+          .eq('usuario_id', empleado.id)
 
-          if (empresaData?.teams_webhook_url) {
-            await enviarMensajeTeams(empresaData.teams_webhook_url, texto)
+        if (!vinculaciones || vinculaciones.length === 0) continue
+
+        const texto = mensajePorDia(dia, empleado.nombre, empleado.empresa_nombre)
+
+        for (const vin of vinculaciones as Vinculacion[]) {
+          if (vin.plataforma === 'gchat') {
+            // chat_user_id tiene formato "users/123"; el DM space está asociado al user
+            // En producción deberías guardar el spaceName real en la vinculación
+            await enviarMensajeGchat(vin.chat_user_id, texto)
             enviados++
+          }
+
+          if (vin.plataforma === 'teams') {
+            // Buscar el teams_webhook_url de la empresa
+            const { data: empresaData } = await supabase
+              .from('empresas')
+              .select('teams_webhook_url')
+              .eq('id', empleado.empresa_id)
+              .maybeSingle()
+
+            if (empresaData?.teams_webhook_url) {
+              await enviarMensajeTeams(empresaData.teams_webhook_url, texto)
+              enviados++
+            }
           }
         }
       }
     }
-  }
 
-  return NextResponse.json({
-    ok:      true,
-    enviados,
-    errores: errores.length > 0 ? errores : undefined,
-  })
-}
+    return NextResponse.json({
+      ok:      true,
+      enviados,
+      errores: errores.length > 0 ? errores : undefined,
+    })
+  }
+)

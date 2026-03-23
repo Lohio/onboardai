@@ -1,7 +1,9 @@
 // Endpoint para el bot de Microsoft Teams (Outgoing Webhook)
 // Teams verifica la autenticidad via HMAC-SHA256
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { procesarMensajeBot } from '@/lib/botCore'
 
 // ─────────────────────────────────────────────
@@ -26,95 +28,102 @@ function verificarHmacTeams(body: string, authHeader: string): boolean {
 // POST /api/bot/teams
 // ─────────────────────────────────────────────
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  // Verificar que TEAMS_WEBHOOK_TOKEN esté configurado
-  if (!process.env.TEAMS_WEBHOOK_TOKEN) {
-    return NextResponse.json(
-      { type: 'message', text: 'Integración de Teams no configurada.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    // Leer el body como string para verificar HMAC antes de parsear
-    const bodyText  = await req.text()
-    const authHeader = req.headers.get('authorization') ?? ''
-
-    if (!verificarHmacTeams(bodyText, authHeader)) {
-      return NextResponse.json({ error: 'Firma inválida' }, { status: 401 })
+export const POST = withHandler(
+  {
+    auth: 'webhook',   // withHandler no verifica auth — lo hace el handler
+    bodyType: 'none',  // el handler lee req.text() internamente para el HMAC
+    rateLimit: RATE_LIMITS.bot,
+  },
+  async ({ req }) => {
+    // Verificar que TEAMS_WEBHOOK_TOKEN esté configurado
+    if (!process.env.TEAMS_WEBHOOK_TOKEN) {
+      return NextResponse.json(
+        { type: 'message', text: 'Integración de Teams no configurada.' },
+        { status: 503 }
+      )
     }
 
-    // Parsear el cuerpo del mensaje de Teams
-    const body = JSON.parse(bodyText) as {
-      text?: string
-      from?: {
-        id:          string
-        aadObjectId: string
-        name:        string
+    try {
+      // Leer el body como string para verificar HMAC antes de parsear
+      const bodyText   = await req.text()
+      const authHeader = req.headers.get('authorization') ?? ''
+
+      if (!verificarHmacTeams(bodyText, authHeader)) {
+        return NextResponse.json({ error: 'Firma inválida' }, { status: 401 })
       }
-    }
 
-    // Limpiar etiquetas <at>...</at> que Teams incluye en las menciones
-    const mensaje = (body.text ?? '').replace(/<at>[^<]+<\/at>/g, '').trim()
+      // Parsear el cuerpo del mensaje de Teams
+      const body = JSON.parse(bodyText) as {
+        text?: string
+        from?: {
+          id:          string
+          aadObjectId: string
+          name:        string
+        }
+      }
 
-    if (!mensaje) {
+      // Limpiar etiquetas <at>...</at> que Teams incluye en las menciones
+      const mensaje = (body.text ?? '').replace(/<at>[^<]+<\/at>/g, '').trim()
+
+      if (!mensaje) {
+        return NextResponse.json({
+          type: 'message',
+          text: '¿En qué puedo ayudarte?',
+        })
+      }
+
+      const chatUserId = body.from?.id          ?? ''
+      // aadObjectId es el ID de Azure AD — más estable que el ID de conversación
+      const email      = body.from?.aadObjectId ?? null
+
+      // Procesar con el core del bot
+      const { respuesta, linkWebApp } = await procesarMensajeBot({
+        chatUserId,
+        chatEmail: email,
+        plataforma: 'teams',
+        mensaje,
+      })
+
+      // Formatear respuesta para Teams (Adaptive Card si hay link)
+      if (linkWebApp) {
+        return NextResponse.json({
+          type: 'message',
+          attachments: [{
+            contentType: 'application/vnd.microsoft.card.adaptive',
+            content: {
+              $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+              type:    'AdaptiveCard',
+              version: '1.4',
+              body: [
+                {
+                  type:   'TextBlock',
+                  text:   respuesta,
+                  wrap:   true,
+                  size:   'Default',
+                },
+              ],
+              actions: [{
+                type:  'Action.OpenUrl',
+                title: linkWebApp.texto,
+                url:   linkWebApp.url,
+              }],
+            },
+          }],
+        })
+      }
+
+      // Respuesta de texto simple
       return NextResponse.json({
         type: 'message',
-        text: '¿En qué puedo ayudarte?',
+        text: respuesta,
       })
-    }
 
-    const chatUserId = body.from?.id          ?? ''
-    // aadObjectId es el ID de Azure AD — más estable que el ID de conversación
-    const email      = body.from?.aadObjectId ?? null
-
-    // Procesar con el core del bot
-    const { respuesta, linkWebApp } = await procesarMensajeBot({
-      chatUserId,
-      chatEmail: email,
-      plataforma: 'teams',
-      mensaje,
-    })
-
-    // Formatear respuesta para Teams (Adaptive Card si hay link)
-    if (linkWebApp) {
+    } catch (err) {
+      console.error('[teams] Error procesando mensaje:', err)
       return NextResponse.json({
         type: 'message',
-        attachments: [{
-          contentType: 'application/vnd.microsoft.card.adaptive',
-          content: {
-            $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
-            type:    'AdaptiveCard',
-            version: '1.4',
-            body: [
-              {
-                type:   'TextBlock',
-                text:   respuesta,
-                wrap:   true,
-                size:   'Default',
-              },
-            ],
-            actions: [{
-              type:  'Action.OpenUrl',
-              title: linkWebApp.texto,
-              url:   linkWebApp.url,
-            }],
-          },
-        }],
+        text: 'Ocurrió un error inesperado. Intentá de nuevo.',
       })
     }
-
-    // Respuesta de texto simple
-    return NextResponse.json({
-      type: 'message',
-      text: respuesta,
-    })
-
-  } catch (err) {
-    console.error('[teams] Error procesando mensaje:', err)
-    return NextResponse.json({
-      type: 'message',
-      text: 'Ocurrió un error inesperado. Intentá de nuevo.',
-    })
   }
-}
+)
