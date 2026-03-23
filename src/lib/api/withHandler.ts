@@ -14,13 +14,14 @@ import { logRequest } from '@/lib/api/logger'
 import { UserRole } from '@/types'
 import { ApiContext } from '@/types/api'
 import { RateLimitOptions, checkRateLimit } from '@/lib/api/withRateLimit'
+import { verifyApiKey, type ApiKeyRecord } from '@/lib/api/apiKeys'
 
 // ─────────────────────────────────────────────
 // Opciones de configuración del handler
 // ─────────────────────────────────────────────
 interface HandlerOptions<TBody = unknown> {
   // Modo de autenticación
-  auth: 'session' | 'cron' | 'webhook' | 'none'
+  auth: 'session' | 'apiKey' | 'cron' | 'webhook' | 'none'
   // Rol mínimo requerido (solo para auth: 'session')
   rol?: UserRole | UserRole[]
   // Schema Zod para validar el body
@@ -58,6 +59,7 @@ export function withHandler<TBody = unknown>(
     let status = 500
     let userId: string | undefined
     let empresaId: string | undefined
+    let apiKeyRecord: ApiKeyRecord | undefined
 
     try {
       // ── Supabase client ──────────────────────────────────────────────
@@ -96,6 +98,28 @@ export function withHandler<TBody = unknown>(
           empresaId: perfil.empresa_id as string,
           rol: perfil.rol as UserRole,
         }
+      } else if (options.auth === 'apiKey') {
+        // Verificación por API Key en el header Authorization: Bearer oai_live_...
+        const authHeader = req.headers.get('Authorization')
+        const rawKey = authHeader?.startsWith('Bearer ')
+          ? authHeader.slice(7)
+          : null
+
+        if (!rawKey) {
+          status = 401
+          return ApiError.unauthorized(requestId)
+        }
+
+        const keyResult = await verifyApiKey(rawKey)
+        if (!keyResult) {
+          status = 401
+          return ApiError.unauthorized(requestId)
+        }
+
+        // Para apiKey auth, user es null (acceso de máquina, no de usuario humano)
+        // La empresa_id proviene de la API key
+        empresaId = keyResult.empresaId
+        apiKeyRecord = keyResult.record
       } else if (options.auth === 'cron') {
         // Verificación por secret compartido en el header Authorization
         const authHeader = req.headers.get('authorization')
@@ -110,7 +134,7 @@ export function withHandler<TBody = unknown>(
       // ── Autorización por rol ─────────────────────────────────────────
       // Solo se puede verificar rol con auth: 'session'
       if (options.rol !== undefined) {
-        if (options.auth !== 'session') {
+        if (options.auth !== 'session' && options.auth !== 'apiKey') {
           // Error de configuración del desarrollador
           if (process.env.NODE_ENV !== 'production') {
             throw new Error(`[withHandler] La opción 'rol' solo aplica con auth: 'session', pero se recibió auth: '${options.auth}'`)
@@ -193,6 +217,7 @@ export function withHandler<TBody = unknown>(
         supabase,
         requestId,
         params: resolvedParams,
+        apiKeyRecord,
       }
 
       const response = await handler(ctx)
