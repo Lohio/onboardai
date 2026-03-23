@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { registerSchema } from '@/lib/schemas/auth'
 
 // ─────────────────────────────────────────────
 // POST /api/auth/register
@@ -8,30 +11,14 @@ import { createClient } from '@supabase/supabase-js'
 // primera inserción (no hay admin aún).
 // ─────────────────────────────────────────────
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json() as {
-      email: string
-      password: string
-      nombre: string
-      nombreEmpresa: string
-    }
-
+export const POST = withHandler(
+  {
+    auth: 'none',
+    schema: registerSchema,
+    rateLimit: RATE_LIMITS.register,
+  },
+  async ({ body }) => {
     const { email, password, nombre, nombreEmpresa } = body
-
-    // Validaciones básicas
-    if (!email || !password || !nombre || !nombreEmpresa) {
-      return NextResponse.json(
-        { error: 'Todos los campos son obligatorios' },
-        { status: 400 }
-      )
-    }
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'La contraseña debe tener al menos 8 caracteres' },
-        { status: 400 }
-      )
-    }
 
     // Cliente con service role (bypasea RLS)
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -112,8 +99,5 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true }, { status: 201 })
-  } catch (err) {
-    console.error('[register] Error inesperado:', err)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
-}
+)

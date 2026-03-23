@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { anthropic, buildSystemPromptWithConfig } from '@/lib/claude'
-import { createServerSupabaseClient } from '@/lib/supabase'
-import { ApiError } from '@/lib/errors'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { agenteSchema } from '@/lib/schemas/empleado'
 import type { ChatMensaje } from '@/lib/claude'
 
 // ─────────────────────────────────────────────
@@ -14,34 +15,26 @@ import type { ChatMensaje } from '@/lib/claude'
 
 const INSTRUCCIONES_AGENTE = `Sos un guía de onboarding proactivo. Tu objetivo es ayudar al empleado a completar su proceso paso a paso. Cuando el empleado llegue al chat desde un módulo específico, orientá tu respuesta hacia ese módulo. Sé conciso, amigable y directo. Usá bullet points cuando hay múltiples puntos. Terminá siempre con una pregunta o próximo paso concreto.`
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createServerSupabaseClient()
-
-    // ── Auth ──────────────────────────────────────────────────────
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return ApiError.unauthorized()
-
-    const body = await request.json() as {
-      mensaje: string
-      modulo?: string
-      contexto?: string
-      historial?: ChatMensaje[]
-    }
-
+export const POST = withHandler(
+  {
+    auth: 'session',
+    schema: agenteSchema,
+    streaming: true,
+    rateLimit: RATE_LIMITS.agente,
+  },
+  async ({ body, supabase, user }) => {
     const { mensaje, modulo, contexto, historial = [] } = body
 
-    if (!mensaje?.trim()) return ApiError.badRequest('Mensaje vacío')
-    if (mensaje.trim().length > 2000) return ApiError.badRequest('El mensaje no puede superar los 2000 caracteres')
-
     // ── Datos del empleado ────────────────────────────────────────
-    const { data: usuario } = await supabase
+    const { data: usuario } = await supabase!
       .from('usuarios')
       .select('nombre, puesto, empresa_id, fecha_ingreso')
-      .eq('id', user.id)
+      .eq('id', user!.id)
       .single()
 
-    if (!usuario) return ApiError.notFound('Usuario')
+    if (!usuario) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    }
 
     const diasOnboarding = usuario.fecha_ingreso
       ? Math.max(1, Math.ceil((Date.now() - new Date(usuario.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)))
@@ -102,8 +95,5 @@ export async function POST(request: Request) {
         'Transfer-Encoding': 'chunked',
       },
     })
-  } catch (err) {
-    console.error('[agente] Error inesperado:', err)
-    return ApiError.internal()
   }
-}
+)

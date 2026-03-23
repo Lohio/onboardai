@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { loginSchema } from '@/lib/schemas/auth'
 
 // ─────────────────────────────────────────────
 // POST /api/auth/login
@@ -48,17 +51,14 @@ function setCookiesSSRFormat(
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json() as { email: string; password: string }
+export const POST = withHandler(
+  {
+    auth: 'none',
+    schema: loginSchema,
+    rateLimit: RATE_LIMITS.login,
+  },
+  async ({ body }) => {
     const { email, password } = body
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email y contraseña son obligatorios' },
-        { status: 400 }
-      )
-    }
 
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!serviceKey) {
@@ -130,8 +130,5 @@ export async function POST(request: NextRequest) {
     }
 
     return response
-  } catch (err) {
-    console.error('[login] Error inesperado:', err)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
-}
+)

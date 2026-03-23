@@ -1,76 +1,45 @@
 import { NextResponse } from 'next/server'
 import { streamChat, logMensaje } from '@/lib/claude'
-import { createServerSupabaseClient } from '@/lib/supabase'
-import { ApiError } from '@/lib/errors'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { chatSchema } from '@/lib/schemas/empleado'
 
-// Límite de mensajes de usuario por día (evita abuso de la API de Anthropic)
-const RATE_LIMIT_DIARIO = 50
+// ─────────────────────────────────────────────
+// POST /api/empleado/chat
+// Chat con el asistente IA (streaming).
+// Rate limiting gestionado por withHandler (RATE_LIMITS.chat).
+// ─────────────────────────────────────────────
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createServerSupabaseClient()
-
-    // ── Auth ──────────────────────────────────────────────────────
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return ApiError.unauthorized()
-
-    const { mensaje, conversacionId } = await request.json() as {
-      mensaje: string
-      conversacionId: string | null
-    }
-
-    if (!mensaje?.trim()) {
-      return ApiError.badRequest('Mensaje vacío')
-    }
-
-    if (mensaje.trim().length > 2000) {
-      return ApiError.badRequest('El mensaje no puede superar los 2000 caracteres')
-    }
+export const POST = withHandler(
+  {
+    auth: 'session',
+    schema: chatSchema,
+    streaming: true,
+    rateLimit: RATE_LIMITS.chat,
+  },
+  async ({ body, supabase, user }) => {
+    const { mensaje, conversacionId } = body
 
     // ── Datos del empleado ────────────────────────────────────────
-    const { data: usuario } = await supabase
+    const { data: usuario } = await supabase!
       .from('usuarios')
       .select('nombre, puesto, empresa_id, fecha_ingreso')
-      .eq('id', user.id)
+      .eq('id', user!.id)
       .single()
 
-    if (!usuario) return ApiError.notFound('Usuario')
+    if (!usuario) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    }
 
     const { empresa_id: empresaId } = usuario
 
-    // ── Rate limiting: máx. RATE_LIMIT_DIARIO mensajes por día ───
-    const hoy = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-    const { count: mensajesHoy } = await supabase
-      .from('mensajes_ia')
-      .select('*', { count: 'exact', head: true })
-      .eq('conversacion_id', conversacionId ?? '')
-      .gte('created_at', `${hoy}T00:00:00.000Z`)
-
-    // Si no hay conversacionId, contar por usuario en mensajes_chat
-    let countHoy = mensajesHoy ?? 0
-    if (!conversacionId) {
-      const { count: countPorUsuario } = await supabase
-        .from('mensajes_chat')
-        .select('*', { count: 'exact', head: true })
-        .eq('usuario_id', user.id)
-        .eq('rol', 'user')
-        .gte('created_at', `${hoy}T00:00:00.000Z`)
-      countHoy = countPorUsuario ?? 0
-    }
-
-    if (countHoy >= RATE_LIMIT_DIARIO) {
-      return ApiError.tooManyRequests(
-        `Alcanzaste el límite de ${RATE_LIMIT_DIARIO} mensajes por día. Volvé mañana.`
-      )
-    }
-
     // ── Gestión de conversación ───────────────────────────────────
     let historial: { role: 'user' | 'assistant'; content: string }[] = []
-    let convId = conversacionId
+    let convId = conversacionId ?? null
 
     if (convId) {
       // Cargar historial existente (últimas 20 interacciones)
-      const { data: mensajesHistorial } = await supabase
+      const { data: mensajesHistorial } = await supabase!
         .from('mensajes_ia')
         .select('rol, contenido')
         .eq('conversacion_id', convId)
@@ -83,9 +52,9 @@ export async function POST(request: Request) {
       }))
     } else {
       // Crear nueva conversación
-      const { data: nuevaConv } = await supabase
+      const { data: nuevaConv } = await supabase!
         .from('conversaciones_ia')
-        .insert({ usuario_id: user.id, empresa_id: empresaId })
+        .insert({ usuario_id: user!.id, empresa_id: empresaId })
         .select('id')
         .single()
       convId = nuevaConv?.id ?? null
@@ -93,7 +62,7 @@ export async function POST(request: Request) {
 
     // Guardar mensaje del usuario en el historial persistente
     if (convId) {
-      await supabase.from('mensajes_ia').insert({
+      await supabase!.from('mensajes_ia').insert({
         conversacion_id: convId,
         rol: 'user',
         contenido: mensaje,
@@ -101,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     // Log de auditoría (mensajes_chat) — fire and forget
-    logMensaje({ usuarioId: user.id, empresaId, rol: 'user', contenido: mensaje })
+    logMensaje({ usuarioId: user!.id, empresaId, rol: 'user', contenido: mensaje })
 
     // ── Streaming ────────────────────────────────────────────────
     let respuestaCompleta = ''
@@ -116,6 +85,10 @@ export async function POST(request: Request) {
       usuario.puesto ? `Su puesto es ${usuario.puesto}.` : '',
       diasOnboarding ? `Lleva ${diasOnboarding} día${diasOnboarding === 1 ? '' : 's'} en la empresa.` : '',
     ].filter(Boolean).join(' ')
+
+    // Capturar referencias para uso dentro del ReadableStream
+    const supabaseRef = supabase!
+    const userId = user!.id
 
     const readable = new ReadableStream({
       async start(controller) {
@@ -142,15 +115,15 @@ export async function POST(request: Request) {
           // ── Trabajo post-stream ───────────────────────────────
           if (convId && respuestaCompleta) {
             // Persistir respuesta del asistente
-            await supabase.from('mensajes_ia').insert({
+            await supabaseRef.from('mensajes_ia').insert({
               conversacion_id: convId,
               rol: 'assistant',
               contenido: respuestaCompleta,
             })
 
             // Marcar progreso M4 — primer uso del asistente
-            await supabase.from('progreso_modulos').upsert({
-              usuario_id: user.id,
+            await supabaseRef.from('progreso_modulos').upsert({
+              usuario_id: userId,
               modulo: 'asistente',
               bloque: 'chat',
               completado: true,
@@ -159,7 +132,7 @@ export async function POST(request: Request) {
 
             // Log de auditoría de la respuesta
             logMensaje({
-              usuarioId: user.id,
+              usuarioId: userId,
               empresaId,
               rol: 'assistant',
               contenido: respuestaCompleta,
@@ -185,10 +158,5 @@ export async function POST(request: Request) {
         'X-Conversation-Id': convId ?? '',
       },
     })
-  } catch (err) {
-    console.error('Error en chat API:', err)
-    return ApiError.internal()
   }
-}
-
-
+)
