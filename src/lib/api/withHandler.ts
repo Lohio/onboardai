@@ -181,10 +181,11 @@ export function withHandler<TBody = unknown>(
     } catch (err: unknown) {
       // ── Manejo de errores ────────────────────────────────────────────
 
-      // Si el handler lanzó un NextResponse directamente, re-lanzar
-      if (err instanceof NextResponse) {
+      // Si el handler lanzó una NextResponse (o Response), retornarla directamente
+      // NextResponse extiende Response, así que verificar instanceof Response es suficiente
+      if (err instanceof Response) {
         status = err.status
-        throw err
+        return err as NextResponse
       }
 
       // ZodError atrapado fuera del parseo (ej: en el handler)
