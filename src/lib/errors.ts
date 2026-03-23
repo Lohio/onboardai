@@ -7,9 +7,9 @@
 import { NextResponse } from 'next/server'
 
 export const ApiError = {
-  unauthorized: (requestId?: string) =>
+  unauthorized: (mensaje = 'No autorizado', requestId?: string) =>
     NextResponse.json(
-      { error: 'No autorizado', ...(requestId && { requestId }) },
+      { error: mensaje, ...(requestId && { requestId }) },
       { status: 401 }
     ),
 

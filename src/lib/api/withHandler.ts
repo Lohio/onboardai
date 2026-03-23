@@ -107,13 +107,13 @@ export function withHandler<TBody = unknown>(
 
         if (!rawKey) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized('API key requerida', requestId)
         }
 
         const keyResult = await verifyApiKey(rawKey)
         if (!keyResult) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized('API key inválida o expirada', requestId)
         }
 
         // Para apiKey auth, user es null (acceso de máquina, no de usuario humano)
