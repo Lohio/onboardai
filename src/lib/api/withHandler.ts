@@ -105,14 +105,20 @@ export function withHandler<TBody = unknown>(
       // 'webhook' y 'none': sin verificación en el wrapper
 
       // ── Autorización por rol ─────────────────────────────────────────
-      if (options.rol !== undefined && user !== null) {
-        const rolesPermitidos = Array.isArray(options.rol)
-          ? options.rol
-          : [options.rol]
-
-        if (!rolesPermitidos.includes(user.rol)) {
-          status = 403
-          return ApiError.forbidden(requestId)
+      // Solo se puede verificar rol con auth: 'session'
+      if (options.rol !== undefined) {
+        if (options.auth !== 'session') {
+          // Error de configuración del desarrollador
+          if (process.env.NODE_ENV !== 'production') {
+            throw new Error(`[withHandler] La opción 'rol' solo aplica con auth: 'session', pero se recibió auth: '${options.auth}'`)
+          }
+        } else if (user !== null) {
+          // Verificar que el rol del usuario está permitido
+          const rolesPermitidos = Array.isArray(options.rol) ? options.rol : [options.rol]
+          if (!rolesPermitidos.includes(user.rol)) {
+            status = 403
+            return ApiError.forbidden(requestId)
+          }
         }
       }
 
@@ -209,8 +215,9 @@ export function withHandler<TBody = unknown>(
 
       // Fallback: error interno
       status = 500
-      if (process.env.NODE_ENV !== 'production' && err instanceof Error) {
-        console.error(`[withHandler] Error interno [${requestId}]:`, err)
+      // Siempre loguear errores internos (crítico para debugging en producción)
+      if (err instanceof Error) {
+        console.error(`[withHandler] Error interno [${requestId}]:`, err.message, process.env.NODE_ENV !== 'production' ? err.stack : '')
       }
       return ApiError.internal(undefined, requestId)
     } finally {
