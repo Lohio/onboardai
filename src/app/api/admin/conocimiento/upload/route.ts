@@ -6,46 +6,39 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { ApiError } from '@/lib/errors'
 
-export async function POST(request: Request) {
-  try {
-    // 1. Verificar sesión del admin
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const { data: admin } = await supabase
-      .from('usuarios')
-      .select('empresa_id, rol')
-      .eq('id', user.id)
-      .single()
-
-    if (!admin || !['admin', 'dev'].includes(admin.rol as string)) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-    }
-
-    // 2. Leer FormData
-    const formData = await request.formData()
+export const POST = withHandler(
+  {
+    auth: 'session',
+    rol: ['admin', 'dev'],
+    bodyType: 'formdata',
+    rateLimit: RATE_LIMITS.upload,
+  },
+  async ({ req, user }) => {
+    // Leer FormData manualmente (sin schema Zod para FormData)
+    const formData = await req.formData()
     const file      = formData.get('file') as File | null
     const empresaId = formData.get('empresaId') as string | null
     const modulo    = formData.get('modulo') as string | null
 
     if (!file || !empresaId || !modulo) {
-      return NextResponse.json({ error: 'Faltan parámetros: file, empresaId, modulo' }, { status: 400 })
+      return ApiError.badRequest('Faltan parámetros: file, empresaId, modulo')
     }
 
     // Validar que el empresaId del admin coincide (evitar subir a empresa ajena)
-    if (admin.empresa_id !== empresaId) {
-      return NextResponse.json({ error: 'Empresa no autorizada' }, { status: 403 })
+    if (user!.empresaId !== empresaId) {
+      return ApiError.forbidden()
     }
 
-    // 3. Generar path único: {empresaId}/{modulo}/{uuid}.{ext}
+    // Generar path único: {empresaId}/{modulo}/{uuid}.{ext}
     const ext  = file.name.split('.').pop()?.toLowerCase() ?? 'bin'
     const uuid = crypto.randomUUID()
     const path = `${empresaId}/${modulo}/${uuid}.${ext}`
 
-    // 4. Subir con service role key (bypass RLS de Storage)
+    // Subir con service role key (bypass RLS de Storage)
     const serviceSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -64,19 +57,15 @@ export async function POST(request: Request) {
 
     if (uploadError) {
       console.error('[upload/conocimiento] Error subiendo archivo:', uploadError)
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+      return ApiError.internal(uploadError.message)
     }
 
-    // 5. Obtener URL pública
+    // Obtener URL pública
     const { data: { publicUrl } } = serviceSupabase
       .storage
       .from('conocimiento')
       .getPublicUrl(path)
 
     return NextResponse.json({ path, publicUrl })
-
-  } catch (err) {
-    console.error('[upload/conocimiento] Error inesperado:', err)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
-}
+)

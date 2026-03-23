@@ -1,155 +1,114 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient } from '@/lib/supabase'
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-
-async function resolverAdmin() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autorizado', status: 401, supabase: null, admin: null }
-
-  const { data: admin } = await supabase
-    .from('usuarios')
-    .select('empresa_id, rol')
-    .eq('id', user.id)
-    .single()
-
-  if (!admin || !['admin', 'dev'].includes(admin.rol)) {
-    return { error: 'Acceso denegado', status: 403, supabase: null, admin: null }
-  }
-
-  return { error: null, status: 200, supabase, admin, userId: user.id }
-}
-
-function adminClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) return null
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
+import { withHandler } from '@/lib/api/withHandler'
+import { actualizarEmpleadoSchema } from '@/lib/schemas/admin'
+import { ApiError } from '@/lib/errors'
 
 // ─────────────────────────────────────────────
 // PATCH /api/admin/empleados/[id]
 // Actualiza los datos del empleado
 // ─────────────────────────────────────────────
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const ctx = await resolverAdmin()
-    if (ctx.error) return NextResponse.json({ error: ctx.error }, { status: ctx.status })
-    const { supabase, admin } = ctx
+export const PATCH = withHandler(
+  {
+    auth: 'session',
+    rol: ['admin', 'dev'],
+    schema: actualizarEmpleadoSchema,
+  },
+  async ({ body, supabase, user, params }) => {
+    const { id } = params
 
     // Verificar que el empleado pertenece a la empresa (dev puede editar cualquier empresa)
-    const { data: empleado } = await supabase!
+    const { data: empleado } = await supabase
       .from('usuarios')
       .select('id, empresa_id')
       .eq('id', id)
       .single()
 
     if (!empleado) {
-      return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 })
+      return ApiError.notFound('Empleado')
     }
-    if (admin!.rol !== 'dev' && empleado.empresa_id !== admin!.empresa_id) {
-      return NextResponse.json({ error: 'Sin acceso a este empleado' }, { status: 403 })
+    if (user!.rol !== 'dev' && empleado.empresa_id !== user!.empresaId) {
+      return ApiError.forbidden()
     }
 
-    const body = await request.json() as Record<string, unknown>
-
-    // Construir objeto de actualización solo con campos permitidos
-    const camposPermitidos = [
-      'nombre', 'puesto', 'area', 'fecha_ingreso',
-      'modalidad', 'manager_id', 'buddy_id', 'bio',
-      'contacto_it_nombre', 'contacto_it_email',
-      'contacto_rrhh_nombre', 'contacto_rrhh_email',
-      'password_corporativo', 'password_bitlocker',
-    ]
+    // body ya viene filtrado y validado por Zod (actualizarEmpleadoSchema)
+    // Construir objeto de actualización solo con campos presentes en el body
     const updateData: Record<string, unknown> = {}
-    for (const campo of camposPermitidos) {
+    const camposSchema = [
+      'nombre', 'puesto', 'area', 'fecha_ingreso',
+      'modalidad_trabajo', 'manager_id', 'buddy_id', 'sobre_mi', 'rol',
+    ] as const
+
+    for (const campo of camposSchema) {
       if (campo in body) updateData[campo] = body[campo] ?? null
     }
 
-    // Rol: solo admin y dev pueden cambiarlo, y no pueden asignar 'dev' via esta ruta
-    if ('rol' in body && ['empleado', 'admin'].includes(String(body.rol))) {
-      updateData['rol'] = body.rol
-    }
-
-    const { data: actualizado, error } = await supabase!
+    const { data: actualizado, error } = await supabase
       .from('usuarios')
       .update(updateData)
       .eq('id', id)
       .select(`id, nombre, email, puesto, area, rol, fecha_ingreso,
-        modalidad, manager_id, buddy_id, bio,
-        contacto_it_nombre, contacto_it_email,
-        contacto_rrhh_nombre, contacto_rrhh_email`)
+        modalidad_trabajo, manager_id, buddy_id, sobre_mi`)
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return ApiError.internal(error.message)
 
     return NextResponse.json({ usuario: actualizado })
-  } catch (err) {
-    console.error('Error actualizando empleado:', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
-}
+)
 
 // ─────────────────────────────────────────────
 // DELETE /api/admin/empleados/[id]
 // Elimina el empleado: progreso, conversaciones, fila en usuarios y auth user
 // ─────────────────────────────────────────────
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const ctx = await resolverAdmin()
-    if (ctx.error) return NextResponse.json({ error: ctx.error }, { status: ctx.status })
-    const { supabase, admin, userId } = ctx
+export const DELETE = withHandler(
+  {
+    auth: 'session',
+    rol: ['admin', 'dev'],
+    bodyType: 'none',
+  },
+  async ({ supabase, user, params }) => {
+    const { id } = params
 
     // No permitir auto-eliminación
-    if (id === userId) {
-      return NextResponse.json({ error: 'No podés eliminar tu propia cuenta' }, { status: 400 })
+    if (id === user!.id) {
+      return ApiError.badRequest('No podés eliminar tu propia cuenta')
     }
 
     // Verificar que el empleado pertenece a la empresa
-    const { data: empleado } = await supabase!
+    const { data: empleado } = await supabase
       .from('usuarios')
       .select('id, empresa_id')
       .eq('id', id)
       .single()
 
     if (!empleado) {
-      return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 })
+      return ApiError.notFound('Empleado')
     }
-    if (admin!.rol !== 'dev' && empleado.empresa_id !== admin!.empresa_id) {
-      return NextResponse.json({ error: 'Sin acceso a este empleado' }, { status: 403 })
+    if (user!.rol !== 'dev' && empleado.empresa_id !== user!.empresaId) {
+      return ApiError.forbidden()
     }
 
-    const sa = adminClient()
-    if (!sa) {
-      return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY no configurada' }, { status: 500 })
+    // Crear cliente con service role key para operaciones de eliminación
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!serviceKey) {
+      return ApiError.internal('SUPABASE_SERVICE_ROLE_KEY no configurada')
     }
+
+    const sa = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
 
     // 1. Eliminar auth user primero — si falla, abortamos antes de tocar datos
     // Así evitamos dejar datos huérfanos con un auth user activo
     const { error: authError } = await sa.auth.admin.deleteUser(id)
     if (authError) {
       console.error('[DELETE empleado] Error eliminando auth user:', authError)
-      return NextResponse.json(
-        { error: 'No se pudo eliminar el usuario de autenticación. Los datos no fueron modificados.' },
-        { status: 500 }
-      )
+      return ApiError.internal('No se pudo eliminar el usuario de autenticación. Los datos no fueron modificados.')
     }
 
     // 2. Auth eliminado — limpiar datos asociados
@@ -161,7 +120,7 @@ export async function DELETE(
       .eq('usuario_id', id)
 
     if (convs && convs.length > 0) {
-      const ids = convs.map(c => c.id)
+      const ids = convs.map((c: { id: string }) => c.id)
       await sa.from('mensajes_ia').delete().in('conversacion_id', ids)
       await sa.from('conversaciones_ia').delete().in('id', ids)
     }
@@ -179,8 +138,5 @@ export async function DELETE(
     }
 
     return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error('Error eliminando empleado:', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
-}
+)

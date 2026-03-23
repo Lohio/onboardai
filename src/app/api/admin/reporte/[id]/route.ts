@@ -1,29 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { NextResponse } from 'next/server'
 import { anthropic } from '@/lib/claude'
+import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
+import { ApiError } from '@/lib/errors'
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: empleadoId } = await params
-  const supabase = await createServerSupabaseClient()
-
-  // 1. Verificar que el caller es admin
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: adminData } = await supabase
-    .from('usuarios')
-    .select('rol, empresa_id')
-    .eq('id', user.id)
-    .single()
-
-  if (adminData?.rol !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+export const POST = withHandler(
+  {
+    auth: 'session',
+    rol: 'admin',
+    streaming: true,
+    rateLimit: RATE_LIMITS.reporte,
+    bodyType: 'none',
+  },
+  async ({ supabase, user, params }) => {
+    const empleadoId = params.id
 
   // 2. Cargar datos del empleado
   const [empleadoRes, progresoRes, tareasRes, culturaCntRes] = await Promise.all([
@@ -43,12 +33,12 @@ export async function POST(
     supabase
       .from('conocimiento')
       .select('*', { count: 'exact', head: true })
-      .eq('empresa_id', adminData.empresa_id)
+      .eq('empresa_id', user!.empresaId)
       .eq('modulo', 'cultura'),
   ])
 
   const empleado = empleadoRes.data
-  if (!empleado) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!empleado) return ApiError.notFound('Empleado')
 
   // Obtener últimas preguntas al asistente IA (tabla puede no existir aún)
   let ultimasPreguntas: string[] = []
@@ -153,4 +143,5 @@ Extensión: 300-400 palabras. Idioma: español rioplatense. Tono: profesional pe
       'Transfer-Encoding': 'chunked',
     },
   })
-}
+  }
+)
