@@ -357,7 +357,7 @@ export function ContenidoModal({
           transition={{ type: 'spring', stiffness: 400, damping: 32 }}
         >
           <div
-            className="relative bg-[#111110] border border-white/[0.12]
+            className="contenido-modal relative bg-[#111110] border border-white/[0.12]
               rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.6)]
               w-full max-w-2xl max-h-[88vh] flex flex-col"
             onClick={e => e.stopPropagation()}

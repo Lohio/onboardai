@@ -438,3 +438,25 @@ aside {
 .theme-light .agente-portal [class*="bg-[#0EA5E9]"]  { background-color: rgba(14,165,233,0.12) !important; }
 /* Mensajes user: mantener azul sky en todos los temas */
 .theme-light .agente-portal .bg-\[#0EA5E9\]          { background-color: #0EA5E9 !important; }
+
+/* ── Modal de conocimiento (Portal): adaptación al tema ── */
+.theme-light .contenido-modal                         { background-color: var(--background) !important; border-color: rgba(17,17,16,0.10) !important; }
+.theme-light .contenido-modal [class*="text-white/80"],
+.theme-light .contenido-modal [class*="text-white/70"],
+.theme-light .contenido-modal [class*="text-white/60"] { color: rgba(17,17,16,0.85) !important; }
+.theme-light .contenido-modal [class*="text-white/55"],
+.theme-light .contenido-modal [class*="text-white/50"],
+.theme-light .contenido-modal [class*="text-white/45"],
+.theme-light .contenido-modal [class*="text-white/40"] { color: rgba(17,17,16,0.65) !important; }
+.theme-light .contenido-modal [class*="text-white/35"],
+.theme-light .contenido-modal [class*="text-white/30"] { color: rgba(17,17,16,0.50) !important; }
+.theme-light .contenido-modal [class*="text-white/25"],
+.theme-light .contenido-modal [class*="text-white/20"] { color: rgba(17,17,16,0.38) !important; }
+.theme-light .contenido-modal [class*="text-white"]    { color: rgba(17,17,16,1.0)  !important; }
+.theme-light .contenido-modal [class*="border-white/"] { border-color: rgba(17,17,16,0.10) !important; }
+.theme-light .contenido-modal [class*="bg-white/"]     { background-color: rgba(17,17,16,0.05) !important; }
+.theme-light .contenido-modal [class*="bg-[#111110]"]  { background-color: var(--background) !important; }
+.theme-light .contenido-modal [class*="placeholder:text-white"] { color: rgba(17,17,16,0.30) !important; }
+.theme-light .contenido-modal input,
+.theme-light .contenido-modal textarea,
+.theme-light .contenido-modal select { background-color: rgba(17,17,16,0.04) !important; color: rgba(17,17,16,0.85) !important; border-color: rgba(17,17,16,0.12) !important; }
