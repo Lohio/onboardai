@@ -39,6 +39,8 @@ const actualizarEmpleado = withHandler(
       'nombre', 'puesto', 'area', 'fecha_ingreso',
       'modalidad_trabajo', 'manager_id', 'buddy_id', 'sobre_mi', 'rol',
       'password_corporativo', 'password_bitlocker',
+      'bio', 'contacto_it_nombre', 'contacto_it_email',
+      'contacto_rrhh_nombre', 'contacto_rrhh_email',
     ] as const
 
     for (const campo of camposSchema) {

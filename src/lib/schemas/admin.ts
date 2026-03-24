@@ -20,8 +20,13 @@ export const crearEmpleadoSchema = z.object({
 export const actualizarEmpleadoSchema = crearEmpleadoSchema
   .omit({ password: true, email: true })
   .extend({
-    password_corporativo: z.string().trim().max(500).nullable().optional(),
-    password_bitlocker:   z.string().trim().max(500).nullable().optional(),
+    password_corporativo:  z.string().trim().max(500).nullable().optional(),
+    password_bitlocker:    z.string().trim().max(500).nullable().optional(),
+    bio:                   z.string().trim().max(1000).nullable().optional(),
+    contacto_it_nombre:    z.string().trim().max(200).nullable().optional(),
+    contacto_it_email:     z.string().email().trim().nullable().optional(),
+    contacto_rrhh_nombre:  z.string().trim().max(200).nullable().optional(),
+    contacto_rrhh_email:   z.string().email().trim().nullable().optional(),
   })
   .partial()
 
