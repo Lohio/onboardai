@@ -38,7 +38,7 @@ const spec = {
           puesto: { type: 'string', nullable: true },
           area: { type: 'string', nullable: true },
           rol: { type: 'string', enum: ['empleado', 'admin', 'dev'] },
-          fecha_ingreso: { type: 'string', format: 'date-time', nullable: true },
+          fecha_ingreso: { type: 'string', format: 'date', nullable: true },
           modalidad_trabajo: { type: 'string', nullable: true },
         },
       },
@@ -154,7 +154,7 @@ const spec = {
                   nombre: { type: 'string' },
                   puesto: { type: 'string' },
                   area: { type: 'string' },
-                  fecha_ingreso: { type: 'string', format: 'date-time' },
+                  fecha_ingreso: { type: 'string', format: 'date' },
                   modalidad_trabajo: { type: 'string' },
                   manager_id: { type: 'string', format: 'uuid' },
                   buddy_id: { type: 'string', format: 'uuid' },
@@ -285,10 +285,22 @@ const spec = {
             description: 'Filtrar por estado de completado',
             schema: { type: 'boolean' },
           },
+          {
+            name: 'page',
+            in: 'query',
+            description: 'Número de página (default: 1)',
+            schema: { type: 'integer', minimum: 1, default: 1 },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            description: 'Resultados por página (default: 20, máx: 100)',
+            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          },
         ],
         responses: {
           '200': {
-            description: 'Lista de encuestas',
+            description: 'Lista paginada de encuestas',
             content: {
               'application/json': {
                 schema: {
@@ -298,6 +310,9 @@ const spec = {
                       type: 'array',
                       items: { $ref: '#/components/schemas/EncuestaPulso' },
                     },
+                    total: { type: 'integer' },
+                    page: { type: 'integer' },
+                    limit: { type: 'integer' },
                   },
                 },
               },

@@ -3,19 +3,11 @@
 // ─────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { withHandler } from '@/lib/api/withHandler'
 import { hasScope } from '@/lib/api/apiKeys'
+import { makeServiceClient } from '@/lib/api/serviceClient'
+import { optionsResponse } from '@/lib/api/cors'
 import { ApiError } from '@/lib/errors'
-
-// Crea cliente Supabase con service role (necesario para bypassear RLS en API pública)
-function makeServiceClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada')
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
-}
 
 // GET /api/v1/empleados/[id]
 export const GET = withHandler(
@@ -48,13 +40,5 @@ export const GET = withHandler(
 
 // OPTIONS /api/v1/empleados/[id] — preflight CORS
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400',
-    },
-  })
+  return optionsResponse('*')
 }

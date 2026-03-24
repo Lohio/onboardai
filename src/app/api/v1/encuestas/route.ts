@@ -1,22 +1,14 @@
 // ─────────────────────────────────────────────
 // GET /api/v1/encuestas — resultados de encuestas de pulso (scope: encuestas:read)
-// Query params opcionales: dia (7|30|60), completada (true|false)
+// Query params opcionales: dia (7|30|60), completada (true|false), page, limit
 // ─────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { withHandler } from '@/lib/api/withHandler'
 import { hasScope } from '@/lib/api/apiKeys'
+import { makeServiceClient } from '@/lib/api/serviceClient'
+import { optionsResponse } from '@/lib/api/cors'
 import { ApiError } from '@/lib/errors'
-
-// Crea cliente Supabase con service role (necesario para bypassear RLS en API pública)
-function makeServiceClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada')
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
-}
 
 // Días válidos para filtrar encuestas de pulso
 const DIAS_VALIDOS = [7, 30, 60] as const
@@ -35,6 +27,12 @@ export const GET = withHandler(
     const url = new URL(req.url)
     const diaParam = url.searchParams.get('dia')
     const completadaParam = url.searchParams.get('completada')
+
+    // Parsear query params de paginación
+    const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10) || 1)
+    const limitRaw = parseInt(url.searchParams.get('limit') ?? '20', 10) || 20
+    const limit = Math.min(100, Math.max(1, limitRaw))
+    const offset = (page - 1) * limit
 
     const sa = makeServiceClient()
 
@@ -56,7 +54,7 @@ export const GET = withHandler(
         created_at,
         respondida_at,
         usuarios!inner(empresa_id)
-      `)
+      `, { count: 'exact' })
       .eq('usuarios.empresa_id', empresaId)
 
     // Filtro por día de onboarding (7, 30 o 60)
@@ -74,9 +72,9 @@ export const GET = withHandler(
       query = query.eq('completada', completada)
     }
 
-    query = query.order('created_at', { ascending: false })
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1)
 
-    const { data: encuestas, error } = await query
+    const { data: encuestas, count, error } = await query
 
     if (error) {
       return ApiError.internal(error.message)
@@ -85,19 +83,11 @@ export const GET = withHandler(
     // Omitir el campo `usuarios` del join (solo se usó para filtrar)
     const resultado = (encuestas ?? []).map(({ usuarios: _usuarios, ...rest }) => rest)
 
-    return NextResponse.json({ encuestas: resultado })
+    return NextResponse.json({ encuestas: resultado, total: count ?? 0, page, limit })
   }
 )
 
 // OPTIONS /api/v1/encuestas — preflight CORS
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400',
-    },
-  })
+  return optionsResponse('*')
 }

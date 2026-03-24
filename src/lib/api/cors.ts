@@ -38,3 +38,9 @@ export function addCorsHeaders(
   })
   return response
 }
+
+// Respuesta estándar para preflight OPTIONS de la API pública
+export function optionsResponse(origin: string | null): NextResponse {
+  const res = NextResponse.json(null, { status: 204 })
+  return addCorsHeaders(res, origin)
+}
