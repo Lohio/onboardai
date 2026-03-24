@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import {
   Briefcase, Wrench, CheckSquare, Target,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
@@ -443,7 +444,8 @@ function SemanaTareas({
   tareas: TareaOnboarding[]
   onToggle: (id: string, completada: boolean) => void
 }) {
-  const completadas = tareas.filter(t => t.completada).length
+  const { t } = useLanguage()
+  const completadas = tareas.filter(tarea => tarea.completada).length
   const total = tareas.length
   const pct = total > 0 ? Math.round(completadas / total * 100) : 0
   const todoCompleto = completadas === total
@@ -474,7 +476,7 @@ function SemanaTareas({
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          {todoCompleto && <Badge variant="success">Completada ✓</Badge>}
+          {todoCompleto && <Badge variant="success">{t('rol.estado.completada')}</Badge>}
           <div className="w-20">
             <ProgressBar value={pct} showPercentage={false} animated />
           </div>
@@ -497,14 +499,10 @@ function SemanaTareas({
 // ObjetivoItem — rediseñado (timeline)
 // ─────────────────────────────────────────────
 
-const ESTADO_CONFIG = {
-  pendiente:   { label: 'Pendiente',   variant: 'default' as const, Icon: Clock, color: 'text-white/30', bg: 'bg-white/[0.04]', border: 'border-white/10' },
-  en_progreso: { label: 'En progreso', variant: 'warning' as const, Icon: Zap,   color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/25' },
-  completado:  { label: 'Completado',  variant: 'success' as const, Icon: Check, color: 'text-teal-400',  bg: 'bg-teal-500/10',  border: 'border-teal-500/25'  },
-}
+// ESTADO_CONFIG se genera dentro del componente con useMemo para soporte i18n
 
-function ObjetivoItem({ objetivo, isLast }: { objetivo: ObjetivoRol; isLast: boolean }) {
-  const cfg = ESTADO_CONFIG[objetivo.estado]
+function ObjetivoItem({ objetivo, isLast, estadoConfig }: { objetivo: ObjetivoRol; isLast: boolean; estadoConfig: Record<string, { label: string; variant: 'default' | 'warning' | 'success'; Icon: React.FC<{ className?: string }>; color: string; bg: string; border: string }> }) {
+  const cfg = estadoConfig[objetivo.estado]
 
   return (
     <motion.div variants={itemVariants} className="flex gap-4">
@@ -546,6 +544,14 @@ function ObjetivoItem({ objetivo, isLast }: { objetivo: ObjetivoRol; isLast: boo
 // ─────────────────────────────────────────────
 
 export default function RolPage() {
+  const { t } = useLanguage()
+
+  const ESTADO_CONFIG = useMemo(() => ({
+    pendiente:   { label: t('rol.estado.pendiente'),   variant: 'default' as const, Icon: Clock, color: 'text-white/30', bg: 'bg-white/[0.04]', border: 'border-white/10' },
+    en_progreso: { label: t('rol.estado.en_progreso'), variant: 'warning' as const, Icon: Zap,   color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/25' },
+    completado:  { label: t('rol.estado.completada'),  variant: 'success' as const, Icon: Check, color: 'text-teal-400',  bg: 'bg-teal-500/10',  border: 'border-teal-500/25'  },
+  }), [t])
+
   const [puesto, setPuesto] = useState<string>('')
   const [autonomia, setAutonomia] = useState<DecisionAutonomia[]>([])
   const [herramientas, setHerramientas] = useState<HerramientaRol[]>([])
@@ -727,8 +733,8 @@ export default function RolPage() {
             <motion.section variants={sectionVariants}>
               <SectionHeader
                 icon={<Briefcase className="w-4 h-4" />}
-                title="Mi puesto"
-                subtitle="Descripción de tu rol y nivel de autonomía"
+                title={t('rol.puesto.title')}
+                subtitle={t('rol.puesto.subtitle')}
                 iconBg="bg-amber-500/15"
                 iconText="text-amber-400"
               />
@@ -793,8 +799,8 @@ export default function RolPage() {
             <motion.section variants={sectionVariants}>
               <SectionHeader
                 icon={<Wrench className="w-4 h-4" />}
-                title="Mis herramientas"
-                subtitle="Las herramientas que usarás en tu día a día"
+                title={t('rol.herramientas.title')}
+                subtitle={t('rol.herramientas.subtitle')}
                 iconBg="bg-sky-500/15"
                 iconText="text-sky-400"
               />
@@ -822,8 +828,8 @@ export default function RolPage() {
               <div className="flex items-center justify-between mb-4">
                 <SectionHeader
                   icon={<CheckSquare className="w-4 h-4" />}
-                  title="Mis primeras tareas"
-                  subtitle={tareas.length > 0 ? `${tareas.filter(t => t.completada).length} de ${tareas.length} completadas` : undefined}
+                  title={t('rol.tareas.title')}
+                  subtitle={tareas.length > 0 ? t('rol.tareas.completadas').replace('{done}', String(tareas.filter(tarea => tarea.completada).length)).replace('{total}', String(tareas.length)) : undefined}
                   iconBg="bg-teal-500/15"
                   iconText="text-teal-400"
                 />
@@ -853,8 +859,8 @@ export default function RolPage() {
             <motion.section variants={sectionVariants} className="pb-8">
               <SectionHeader
                 icon={<Target className="w-4 h-4" />}
-                title="Mis objetivos del mes"
-                subtitle="Milestones para las primeras semanas"
+                title={t('rol.objetivos.title')}
+                subtitle={t('rol.objetivos.subtitle')}
                 iconBg="bg-rose-500/15"
                 iconText="text-rose-400"
               />
@@ -864,7 +870,7 @@ export default function RolPage() {
                   style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <motion.div variants={containerVariants} initial="hidden" animate="show">
                     {objetivos.map((obj, i) => (
-                      <ObjetivoItem key={obj.id} objetivo={obj} isLast={i === objetivos.length - 1} />
+                      <ObjetivoItem key={obj.id} objetivo={obj} isLast={i === objetivos.length - 1} estadoConfig={ESTADO_CONFIG} />
                     ))}
                   </motion.div>
                 </div>

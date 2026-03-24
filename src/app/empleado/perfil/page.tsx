@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn, getInitials, formatFecha, diasDesde } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
+import { useLanguage } from '@/components/LanguageProvider'
 import ProductTour from '@/components/empleado/ProductTour'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
 
@@ -65,10 +66,10 @@ const itemVariants = {
 
 // getInitials, formatFecha y diasDesde importados desde @/lib/utils
 
-function modalidadLabel(m: string): string {
-  if (m === 'presencial') return 'Presencial'
-  if (m === 'remoto') return 'Remoto'
-  if (m === 'hibrido') return 'Híbrido'
+function modalidadLabel(m: string, t: (key: string) => string): string {
+  if (m === 'presencial') return t('perfil.modalidad.presencial')
+  if (m === 'remoto') return t('perfil.modalidad.remoto')
+  if (m === 'hibrido') return t('perfil.modalidad.hibrido')
   return m
 }
 
@@ -79,10 +80,10 @@ function modalidadVariant(m: string): 'info' | 'default' | 'success' {
   return 'default'
 }
 
-function relacionLabel(r: MiembroEquipo['relacion']): string {
-  if (r === 'manager') return 'Manager'
-  if (r === 'buddy') return 'Buddy'
-  return 'Compañero'
+function relacionLabel(r: MiembroEquipo['relacion'], t: (key: string) => string): string {
+  if (r === 'manager') return t('perfil.relacion.manager')
+  if (r === 'buddy') return t('perfil.relacion.buddy')
+  return t('perfil.relacion.companero')
 }
 
 function relacionBadgeVariant(r: MiembroEquipo['relacion']): 'default' | 'success' | 'info' {
@@ -255,6 +256,7 @@ function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
 // ─────────────────────────────────────────────
 
 export default function PerfilPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [perfil, setPerfil] = useState<Usuario | null>(null)
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([])
@@ -622,7 +624,7 @@ export default function PerfilPage() {
                   </button>
                   {perfil.modalidad && (
                     <Badge variant={modalidadVariant(perfil.modalidad)}>
-                      {modalidadLabel(perfil.modalidad)}
+                      {modalidadLabel(perfil.modalidad, t)}
                     </Badge>
                   )}
                 </div>
@@ -778,7 +780,7 @@ export default function PerfilPage() {
                             {miembro.nombre}
                           </span>
                           <Badge variant={relacionBadgeVariant(miembro.relacion)}>
-                            {relacionLabel(miembro.relacion)}
+                            {relacionLabel(miembro.relacion, t)}
                           </Badge>
                         </div>
                         {miembro.puesto && (

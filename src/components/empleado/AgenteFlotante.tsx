@@ -240,7 +240,7 @@ export default function AgenteFlotante({
         accesosPendientes,
         moduloCompletado,
         nombreEmpleado,
-      })
+      }, t)
 
       if (msg) {
         setHintActivo(msg)
@@ -379,6 +379,7 @@ export default function AgenteFlotante({
 
   return (
     <Portal>
+    <div className="agente-portal">
 
       {/* ── Hint proactivo ─────────────────────────────────────── */}
       <AnimatePresence>
@@ -395,16 +396,16 @@ export default function AgenteFlotante({
             <div
               className="relative rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
               style={{
-                background: '#111110',
-                border: '0.5px solid rgba(255,255,255,0.12)',
+                background: 'var(--surface)',
+                border: '0.5px solid var(--glass-border)',
               }}
             >
               {/* Flecha decorativa hacia el botón flotante */}
               <div
                 className="absolute bottom-[-6px] right-5 w-3 h-3 rotate-45"
                 style={{
-                  background: '#111110',
-                  border: '0.5px solid rgba(255,255,255,0.12)',
+                  background: 'var(--surface)',
+                  border: '0.5px solid var(--glass-border)',
                   borderTop: 'none',
                   borderLeft: 'none',
                 }}
@@ -460,8 +461,8 @@ export default function AgenteFlotante({
               w-[calc(100vw-32px)] sm:w-80 max-h-[500px]"
             style={{
               transformOrigin: 'bottom right',
-              background: '#111110',
-              border: '0.5px solid rgba(255,255,255,0.12)',
+              background: 'var(--surface)',
+              border: '0.5px solid var(--glass-border)',
               borderRadius: '16px',
               boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
             }}
@@ -638,6 +639,7 @@ export default function AgenteFlotante({
         </AnimatePresence>
       </motion.button>
 
+    </div>
     </Portal>
   )
 }

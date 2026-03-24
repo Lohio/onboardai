@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -10,6 +10,7 @@ import {
   Calendar, MapPin,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import { EncuestaPulsoModal, type EncuestaPendiente } from '@/components/empleado/EncuestaPulsoModal'
@@ -61,44 +62,7 @@ type TabId = 'M1' | 'M2' | 'M3' | 'M4'
 // Config de tabs
 // ─────────────────────────────────────────────
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode; href: string; color: string }[] = [
-  {
-    id: 'M1',
-    label: 'Perfil',
-    icon: <User className="w-4 h-4" />,
-    href: '/empleado/perfil',
-    color: 'sky',
-  },
-  {
-    id: 'M2',
-    label: 'Cultura',
-    icon: <BookOpen className="w-4 h-4" />,
-    href: '/empleado/cultura',
-    color: 'sky',
-  },
-  {
-    id: 'M3',
-    label: 'Rol',
-    icon: <Briefcase className="w-4 h-4" />,
-    href: '/empleado/rol',
-    color: 'amber',
-  },
-  {
-    id: 'M4',
-    label: 'Asistente',
-    icon: <MessageSquare className="w-4 h-4" />,
-    href: '/empleado/asistente',
-    color: 'teal',
-  },
-]
-
-const BLOQUES_CULTURA_LABELS: Record<string, string> = {
-  historia: 'Nuestra historia',
-  mision: 'Misión y valores',
-  como_trabajamos: 'Cómo trabajamos',
-  expectativas: 'Qué se espera de mí',
-  hitos: 'Nuestros hitos',
-}
+// TABS y BLOQUES_CULTURA_LABELS se generan dentro del componente con useMemo para soporte i18n
 
 // ─────────────────────────────────────────────
 // Animaciones
@@ -443,6 +407,24 @@ function TabAsistente({
 // ─────────────────────────────────────────────
 
 export default function EmpleadoHome() {
+  const { t } = useLanguage()
+
+  // ── Tabs y labels de cultura (i18n) ──────────
+  const TABS = useMemo(() => [
+    { id: 'M1' as TabId, label: t('tab.perfil'),    icon: <User className="w-4 h-4" />,          href: '/empleado/perfil',    color: 'sky' },
+    { id: 'M2' as TabId, label: t('tab.cultura'),   icon: <BookOpen className="w-4 h-4" />,       href: '/empleado/cultura',   color: 'sky' },
+    { id: 'M3' as TabId, label: t('tab.rol'),       icon: <Briefcase className="w-4 h-4" />,      href: '/empleado/rol',       color: 'amber' },
+    { id: 'M4' as TabId, label: t('tab.asistente'), icon: <MessageSquare className="w-4 h-4" />,  href: '/empleado/asistente', color: 'teal' },
+  ], [t])
+
+  const BLOQUES_CULTURA_LABELS = useMemo<Record<string, string>>(() => ({
+    historia:        t('cultura.historia'),
+    mision:          t('cultura.mision'),
+    como_trabajamos: t('cultura.como_trabajamos'),
+    expectativas:    t('cultura.expectativas'),
+    hitos:           t('cultura.hitos'),
+  }), [t])
+
   // ── Estado base (carga inicial) ──────────────
   const [loading, setLoading] = useState(true)
   const [datosBase, setDatosBase] = useState<DatosBase | null>(null)
@@ -453,7 +435,7 @@ export default function EmpleadoHome() {
   // ── Tab activo y dirección de animación ──────
   const [tabActivo, setTabActivo] = useState<TabId>('M1')
   const [tabPrev, setTabPrev] = useState<TabId>('M1')
-  const direction = TABS.findIndex(t => t.id === tabActivo) - TABS.findIndex(t => t.id === tabPrev)
+  const direction = TABS.findIndex(tab => tab.id === tabActivo) - TABS.findIndex(tab => tab.id === tabPrev)
 
   // ── Datos lazy por tab ───────────────────────
   const [tabsCargados, setTabsCargados] = useState<Set<TabId>>(new Set())
@@ -617,7 +599,7 @@ export default function EmpleadoHome() {
       console.warn('[TabM2] cultura:', err)
       setBloquesProgreso([])
     }
-  }, [])
+  }, [BLOQUES_CULTURA_LABELS])
 
   const cargarTabM3 = useCallback(async (userId: string, empresaId: string) => {
     try {
@@ -730,14 +712,14 @@ export default function EmpleadoHome() {
           className="mb-6"
         >
           <h1 className="text-2xl font-semibold text-white">
-            Buen{new Date().getHours() < 12 ? 'os días' : new Date().getHours() < 18 ? 'as tardes' : 'as noches'},{' '}
+            {new Date().getHours() < 12 ? t('home.greeting.morning') : new Date().getHours() < 18 ? t('home.greeting.afternoon') : t('home.greeting.evening')},{' '}
             <span className="text-[#7DD3FC]">{datosBase.nombre.split(' ')[0]}</span> 👋
           </h1>
           <div className="flex items-center gap-3 mt-1">
             {dias !== null && (
               <span className="flex items-center gap-1.5 text-xs text-white/40">
                 <Calendar className="w-3.5 h-3.5" />
-                Día {dias} de onboarding
+                {t('home.day').replace('{n}', String(dias))}
               </span>
             )}
             {datosBase.puesto && (
@@ -759,7 +741,7 @@ export default function EmpleadoHome() {
           {/* Barra + porcentaje */}
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-              Progreso de onboarding
+              {t('home.progress')}
             </p>
             <span className="text-xs font-mono text-white/50 tabular-nums">{progresoPct}%</span>
           </div>

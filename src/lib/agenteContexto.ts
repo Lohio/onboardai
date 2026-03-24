@@ -39,7 +39,7 @@ export function silenciarPor24hs(): void {
 }
 
 /** Devuelve el mensaje proactivo adecuado según el contexto, o null si no aplica ninguno */
-export function getMensajeProactivo(params: AgenteParams): MensajeProactivo | null {
+export function getMensajeProactivo(params: AgenteParams, t: (key: string) => string): MensajeProactivo | null {
   const {
     modulo,
     diasOnboarding,
@@ -100,18 +100,18 @@ export function getMensajeProactivo(params: AgenteParams): MensajeProactivo | nu
   // ── Módulo cultura — más de 3 días sin completar ──────────────
   if (modulo === 'cultura' && diasOnboarding >= 3 && !moduloCompletado) {
     return {
-      mensaje: `Ya van ${diasOnboarding} días 🕐 Las empresas top recomiendan completar Cultura en la primera semana. ¿Seguimos?`,
-      ctaPrimario: 'Continuar',
-      ctaSecundario: 'Recordarme mañana',
+      mensaje: t('hint.cultura.msg').replace('{dias}', String(diasOnboarding)),
+      ctaPrimario: t('hint.cultura.cta1'),
+      ctaSecundario: t('hint.cultura.cta2'),
     }
   }
 
   // ── Módulo rol — sin completar ────────────────────────────────
   if (modulo === 'rol' && !moduloCompletado) {
     return {
-      mensaje: `En Rol vas a encontrar tus primeras tareas y objetivos. Tu manager ya las configuró. ¿Las vemos?`,
-      ctaPrimario: 'Ver mis tareas',
-      ctaSecundario: 'Ahora no',
+      mensaje: t('hint.rol.msg'),
+      ctaPrimario: t('hint.rol.cta1'),
+      ctaSecundario: t('hint.rol.cta2'),
     }
   }
 
@@ -124,9 +124,9 @@ export function getMensajeProactivo(params: AgenteParams): MensajeProactivo | nu
 
   if (diasOnboarding >= 7 && diasOnboarding < 30 && !moduloCompletado) {
     return {
-      mensaje: `Llevás ${diasOnboarding} días en la empresa. El módulo de ${nombreModulo} te va a ayudar a integrarte más rápido. ¿Seguimos donde lo dejaste?`,
-      ctaPrimario: 'Continuar',
-      ctaSecundario: 'Ahora no',
+      mensaje: t('hint.continuar.msg').replace('{dias}', String(diasOnboarding)).replace('{modulo}', nombreModulo),
+      ctaPrimario: t('hint.continuar.cta1'),
+      ctaSecundario: t('hint.continuar.cta2'),
     }
   }
 

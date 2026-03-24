@@ -6,6 +6,7 @@ import { Send, Bot, Loader2, AlertTriangle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -133,6 +134,7 @@ function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
 // ─────────────────────────────────────────────
 
 function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (texto: string) => void }) {
+  const { t } = useLanguage()
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
       <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
@@ -140,10 +142,10 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
       </div>
       <div className="text-center space-y-1.5 max-w-sm">
         <p className="text-sm font-medium text-white/60">
-          Hola{nombre ? `, ${nombre.split(' ')[0]}` : ''}! Soy tu asistente de onboarding.
+          {nombre ? `${t('asistente.greeting').replace('¡Hola!', `¡Hola, ${nombre.split(' ')[0]}!`)}` : t('asistente.greeting')}
         </p>
         <p className="text-xs text-white/30">
-          Preguntame sobre la empresa, tus tareas, procesos o cualquier duda que tengas.
+          {t('asistente.greetingBody')}
         </p>
         <p className="text-[11px] text-[#0EA5E9]/50 mt-1">
           También podés chatear desde el ícono flotante en cualquier módulo.
@@ -176,6 +178,7 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
 // ─────────────────────────────────────────────
 
 export default function AsistentePage() {
+  const { t } = useLanguage()
   const [mensajes, setMensajes] = useState<Mensaje[]>([])
   const [input, setInput] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -331,13 +334,13 @@ export default function AsistentePage() {
           <Bot className="w-4 h-4 text-teal-400" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white/80">Historial de conversaciones</p>
-          <p className="text-[11px] text-white/30">Tus preguntas anteriores al asistente</p>
+          <p className="text-sm font-medium text-white/80">{t('asistente.title')}</p>
+          <p className="text-[11px] text-white/30">{t('asistente.subtitle')}</p>
         </div>
         {/* Dot de estado activo */}
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_6px_rgba(13,148,136,0.7)] animate-pulse" />
-          <span className="text-[10px] text-white/30">Activo</span>
+          <span className="text-[10px] text-white/30">{t('asistente.online')}</span>
         </div>
       </div>
 
@@ -362,7 +365,7 @@ export default function AsistentePage() {
                 className="flex items-center gap-2 text-xs text-red-400/70 px-1"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                No se pudo enviar. Intentá de nuevo.
+                {t('asistente.error')}
               </motion.div>
             )}
           </>
@@ -377,7 +380,7 @@ export default function AsistentePage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribí tu pregunta..."
+            placeholder={t('asistente.placeholder')}
             rows={1}
             className="flex-1 bg-transparent text-sm text-white/80 placeholder:text-white/25
               resize-none outline-none py-1.5 leading-relaxed max-h-[120px]"
@@ -397,7 +400,7 @@ export default function AsistentePage() {
           </button>
         </div>
         <p className="text-[10px] text-white/20 text-center mt-1.5">
-          Enter para enviar · Shift+Enter para nueva línea
+          {t('asistente.hint')}
         </p>
       </div>
     </div>

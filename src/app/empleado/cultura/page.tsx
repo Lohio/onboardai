@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import type { ContenidoBloque, ProgresoModulo } from '@/types'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Renderer simple de Markdown
@@ -453,6 +454,7 @@ interface QuizProps {
 }
 
 function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completando, onReset }: QuizProps) {
+  const { t } = useLanguage()
   const preguntas = PREGUNTAS[bloqueKey]
   const todasRespondidas = respuestas.every(r => r !== null)
   const todasCorrectas = preguntas.every((p, i) => respuestas[i] === p.correcta)
@@ -465,7 +467,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
         <div className="flex-1 h-px bg-white/[0.07]" />
         <div className={cn('flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium', cfg.iconBg, cfg.iconText)}>
           <Sparkles className="w-3 h-3" />
-          Verificá tu comprensión
+          {t('cultura.quiz.title')}
         </div>
         <div className="flex-1 h-px bg-white/[0.07]" />
       </div>
@@ -565,7 +567,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
             exit={{ opacity: 0 }}
             className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
           >
-            <p className="text-xs text-amber-300/80">Hay respuestas incorrectas. Revisá el contenido.</p>
+            <p className="text-xs text-amber-300/80">{t('cultura.quiz.error')}</p>
             <button
               onClick={onReset}
               className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors ml-3 flex-shrink-0"
