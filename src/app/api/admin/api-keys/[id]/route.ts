@@ -34,13 +34,13 @@ export const DELETE = withHandler(
 
     // Verificar que la key existe y pertenece a la empresa del usuario
     // (dev puede revocar cualquier key)
-    const matchQuery = sa
+    let matchQuery = sa
       .from('api_keys')
       .select('id, empresa_id, activa')
       .eq('id', id)
 
     if (user!.rol !== 'dev') {
-      matchQuery.eq('empresa_id', user!.empresaId)
+      matchQuery = matchQuery.eq('empresa_id', user!.empresaId)
     }
 
     const { data: existente, error: fetchError } = await matchQuery.single()
