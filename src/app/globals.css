@@ -78,7 +78,7 @@
   --text-muted: rgba(0, 0, 0, 0.45);
   --glass-bg: rgba(255, 255, 255, 0.70);
   --glass-border: rgba(0, 0, 0, 0.08);
-  --sidebar-bg: #18181b;
+  --sidebar-bg: #ffffff;
   --gradient-bg:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14, 165, 233, 0.08) 0%, transparent 65%),
     radial-gradient(ellipse 40% 35% at 85% 85%, rgba(14, 165, 233, 0.04) 0%, transparent 55%),
@@ -285,8 +285,39 @@ body {
 /* ── Todos los temas: sidebar usa su color específico ── */
 aside {
   background: var(--sidebar-bg) !important;
+}
+
+/* ── Tema oscuro/gris: borde lateral del sidebar ── */
+:root aside,
+.theme-dark aside,
+.theme-gray aside {
   border-color: rgba(255,255,255,0.08) !important;
 }
+
+/* ── Tema claro: sidebar adapta texto y bordes ── */
+.theme-light aside {
+  border-color: rgba(17,17,16,0.08) !important;
+}
+.theme-light aside [class*="text-white"]     { color: rgba(17,17,16,1.0)  !important; }
+.theme-light aside [class*="text-white/80"],
+.theme-light aside [class*="text-white/70"],
+.theme-light aside [class*="text-white/60"] { color: rgba(17,17,16,0.85) !important; }
+.theme-light aside [class*="text-white/55"],
+.theme-light aside [class*="text-white/50"],
+.theme-light aside [class*="text-white/45"],
+.theme-light aside [class*="text-white/40"] { color: rgba(17,17,16,0.65) !important; }
+.theme-light aside [class*="text-white/35"],
+.theme-light aside [class*="text-white/30"] { color: rgba(17,17,16,0.50) !important; }
+.theme-light aside [class*="text-white/25"],
+.theme-light aside [class*="text-white/20"] { color: rgba(17,17,16,0.38) !important; }
+.theme-light aside [class*="text-white/15"],
+.theme-light aside [class*="text-white/10"] { color: rgba(17,17,16,0.25) !important; }
+
+.theme-light aside [class*="border-white/"] { border-color: rgba(17,17,16,0.08) !important; }
+.theme-light aside [class*="bg-white/"]     { background-color: rgba(17,17,16,0.04) !important; }
+.theme-light aside [class*="bg-[#0d0d0c]"],
+.theme-light aside [class*="bg-[#111110]"]  { background-color: var(--surface-2) !important; }
+.theme-light aside [class*="bg-[#1a1a18]"]  { background-color: var(--surface)   !important; }
 
 /* ── Tema claro: header claro ── */
 .theme-light header {

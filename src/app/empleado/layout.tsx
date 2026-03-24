@@ -271,9 +271,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       </header>
 
       {/* Contenido de la página */}
-      <div className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col">
         {children}
-      </div>
+      </main>
 
       {/* Agente flotante proactivo (M1–M4) */}
       {(() => {
