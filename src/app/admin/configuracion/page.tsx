@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Check, Mail, Video, Plus, MessageSquareMore, Trash2, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+import { Save, Check, Mail, Video, Plus, MessageSquareMore, Trash2, ExternalLink, Key, ChevronRight, Palette, PlayCircle } from 'lucide-react'
+import { ThemeSelector } from '@/components/shared/ThemeSelector'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -270,11 +272,59 @@ export default function ConfiguracionPage() {
         <p className="text-sm text-white/40 mt-1">Ajustes generales del panel admin</p>
       </motion.div>
 
-      {/* ── Herramientas de contacto ── */}
+      {/* ── Apariencia ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.05 }}
+      >
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <Palette className="w-4 h-4 text-sky-400" />
+            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              Apariencia
+            </h2>
+          </div>
+          <p className="text-xs text-white/40 mb-4">Elegí el tema visual de la aplicación.</p>
+          <ThemeSelector />
+        </Card>
+      </motion.div>
+
+      {/* ── Tour del panel ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.08 }}
+      >
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <PlayCircle className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              Tour del panel
+            </h2>
+          </div>
+          <p className="text-xs text-white/40 mb-4">
+            Recorrido guiado por las secciones principales del panel de administración.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('start-admin-tour'))}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+              bg-indigo-500/10 text-indigo-300 border border-indigo-500/20
+              hover:bg-indigo-500/20 hover:border-indigo-500/40
+              transition-all duration-150"
+          >
+            <PlayCircle className="w-4 h-4" />
+            Ver tour
+          </button>
+        </Card>
+      </motion.div>
+
+      {/* ── Herramientas de contacto ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.12 }}
       >
         <Card>
           <div className="flex items-start justify-between mb-1">
@@ -655,6 +705,36 @@ export default function ConfiguracionPage() {
           </Card>
         </motion.div>
       )}
+
+      {/* ── API Keys ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.25 }}
+      >
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <Key className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              API Keys
+            </h2>
+          </div>
+          <p className="text-xs text-white/40 mb-4">
+            Generá claves de acceso para integrar Heero con sistemas externos via la API pública.
+          </p>
+          <Link
+            href="/admin/configuracion/api-keys"
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg
+              bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05]
+              hover:border-indigo-500/30 transition-all duration-150 group"
+          >
+            <span className="text-sm text-white/70 group-hover:text-white transition-colors">
+              Gestionar API Keys
+            </span>
+            <ChevronRight className="w-4 h-4 text-white/25 group-hover:text-indigo-400 transition-colors" />
+          </Link>
+        </Card>
+      </motion.div>
 
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, X, Send, Loader2, ExternalLink } from 'lucide-react'
@@ -16,6 +16,7 @@ import {
 } from '@/lib/agenteContexto'
 import type { ChatMensaje } from '@/lib/claude'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -45,36 +46,7 @@ interface AgenteFlotanteProps {
 
 const MAX_MENSAJES = 20
 
-// Sugerencias contextuales por módulo
-const SUGERENCIAS: Record<string, string[]> = {
-  perfil: [
-    '¿Cómo completo mi perfil?',
-    '¿Qué son los accesos?',
-    '¿A quién contacto si tengo dudas?',
-  ],
-  cultura: [
-    'Contame la historia de la empresa',
-    '¿Cuáles son los valores?',
-    '¿Cómo es el ambiente de trabajo?',
-  ],
-  rol: [
-    '¿Cuáles son mis primeras tareas?',
-    '¿Qué se espera de mí en 30 días?',
-    '¿Con quién voy a trabajar?',
-  ],
-  asistente: [
-    '¿En qué te puedo ayudar?',
-    '¿Tenés alguna duda del onboarding?',
-  ],
-}
-
-// Badge de módulo para el header del panel
-const MODULO_LABELS: Record<string, string> = {
-  perfil:    'M1 · Perfil',
-  cultura:   'M2 · Cultura',
-  rol:       'M3 · Rol',
-  asistente: 'M4 · Asistente',
-}
+// CTAs y SUGERENCIAS/MODULO_LABELS se generan dentro del componente usando i18n
 
 // CTAs que navegan a otra ruta en lugar de abrir el panel
 const CTA_NAVEGACION: Record<string, string> = {
@@ -172,6 +144,22 @@ export default function AgenteFlotante({
   userId,
 }: AgenteFlotanteProps) {
   const router = useRouter()
+  const { t } = useLanguage()
+
+  // ── Constantes traducidas ─────────────────────────────────────
+  const SUGERENCIAS = useMemo<Record<string, string[]>>(() => ({
+    perfil:    [t('agente.sug.perfil.1'),    t('agente.sug.perfil.2'),    t('agente.sug.perfil.3')],
+    cultura:   [t('agente.sug.cultura.1'),   t('agente.sug.cultura.2'),   t('agente.sug.cultura.3')],
+    rol:       [t('agente.sug.rol.1'),       t('agente.sug.rol.2'),       t('agente.sug.rol.3')],
+    asistente: [t('agente.sug.asistente.1'), t('agente.sug.asistente.2')],
+  }), [t])
+
+  const MODULO_LABELS = useMemo<Record<string, string>>(() => ({
+    perfil:    t('agente.mod.perfil'),
+    cultura:   t('agente.mod.cultura'),
+    rol:       t('agente.mod.rol'),
+    asistente: t('agente.mod.asistente'),
+  }), [t])
 
   // ── Estado del panel ──────────────────────────────────────────
   const [panelAbierto, setPanelAbierto] = useState(false)
@@ -328,7 +316,7 @@ export default function AgenteFlotante({
       setMensajes(prev =>
         prev.map(m =>
           m.id === idAssistant
-            ? { ...m, contenido: 'No pude conectar con el asistente. Intentá de nuevo.' }
+            ? { ...m, contenido: t('agente.error') }
             : m
         )
       )
@@ -492,7 +480,7 @@ export default function AgenteFlotante({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-white/90 leading-none">Asistente</p>
+                  <p className="text-sm font-medium text-white/90 leading-none">{t('agente.title')}</p>
                   {/* Badge del módulo actual */}
                   {moduloBadge && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
@@ -501,7 +489,7 @@ export default function AgenteFlotante({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-teal-400/70 mt-0.5">En línea</p>
+                <p className="text-[11px] text-teal-400/70 mt-0.5">{t('agente.online')}</p>
               </div>
 
               {/* Ir al historial completo */}
@@ -541,7 +529,7 @@ export default function AgenteFlotante({
                     <Bot className="w-5 h-5 text-[#38BDF8]" />
                   </div>
                   <p className="text-xs text-white/35 text-center leading-relaxed max-w-[200px]">
-                    Hola, soy tu guía de onboarding. ¿En qué te puedo ayudar?
+                    {t('agente.greeting')}
                   </p>
 
                   {/* Chips de sugerencias */}
@@ -576,7 +564,7 @@ export default function AgenteFlotante({
                   value={inputValue}
                   onChange={e => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Escribí tu pregunta..."
+                  placeholder={t('agente.placeholder')}
                   rows={1}
                   disabled={enviando}
                   className="flex-1 resize-none bg-white/[0.06] border border-white/[0.08]
@@ -609,7 +597,7 @@ export default function AgenteFlotante({
                 text-[10px] text-white/25 hover:text-white/45
                 transition-colors duration-150 cursor-pointer w-full"
             >
-              Ver historial completo →
+              {t('agente.history')}
             </button>
           </motion.div>
         )}

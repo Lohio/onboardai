@@ -48,9 +48,59 @@
    BASE
    ========================================== */
 
-:root {
+/* ── Tema oscuro (default) ── */
+:root,
+.theme-dark {
   --background: #111110;
   --foreground: #ffffff;
+  --surface: #1a1a18;
+  --surface-2: #222220;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.40);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: #1a1a18;
+  --gradient-bg:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14, 165, 233, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(14, 165, 233, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 10% 60%, rgba(14, 165, 233, 0.04) 0%, transparent 50%),
+    #111110;
+  color-scheme: dark;
+}
+
+/* ── Tema claro ── */
+.theme-light {
+  --background: #f8f8f7;
+  --foreground: #111110;
+  --surface: #ffffff;
+  --surface-2: #f0efee;
+  --border: rgba(0, 0, 0, 0.08);
+  --text-muted: rgba(0, 0, 0, 0.45);
+  --glass-bg: rgba(255, 255, 255, 0.70);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --sidebar-bg: #18181b;
+  --gradient-bg:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14, 165, 233, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(14, 165, 233, 0.04) 0%, transparent 55%),
+    #f8f8f7;
+  color-scheme: light;
+}
+
+/* ── Tema gris neutro ── */
+.theme-gray {
+  --background: #1c1c1e;
+  --foreground: #f5f5f5;
+  --surface: #2c2c2e;
+  --surface-2: #3a3a3c;
+  --border: rgba(255, 255, 255, 0.10);
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --sidebar-bg: #2c2c2e;
+  --gradient-bg:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(120, 120, 128, 0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(120, 120, 128, 0.05) 0%, transparent 55%),
+    #1c1c1e;
   color-scheme: dark;
 }
 
@@ -76,10 +126,10 @@ body {
 
 /* Card con efecto glassmorphism — Heero */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
@@ -96,13 +146,9 @@ body {
     0 1px 3px 0 rgba(0, 0, 0, 0.25);
 }
 
-/* Fondo con gradiente radial atmosférico — tonos sky */
+/* Fondo con gradiente radial atmosférico — usa variable de tema */
 .gradient-bg {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14, 165, 233, 0.12) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(14, 165, 233, 0.05) 0%, transparent 55%),
-    radial-gradient(ellipse 30% 25% at 10% 60%, rgba(14, 165, 233, 0.04) 0%, transparent 50%),
-    #111110;
+  background: var(--gradient-bg);
 }
 
 /* Efecto shimmer para loading/skeleton */
@@ -206,3 +252,132 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ==========================================
+   BUTTON VARIANTS — adaptables a todos los temas
+   ========================================== */
+
+.btn-secondary {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+.btn-ghost {
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+}
+.btn-ghost:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+/* ==========================================
+   OVERRIDES DE TEMA — claro y gris
+   ==========================================
+   El sidebar (aside) se mantiene siempre oscuro
+   para maximizar contraste. Header y main se
+   adaptan al tema claro.
+   ========================================== */
+
+/* ── Todos los temas: sidebar usa su color específico ── */
+aside {
+  background: var(--sidebar-bg) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* ── Tema claro: header claro ── */
+.theme-light header {
+  background: var(--surface) !important;
+  border-bottom-color: rgba(17,17,16,0.08) !important;
+}
+
+/* ── Tema claro: texto blanco → negro (header y main) — máximo contraste ── */
+.theme-light header [class*="text-white"],
+.theme-light main   [class*="text-white"]    { color: rgba(17,17,16,1.0) !important; }
+
+.theme-light header [class*="text-white/80"],
+.theme-light header [class*="text-white/70"],
+.theme-light header [class*="text-white/60"],
+.theme-light main   [class*="text-white/80"],
+.theme-light main   [class*="text-white/70"],
+.theme-light main   [class*="text-white/60"] { color: rgba(17,17,16,0.85) !important; }
+
+.theme-light header [class*="text-white/50"],
+.theme-light header [class*="text-white/40"],
+.theme-light main   [class*="text-white/50"],
+.theme-light main   [class*="text-white/40"] { color: rgba(17,17,16,0.70) !important; }
+
+.theme-light header [class*="text-white/35"],
+.theme-light header [class*="text-white/30"],
+.theme-light main   [class*="text-white/35"],
+.theme-light main   [class*="text-white/30"] { color: rgba(17,17,16,0.55) !important; }
+
+.theme-light header [class*="text-white/25"],
+.theme-light header [class*="text-white/20"],
+.theme-light main   [class*="text-white/25"],
+.theme-light main   [class*="text-white/20"] { color: rgba(17,17,16,0.42) !important; }
+
+.theme-light header [class*="text-white/15"],
+.theme-light header [class*="text-white/10"],
+.theme-light main   [class*="text-white/15"],
+.theme-light main   [class*="text-white/10"] { color: rgba(17,17,16,0.30) !important; }
+
+.theme-light header [class*="text-white/5"],
+.theme-light main   [class*="text-white/5"]  { color: rgba(17,17,16,0.18) !important; }
+
+/* ── Tema claro: fondos oscuros en header/main → claros ── */
+.theme-light header [class*="bg-[#0d0d0c]"],
+.theme-light header [class*="bg-[#111110]"],
+.theme-light main   [class*="bg-[#0d0d0c]"],
+.theme-light main   [class*="bg-[#111110]"]  { background-color: var(--background) !important; }
+
+.theme-light header [class*="bg-[#1a1a18]"],
+.theme-light header [class*="bg-[#1a1a19]"],
+.theme-light main   [class*="bg-[#1a1a18]"],
+.theme-light main   [class*="bg-[#1a1a19]"]  { background-color: var(--surface) !important; }
+
+.theme-light header [class*="bg-[#222220]"],
+.theme-light header [class*="bg-[#2a2a28]"],
+.theme-light main   [class*="bg-[#222220]"],
+.theme-light main   [class*="bg-[#2a2a28]"]  { background-color: var(--surface-2) !important; }
+
+/* ── Tema claro: fondos blancos semitransparentes en header/main ── */
+.theme-light header [class*="bg-white/"],
+.theme-light main   [class*="bg-white/"]     { background-color: rgba(17,17,16,0.05) !important; }
+
+/* ── Tema claro: bordes blancos en header/main → oscuros ── */
+.theme-light header [class*="border-white/"],
+.theme-light main   [class*="border-white/"] { border-color: rgba(17,17,16,0.10) !important; }
+
+/* ── Tema gris: fondos oscuros cálidos → grises neutros ── */
+.theme-gray [class*="bg-[#0d0d0c]"] { background-color: var(--background) !important; }
+.theme-gray [class*="bg-[#111110]"] { background-color: var(--background) !important; }
+.theme-gray [class*="bg-[#1a1a18]"],
+.theme-gray [class*="bg-[#1a1a19]"] { background-color: var(--surface) !important; }
+.theme-gray [class*="bg-[#222220]"],
+.theme-gray [class*="bg-[#2a2a28]"] { background-color: var(--surface-2) !important; }
+
+/* ── Tema claro: inline styles con gradientes oscuros navy → superficie clara ── */
+.theme-light [style*="#1a2d5a"],
+.theme-light [style*="#162440"],
+.theme-light [style*="#0f1e3d"],
+.theme-light [style*="#0F1F3D"],
+.theme-light [style*="#13182a"],
+.theme-light [style*="#0a1628"],
+.theme-light [style*="rgba(10,22,40"],
+.theme-light [style*="rgba(7,15,30"] {
+  background: var(--surface) !important;
+  background-image: none !important;
+}
+
+/* ── Tema claro/gris: clases Tailwind custom (bg-surface-*, bg-heero-*) ── */
+.theme-light main  [class*="bg-surface-"],
+.theme-light header [class*="bg-surface-"] { background-color: var(--surface-2) !important; }
+.theme-light main  [class*="bg-heero-"],
+.theme-light header [class*="bg-heero-"]   { background-color: var(--surface-2) !important; }
+
+.theme-gray [class*="bg-surface-"] { background-color: var(--surface) !important; }
+.theme-gray [class*="bg-heero-"]   { background-color: var(--surface) !important; }

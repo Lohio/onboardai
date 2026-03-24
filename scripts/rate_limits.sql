@@ -2,14 +2,14 @@
 CREATE TABLE IF NOT EXISTS rate_limits (
   id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   key        TEXT NOT NULL,          -- ej: "chat:user:uuid-del-user"
-  window     TIMESTAMPTZ NOT NULL,   -- inicio de la ventana temporal (truncado)
+  "window"   TIMESTAMPTZ NOT NULL,   -- inicio de la ventana temporal (truncado)
   count      INT NOT NULL DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(key, window)
+  UNIQUE(key, "window")
 );
 
 -- Índice para búsquedas rápidas
-CREATE INDEX IF NOT EXISTS idx_rate_limits_key_window ON rate_limits(key, window);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_key_window ON rate_limits(key, "window");
 
 -- Función atómica de incremento y verificación
 -- Retorna TRUE si la request está permitida (count <= p_max)
@@ -23,9 +23,9 @@ LANGUAGE plpgsql AS $$
 DECLARE
   current_count INT;
 BEGIN
-  INSERT INTO rate_limits (key, window, count)
+  INSERT INTO rate_limits (key, "window", count)
   VALUES (p_key, p_window, 1)
-  ON CONFLICT (key, window)
+  ON CONFLICT (key, "window")
   DO UPDATE SET count = rate_limits.count + 1
   RETURNING count INTO current_count;
 

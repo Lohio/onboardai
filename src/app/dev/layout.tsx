@@ -9,16 +9,18 @@ import {
   Settings, LogOut, Menu, X, ChevronRight,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Navegación
 // ─────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',  href: '/dev',           icon: <LayoutDashboard className="w-4 h-4" />, exact: true },
-  { label: 'Empresas',   href: '/dev/empresas',  icon: <Building2 className="w-4 h-4" />,       exact: false },
-  { label: 'Usuarios',   href: '/dev/usuarios',  icon: <Users className="w-4 h-4" />,           exact: false },
-  { label: 'Config',     href: '/dev/config',    icon: <Settings className="w-4 h-4" />,        exact: false },
+  { labelKey: 'nav.dashboard', href: '/dev',           icon: <LayoutDashboard className="w-4 h-4" />, exact: true },
+  { labelKey: 'nav.companies', href: '/dev/empresas',  icon: <Building2 className="w-4 h-4" />,       exact: false },
+  { labelKey: 'nav.users',     href: '/dev/usuarios',  icon: <Users className="w-4 h-4" />,           exact: false },
+  { labelKey: 'nav.settings',  href: '/dev/config',    icon: <Settings className="w-4 h-4" />,        exact: false },
 ]
 
 // ─────────────────────────────────────────────
@@ -36,6 +38,7 @@ function SidebarContent({
   onLogout: () => void
   onClose?: () => void
 }) {
+  const { t } = useLanguage()
   const initials = devNombre
     ? devNombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
     : 'DV'
@@ -78,7 +81,7 @@ function SidebarContent({
                 }`}
             >
               <span className={activo ? 'text-amber-400' : 'text-white/35'}>{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1">{t(item.labelKey)}</span>
               {activo && <ChevronRight className="w-3 h-3 text-amber-400/50" />}
             </Link>
           )
@@ -169,6 +172,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <ThemeProvider section="dev">
     <div className="min-h-dvh gradient-bg flex">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-white/[0.06] bg-[#111110]/40">
@@ -230,5 +234,6 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
     </div>
+    </ThemeProvider>
   )
 }

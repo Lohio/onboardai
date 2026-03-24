@@ -18,16 +18,20 @@ import {
 } from 'lucide-react'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
+import AdminProductTour from '@/components/AdminProductTour'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos locales
 // ─────────────────────────────────────────────
 
 interface NavItemDef {
-  label: string
+  labelKey: string
   href: string
   icon: React.ReactNode
   disabled: boolean
+  tourId?: string
 }
 
 // ─────────────────────────────────────────────
@@ -62,6 +66,8 @@ function NavItem({
   item: NavItemDef
   activo: boolean
 }) {
+  const { t } = useLanguage()
+
   if (item.disabled) {
     return (
       <motion.div variants={navItemVariants}>
@@ -72,12 +78,12 @@ function NavItem({
           <span className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/15">
             {item.icon}
           </span>
-          <span className="flex-1 font-medium">{item.label}</span>
+          <span className="flex-1 font-medium">{t(item.labelKey)}</span>
           <span
             className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
               bg-white/[0.06] text-white/25 border border-white/[0.06]"
           >
-            Pronto
+            {t('nav.soon')}
           </span>
         </span>
       </motion.div>
@@ -88,6 +94,7 @@ function NavItem({
     <motion.div variants={navItemVariants}>
       <Link
         href={item.href}
+        id={item.tourId}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
           font-medium transition-all duration-150 group
           ${
@@ -96,12 +103,9 @@ function NavItem({
               : 'text-white/55 hover:text-white/85 hover:bg-white/[0.06] border border-transparent'
           }`}
       >
-        {/* Indicador lateral para item activo */}
         {activo && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-[#0EA5E9]" />
         )}
-
-        {/* Ícono con fondo */}
         <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150
           ${activo
             ? 'bg-[#0EA5E9]/15 text-[#38BDF8]'
@@ -110,8 +114,7 @@ function NavItem({
         >
           {item.icon}
         </span>
-
-        <span className="flex-1">{item.label}</span>
+        <span className="flex-1">{t(item.labelKey)}</span>
       </Link>
     </motion.div>
   )
@@ -123,40 +126,45 @@ function NavItem({
 
 const navItems: NavItemDef[] = [
   {
-    label: 'Dashboard',
+    labelKey: 'nav.dashboard',
     href: '/admin',
     icon: <LayoutDashboard className="w-[18px] h-[18px]" />,
     disabled: false,
+    tourId: 'tour-nav-dashboard',
   },
   {
-    label: 'Empleados',
+    labelKey: 'nav.employees',
     href: '/admin/empleados',
     icon: <Users className="w-[18px] h-[18px]" />,
     disabled: false,
+    tourId: 'tour-nav-empleados',
   },
   {
-    label: 'Conocimiento',
+    labelKey: 'nav.knowledge',
     href: '/admin/conocimiento',
     icon: <BookOpen className="w-[18px] h-[18px]" />,
     disabled: false,
+    tourId: 'tour-nav-conocimiento',
   },
   {
-    label: 'Contenido IA',
+    labelKey: 'nav.content',
     href: '/admin/contenido',
     icon: <Layers className="w-[18px] h-[18px]" />,
     disabled: false,
   },
   {
-    label: 'Reportes',
+    labelKey: 'nav.reports',
     href: '/admin/reportes',
     icon: <BarChart2 className="w-[18px] h-[18px]" />,
     disabled: false,
+    tourId: 'tour-nav-reportes',
   },
   {
-    label: 'Configuración',
+    labelKey: 'nav.settings',
     href: '/admin/configuracion',
     icon: <Settings className="w-[18px] h-[18px]" />,
     disabled: false,
+    tourId: 'tour-nav-configuracion',
   },
 ]
 
@@ -169,6 +177,7 @@ function SidebarContent({
   pathname: string
   onClose?: () => void
 }) {
+  const { t } = useLanguage()
   const initials = adminNombre
     ? adminNombre
         .split(' ')
@@ -184,7 +193,7 @@ function SidebarContent({
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.06]">
         <div className="flex-1 min-w-0">
           <HeeroLogo size="sm" />
-          <p className="text-[11px] text-white/35 mt-1.5">Panel de administración</p>
+          <p className="text-[11px] text-white/35 mt-1.5">{t('nav.adminPanel')}</p>
         </div>
         {onClose && (
           <button
@@ -202,7 +211,7 @@ function SidebarContent({
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
         {/* Etiqueta de sección */}
         <p className="px-3 mb-1.5 text-[10px] font-semibold text-white/25 uppercase tracking-widest">
-          Navegación
+          {t('nav.navigation')}
         </p>
         <motion.div
           variants={sidebarContainerVariants}
@@ -235,7 +244,7 @@ function SidebarContent({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white/80 truncate">{adminNombre || 'Admin'}</p>
-            <p className="text-[11px] text-white/35 mt-0.5">Administrador</p>
+            <p className="text-[11px] text-white/35 mt-0.5">{t('common.admin')}</p>
           </div>
         </div>
       </div>
@@ -258,6 +267,7 @@ function AdminHeader({
   onMenuClick: () => void
   onLogout: () => void
 }) {
+  const { t } = useLanguage()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -341,7 +351,7 @@ function AdminHeader({
               {/* Info del usuario */}
               <div className="px-3 py-3 border-b border-white/[0.06]">
                 <p className="text-xs font-medium text-white/80 truncate">{adminNombre || 'Admin'}</p>
-                <p className="text-[11px] text-white/35 mt-0.5">Administrador</p>
+                <p className="text-[11px] text-white/35 mt-0.5">{t('common.admin')}</p>
               </div>
 
               {/* Cerrar sesión */}
@@ -353,7 +363,7 @@ function AdminHeader({
                     transition-colors duration-150 cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-                  Cerrar sesión
+                  {t('common.logout')}
                 </button>
               </div>
             </motion.div>
@@ -372,6 +382,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const pathname = usePathname()
 
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [adminNombre, setAdminNombre] = useState('')
   const [empresaId, setEmpresaId] = useState<string | null>(null)
@@ -474,13 +485,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="min-h-dvh gradient-bg flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-[#0EA5E9]/30 border-t-[#0EA5E9] rounded-full animate-spin-fast" />
-          <span className="text-sm text-white/40">Cargando...</span>
+          <span className="text-sm text-white/40">{t('common.loading')}</span>
         </div>
       </div>
     )
   }
 
   return (
+    <ThemeProvider section="admin">
     <div className="min-h-dvh gradient-bg flex">
       {/* ── Sidebar desktop (fijo) ── */}
       <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/[0.07] bg-white/[0.02]">
@@ -504,6 +516,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </main>
       </div>
+
+      {/* ── Product Tour ── */}
+      {!loading && <AdminProductTour />}
 
       {/* ── Sidebar mobile (drawer) ── */}
       <AnimatePresence>
@@ -538,5 +553,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
       </AnimatePresence>
     </div>
+    </ThemeProvider>
   )
 }

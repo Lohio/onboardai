@@ -22,15 +22,8 @@ const variantStyles: Record<ButtonVariant, string> = {
     'hover:shadow-[0_0_28px_rgba(14,165,233,0.35)]',
     'font-medium',
   ].join(' '),
-  secondary: [
-    'bg-white/[0.06] text-white/80',
-    'border border-white/[0.12]',
-    'hover:bg-white/[0.10] hover:border-white/20',
-  ].join(' '),
-  ghost: [
-    'text-white/60',
-    'hover:text-white hover:bg-white/[0.05]',
-  ].join(' '),
+  secondary: 'btn-secondary',
+  ghost: 'btn-ghost',
   danger: [
     'bg-red-600 text-white',
     'hover:bg-red-500',
@@ -87,7 +80,7 @@ export function Button({
         'font-[\'Instrument_Sans\'] transition-colors duration-150 cursor-pointer select-none',
         'focus-visible:outline-none focus-visible:ring-2',
         'focus-visible:ring-[#0EA5E9]/50 focus-visible:ring-offset-1',
-        'focus-visible:ring-offset-[#111110]',
+        'focus-visible:ring-offset-transparent',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
         variantStyles[variant],
         sizeStyles[size],

@@ -18,7 +18,12 @@
       "Bash(node:*)",
       "Bash(git push:*)",
       "Bash(curl -s -X GET \"https://dffoukeptusuolzvolay.supabase.co/auth/v1/admin/users?email=maximiliano@d-byte.com.ar\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZm91a2VwdHVzdW9senZvbGF5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzU4MTkzOSwiZXhwIjoyMDg5MTU3OTM5fQ.K3g7xxsHPXbtbsnP4nFOcOvewDNM5hG_Q6XC-62VqyM\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZm91a2VwdHVzdW9senZvbGF5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzU4MTkzOSwiZXhwIjoyMDg5MTU3OTM5fQ.K3g7xxsHPXbtbsnP4nFOcOvewDNM5hG_Q6XC-62VqyM\")",
-      "Bash(python -m json.tool)"
+      "Bash(python -m json.tool)",
+      "Bash(git worktree:*)",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "mcp__plugin_context-mode_context-mode__ctx_execute"
     ]
   }
 }

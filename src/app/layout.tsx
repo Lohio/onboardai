@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { PageWrapper } from '@/components/shared/PageWrapper'
+import { LanguageProvider } from '@/components/LanguageProvider'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <PageWrapper>{children}</PageWrapper>
+        <LanguageProvider>
+          <PageWrapper>{children}</PageWrapper>
+        </LanguageProvider>
         <Toaster
           position="top-right"
           toastOptions={{

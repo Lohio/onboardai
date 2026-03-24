@@ -9,6 +9,9 @@ import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
 import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
 import AgenteFlotante from '@/components/empleado/AgenteFlotante'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { SettingsDropdown } from '@/components/shared/SettingsDropdown'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -44,6 +47,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const [accesosPendientes, setAccesosPendientes] = useState(0)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { t } = useLanguage()
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -133,6 +137,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   }, [router, pathname]) // re-evalúa al cambiar de ruta
 
   return (
+    <ThemeProvider section="empleado">
     <div className="min-h-dvh flex flex-col">
       {/* ── Header de progreso (sticky) ── */}
       <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#111110]/80 backdrop-blur-xl">
@@ -206,6 +211,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             </span>
           </div>
 
+          {/* Settings */}
+          <SettingsDropdown />
+
           {/* Avatar + dropdown */}
           <div ref={menuRef} className="relative flex-shrink-0">
             <button
@@ -252,7 +260,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                         transition-colors duration-150 cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-                      Cerrar sesión
+                      {t('common.logout')}
                     </button>
                   </div>
                 </motion.div>
@@ -296,5 +304,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       })()}
 
     </div>
+    </ThemeProvider>
   )
 }
