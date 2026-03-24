@@ -472,7 +472,7 @@ export default function EmpleadoDetallePage() {
           puesto:               form.puesto.trim() || null,
           area:                 form.area.trim() || null,
           fecha_ingreso:        form.fecha_ingreso || null,
-          modalidad:            form.modalidad || null,
+          modalidad_trabajo:    form.modalidad || null,
           manager_id:           form.manager_id || null,
           buddy_id:             form.buddy_id || null,
           bio:                  form.bio.trim() || null,

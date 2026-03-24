@@ -9,7 +9,7 @@ import { ApiError } from '@/lib/errors'
 // Actualiza los datos del empleado
 // ─────────────────────────────────────────────
 
-export const PATCH = withHandler(
+const actualizarEmpleado = withHandler(
   {
     auth: 'session',
     rol: ['admin', 'dev'],
@@ -59,6 +59,9 @@ export const PATCH = withHandler(
     return NextResponse.json({ usuario: actualizado })
   }
 )
+
+export const PATCH = actualizarEmpleado
+export const PUT = actualizarEmpleado
 
 // ─────────────────────────────────────────────
 // DELETE /api/admin/empleados/[id]

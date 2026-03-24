@@ -200,6 +200,11 @@ export function withHandler<TBody = unknown>(
         const parsed = options.schema.safeParse(rawBody)
         if (!parsed.success) {
           status = 400
+          console.log('[withHandler] Datos inválidos:', {
+            path: new URL(req.url).pathname,
+            rawBody,
+            issues: parsed.error.issues,
+          })
           return NextResponse.json(
             { error: 'Datos inválidos', details: parsed.error.issues, requestId },
             { status: 400 }
