@@ -39,8 +39,11 @@ export interface MiembroEquipo {
 export interface Acceso {
   id: string
   herramienta: string
-  url?: string
+  url?: string | null
   estado: 'activo' | 'pendiente' | 'sin_acceso'
+  usuario_acceso?: string | null
+  password_acceso?: string | null
+  notas?: string | null
 }
 
 // Tipos de contenido soportados

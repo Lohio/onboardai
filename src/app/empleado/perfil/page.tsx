@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera, Mail, ExternalLink, Copy, Check,
   MessageSquare, FileText, Code, Globe,
-  Calendar, User, BookOpen, Briefcase, KeyRound, ShieldAlert,
+  Calendar, User, BookOpen, Briefcase, KeyRound, ShieldAlert, Eye, EyeOff,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -263,6 +263,9 @@ export default function PerfilPage() {
   const [accesos, setAccesos] = useState<Acceso[]>([])
 
   const [herramientaContacto, setHerramientaContacto] = useState<string>('email')
+  const [showPassCorp, setShowPassCorp] = useState(false)
+  const [showPassBitlocker, setShowPassBitlocker] = useState(false)
+  const [showPassAcceso, setShowPassAcceso] = useState<Record<string, boolean>>({})
 
   const [editandoBio, setEditandoBio] = useState(false)
   const [bio, setBio] = useState('')
@@ -881,39 +884,65 @@ export default function PerfilPage() {
                     <motion.div
                       key={acceso.id}
                       variants={itemVariants}
-                      className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0"
+                      className="py-2.5 border-b border-white/[0.04] last:border-0"
                     >
-                      <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
-                        <ToolIcon name={acceso.herramienta} className="text-white/50" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
+                          <ToolIcon name={acceso.herramienta} className="text-white/50" />
+                        </div>
+
+                        <span className="flex-1 text-sm text-white/70 truncate">
+                          {acceso.herramienta}
+                        </span>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {acceso.estado === 'activo' && (
+                            <>
+                              <Badge variant="success">Activo</Badge>
+                              {acceso.url && (
+                                <a
+                                  href={acceso.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-white/25 hover:text-teal-400 transition-colors duration-150"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </>
+                          )}
+                          {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
+                          {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
+                        </div>
                       </div>
 
-                      <span className="flex-1 text-sm text-white/70 truncate">
-                        {acceso.herramienta}
-                      </span>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {acceso.estado === 'activo' && (
-                          <>
-                            <Badge variant="success">Activo</Badge>
-                            {acceso.url && (
-                              <a
-                                href={acceso.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-white/25 hover:text-teal-400 transition-colors duration-150"
+                      {/* Usuario y contraseña del acceso */}
+                      {(acceso.usuario_acceso || acceso.password_acceso) && (
+                        <div className="mt-2 ml-10 space-y-1">
+                          {acceso.usuario_acceso && (
+                            <p className="text-xs text-white/40">
+                              <span className="text-white/25">Usuario: </span>
+                              {acceso.usuario_acceso}
+                            </p>
+                          )}
+                          {acceso.password_acceso && (
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-white/40">
+                                <span className="text-white/25">Pass: </span>
+                                <span className="font-mono">
+                                  {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
+                                </span>
+                              </p>
+                              <button
+                                onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
+                                className="text-white/20 hover:text-white/50 transition-colors"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                          </>
-                        )}
-                        {acceso.estado === 'pendiente' && (
-                          <Badge variant="warning">En proceso</Badge>
-                        )}
-                        {acceso.estado === 'sin_acceso' && (
-                          <Badge variant="error">Sin acceso</Badge>
-                        )}
-                      </div>
+                                {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </motion.div>
@@ -936,8 +965,13 @@ export default function PerfilPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
-                        <p className="text-sm font-mono text-white/70 truncate">{perfil.password_corporativo}</p>
+                        <p className="text-sm font-mono text-white/70 truncate">
+                          {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
+                        </p>
                       </div>
+                      <button onClick={() => setShowPassCorp(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                        {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   )}
                   {perfil.password_bitlocker && (
@@ -947,8 +981,13 @@ export default function PerfilPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
-                        <p className="text-sm font-mono text-white/70 truncate">{perfil.password_bitlocker}</p>
+                        <p className="text-sm font-mono text-white/70 truncate">
+                          {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
+                        </p>
                       </div>
+                      <button onClick={() => setShowPassBitlocker(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                        {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   )}
                 </div>
