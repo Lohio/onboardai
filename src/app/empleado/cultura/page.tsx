@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -1027,10 +1027,15 @@ export default function CulturaPage() {
     }
   }
 
-  // ── Derivados ──
-  const totalCompletados = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
-  const porcentajeGlobal = (totalCompletados / BLOQUES_ORDEN.length) * 100
-  const todoCompleto = totalCompletados === BLOQUES_ORDEN.length
+  // ── Derivados (memoizados para no recalcular en re-renders por scroll) ──
+  const { totalCompletados, porcentajeGlobal, todoCompleto } = useMemo(() => {
+    const total = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
+    return {
+      totalCompletados: total,
+      porcentajeGlobal: (total / BLOQUES_ORDEN.length) * 100,
+      todoCompleto: total === BLOQUES_ORDEN.length,
+    }
+  }, [progreso])
 
   const isUnlocked = (bloque: BloqueKey): boolean => {
     const idx = BLOQUES_ORDEN.indexOf(bloque)
