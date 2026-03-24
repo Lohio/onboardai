@@ -261,6 +261,7 @@ export default function PerfilPage() {
   const [perfil, setPerfil] = useState<Usuario | null>(null)
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([])
   const [accesos, setAccesos] = useState<Acceso[]>([])
+  const [accesosRlsBlock, setAccesosRlsBlock] = useState(false)
 
   const [herramientaContacto, setHerramientaContacto] = useState<string>('email')
   const [showPassCorp, setShowPassCorp] = useState(false)
@@ -327,8 +328,14 @@ export default function PerfilPage() {
         }
       }
 
-      if (accesosRes.data) {
-        setAccesos(accesosRes.data as Acceso[])
+      if (accesosRes.error) {
+        console.warn('[Perfil] accesos_herramientas error:', accesosRes.error.code, accesosRes.error.message)
+        // PGRST301 = JWT expired, 42501 = insufficient_privilege (RLS bloqueando)
+        if (accesosRes.error.code === '42501' || accesosRes.error.message?.includes('permission')) {
+          setAccesosRlsBlock(true)
+        }
+      } else {
+        setAccesos((accesosRes.data ?? []) as Acceso[])
       }
 
       // 4. Miembros del equipo
@@ -869,7 +876,11 @@ export default function PerfilPage() {
                 Mis accesos
               </h2>
 
-              {accesos.length === 0 ? (
+              {accesosRlsBlock ? (
+                <p className="text-sm text-amber-400/60 italic py-2">
+                  Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
+                </p>
+              ) : accesos.length === 0 ? (
                 <p className="text-sm text-white/30 italic py-2">
                   Tus accesos aparecerán aquí cuando el admin los configure.
                 </p>
