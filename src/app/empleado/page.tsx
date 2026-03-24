@@ -451,6 +451,24 @@ export default function EmpleadoHome() {
   // M4
   const [conversaciones, setConversaciones] = useState<number | null>(null)
 
+  // ── Verificar encuesta de pulso pendiente ─────────────────────
+  const verificarEncuesta = useCallback(async () => {
+    try {
+      const res = await fetch('/api/empleado/encuesta-check', { method: 'POST' })
+      if (res.ok) {
+        const json = await res.json() as { encuesta: EncuestaPendiente | null }
+        if (json.encuesta) setEncuestaPendiente(json.encuesta)
+      }
+    } catch { /* silenciar */ }
+  }, [])
+
+  // Listener para abrir el modal desde el agente flotante
+  useEffect(() => {
+    const handler = () => void verificarEncuesta()
+    window.addEventListener('open-encuesta-modal', handler)
+    return () => window.removeEventListener('open-encuesta-modal', handler)
+  }, [verificarEncuesta])
+
   // ── Carga inicial de datos base ────────────────────────────────
   const cargarDatosBase = useCallback(async () => {
     setLoading(true)
@@ -492,13 +510,7 @@ export default function EmpleadoHome() {
       setProgresoPct(calcularProgresoPct(estados))
 
       // Encuesta de pulso (fire and forget)
-      try {
-        const res = await fetch('/api/empleado/encuesta-check', { method: 'POST' })
-        if (res.ok) {
-          const json = await res.json() as { encuesta: EncuestaPendiente | null }
-          if (json.encuesta) setEncuestaPendiente(json.encuesta)
-        }
-      } catch { /* silenciar */ }
+      void verificarEncuesta()
 
       // Precargar el primer tab (M1)
       setTabsCargados(new Set(['M1' as TabId]))

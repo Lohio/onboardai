@@ -52,7 +52,6 @@ const MAX_MENSAJES = 20
 const CTA_NAVEGACION: Record<string, string> = {
   'Ver Cultura':    '/empleado/cultura',
   'Ver mis tareas': '/empleado/rol',
-  'Responder ahora': '/empleado',
 }
 
 // ─────────────────────────────────────────────
@@ -329,6 +328,12 @@ export default function AgenteFlotante({
   const handleCtaPrimario = useCallback((cta: string) => {
     setHintVisible(false)
     setHintActivo(null)
+
+    // CTA especial: abrir modal de encuesta de pulso
+    if (cta === 'Responder ahora') {
+      window.dispatchEvent(new CustomEvent('open-encuesta-modal'))
+      return
+    }
 
     const ruta = CTA_NAVEGACION[cta]
     if (ruta) {
