@@ -19,6 +19,10 @@ export const crearEmpleadoSchema = z.object({
 // Schema para actualizar un empleado: todos los campos opcionales, sin email ni password
 export const actualizarEmpleadoSchema = crearEmpleadoSchema
   .omit({ password: true, email: true })
+  .extend({
+    password_corporativo: z.string().trim().max(500).nullable().optional(),
+    password_bitlocker:   z.string().trim().max(500).nullable().optional(),
+  })
   .partial()
 
 // Schema para operaciones de preboarding

@@ -377,7 +377,7 @@ aside {
 
 /* ── Tema claro: fondos blancos semitransparentes en header/main ── */
 .theme-light header [class*="bg-white/"],
-.theme-light main   [class*="bg-white/"]     { background-color: rgba(17,17,16,0.05) !important; }
+.theme-light main   [class*="bg-white/"]     { background-color: rgba(17,17,16,0.07) !important; }
 
 /* ── Tema claro: bordes blancos en header/main → oscuros ── */
 .theme-light header [class*="border-white/"],
@@ -398,10 +398,15 @@ aside {
 .theme-light [style*="#0F1F3D"],
 .theme-light [style*="#13182a"],
 .theme-light [style*="#0a1628"],
-.theme-light [style*="rgba(10,22,40"],
 .theme-light [style*="rgba(7,15,30"] {
   background: var(--surface) !important;
   background-image: none !important;
+}
+
+/* ── Tema claro: badge "Día X de onboarding" → pill sky visible ── */
+.theme-light [style*="rgba(10,22,40"] {
+  background: rgba(14,165,233,0.08) !important;
+  border-color: rgba(14,165,233,0.25) !important;
 }
 
 /* ── Tema claro/gris: clases Tailwind custom (bg-surface-*, bg-heero-*) ── */
@@ -412,3 +417,24 @@ aside {
 
 .theme-gray [class*="bg-surface-"] { background-color: var(--surface) !important; }
 .theme-gray [class*="bg-heero-"]   { background-color: var(--surface) !important; }
+
+/* ── Agente flotante (Portal): adaptación al tema ── */
+/* El Portal renderiza fuera de header/main/aside, por eso necesita su propia regla */
+.theme-light .agente-portal [class*="text-white"]     { color: rgba(17,17,16,1.0)  !important; }
+.theme-light .agente-portal [class*="text-white/80"],
+.theme-light .agente-portal [class*="text-white/70"],
+.theme-light .agente-portal [class*="text-white/60"] { color: rgba(17,17,16,0.85) !important; }
+.theme-light .agente-portal [class*="text-white/55"],
+.theme-light .agente-portal [class*="text-white/50"],
+.theme-light .agente-portal [class*="text-white/45"],
+.theme-light .agente-portal [class*="text-white/40"] { color: rgba(17,17,16,0.65) !important; }
+.theme-light .agente-portal [class*="text-white/35"],
+.theme-light .agente-portal [class*="text-white/30"] { color: rgba(17,17,16,0.50) !important; }
+.theme-light .agente-portal [class*="text-white/25"],
+.theme-light .agente-portal [class*="text-white/20"] { color: rgba(17,17,16,0.38) !important; }
+.theme-light .agente-portal [class*="border-white/"] { border-color: rgba(17,17,16,0.10) !important; }
+.theme-light .agente-portal [class*="bg-white/"]     { background-color: rgba(17,17,16,0.06) !important; }
+.theme-light .agente-portal [class*="bg-[#111110]"]  { background-color: var(--background) !important; }
+.theme-light .agente-portal [class*="bg-[#0EA5E9]"]  { background-color: rgba(14,165,233,0.12) !important; }
+/* Mensajes user: mantener azul sky en todos los temas */
+.theme-light .agente-portal .bg-\[#0EA5E9\]          { background-color: #0EA5E9 !important; }

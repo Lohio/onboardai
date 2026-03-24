@@ -21,6 +21,8 @@ export interface Usuario {
   contacto_it_email?: string
   contacto_rrhh_nombre?: string
   contacto_rrhh_email?: string
+  password_corporativo?: string | null
+  password_bitlocker?: string | null
   created_at: string
 }
 
