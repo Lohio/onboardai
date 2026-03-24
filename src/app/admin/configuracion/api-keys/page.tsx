@@ -202,9 +202,10 @@ function KeyRow({ apiKey, onRevoke, revoking }: KeyRowProps) {
 interface NuevaKeyModalProps {
   onClose: () => void
   onCreated: (key: string, record: KeyListItem) => void
+  onConfirmed: () => void
 }
 
-function NuevaKeyModal({ onClose, onCreated }: NuevaKeyModalProps) {
+function NuevaKeyModal({ onClose, onCreated, onConfirmed }: NuevaKeyModalProps) {
   const [step, setStep] = useState<'form' | 'reveal'>('form')
   const [nombre, setNombre] = useState('')
   const [scopes, setScopes] = useState<ApiKeyScope[]>([])
@@ -212,6 +213,7 @@ function NuevaKeyModal({ onClose, onCreated }: NuevaKeyModalProps) {
   const [loading, setLoading] = useState(false)
   const [newKey, setNewKey] = useState('')
   const [copied, setCopied] = useState(false)
+  const [confirmedWithoutCopy, setConfirmedWithoutCopy] = useState(false)
 
   function toggleScope(scope: ApiKeyScope) {
     setScopes((prev) =>
@@ -256,7 +258,18 @@ function NuevaKeyModal({ onClose, onCreated }: NuevaKeyModalProps) {
   async function handleCopy() {
     await navigator.clipboard.writeText(newKey)
     setCopied(true)
+    setConfirmedWithoutCopy(false)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleConfirm() {
+    if (!copied && !confirmedWithoutCopy) {
+      // Primera vez sin copiar: mostrar advertencia
+      setConfirmedWithoutCopy(true)
+      return
+    }
+    // Copió la key, o ya fue advertido y confirma igual
+    onConfirmed()
   }
 
   return (
@@ -433,9 +446,32 @@ function NuevaKeyModal({ onClose, onCreated }: NuevaKeyModalProps) {
               </div>
 
               {/* Confirm */}
-              <Button variant="primary" onClick={onClose} className="w-full">
-                Entendido, ya la guardé
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleConfirm}
+                  className={cn(
+                    'w-full transition-all duration-150',
+                    confirmedWithoutCopy && !copied && 'ring-2 ring-amber-400/60'
+                  )}
+                >
+                  {confirmedWithoutCopy && !copied ? 'Sí, ya la guardé (sin copiar)' : 'Entendido, ya la guardé'}
+                </Button>
+                <AnimatePresence>
+                  {confirmedWithoutCopy && !copied && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex items-center gap-1.5 text-xs text-amber-400 justify-center"
+                    >
+                      <AlertTriangle size={12} className="flex-shrink-0" />
+                      ¿Seguro? No podrás ver esta key de nuevo.
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -488,9 +524,14 @@ export default function ApiKeysPage() {
     }
   }, [])
 
-  function handleCreated(key: string, record: KeyListItem) {
+  function handleCreated(_key: string, record: KeyListItem) {
     setKeys((prev) => [record, ...prev])
+    // El toast se dispara en onConfirmed, cuando el usuario cierra el modal de reveal
+  }
+
+  function handleConfirmed() {
     toast.success('API key creada correctamente')
+    setShowModal(false)
   }
 
   return (
@@ -568,9 +609,8 @@ export default function ApiKeysPage() {
         {showModal && (
           <NuevaKeyModal
             onClose={() => setShowModal(false)}
-            onCreated={(key, record) => {
-              handleCreated(key, record)
-            }}
+            onCreated={handleCreated}
+            onConfirmed={handleConfirmed}
           />
         )}
       </AnimatePresence>
