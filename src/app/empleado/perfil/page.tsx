@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera, Mail, ExternalLink, Copy, Check,
   MessageSquare, FileText, Code, Globe,
-  Calendar, User, BookOpen, Briefcase,
+  Calendar, User, BookOpen, Briefcase, KeyRound, ShieldAlert,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -294,7 +294,7 @@ export default function PerfilPage() {
       const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
         supabase
           .from('usuarios')
-          .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
+          .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email, password_corporativo, password_bitlocker')
           .eq('id', user.id)
           .single(),
         supabase
@@ -900,6 +900,41 @@ export default function PerfilPage() {
               )}
             </Card>
           </motion.section>
+
+          {/* ── Bloque F: Credenciales ── */}
+          {(perfil.password_corporativo || perfil.password_bitlocker) && (
+            <motion.section variants={blockVariants}>
+              <Card>
+                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                  Credenciales
+                </h2>
+                <div className="space-y-3">
+                  {perfil.password_corporativo && (
+                    <div className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0">
+                      <div className="w-7 h-7 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                        <KeyRound className="w-3.5 h-3.5 text-[#38BDF8]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
+                        <p className="text-sm font-mono text-white/70 truncate">{perfil.password_corporativo}</p>
+                      </div>
+                    </div>
+                  )}
+                  {perfil.password_bitlocker && (
+                    <div className="flex items-center gap-3 py-2.5">
+                      <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
+                        <p className="text-sm font-mono text-white/70 truncate">{perfil.password_bitlocker}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </motion.section>
+          )}
 
         </motion.div>
       </div>

@@ -38,6 +38,7 @@ export const PATCH = withHandler(
     const camposSchema = [
       'nombre', 'puesto', 'area', 'fecha_ingreso',
       'modalidad_trabajo', 'manager_id', 'buddy_id', 'sobre_mi', 'rol',
+      'password_corporativo', 'password_bitlocker',
     ] as const
 
     for (const campo of camposSchema) {
@@ -49,7 +50,8 @@ export const PATCH = withHandler(
       .update(updateData)
       .eq('id', id)
       .select(`id, nombre, email, puesto, area, rol, fecha_ingreso,
-        modalidad_trabajo, manager_id, buddy_id, sobre_mi`)
+        modalidad_trabajo, manager_id, buddy_id, sobre_mi,
+        password_corporativo, password_bitlocker`)
       .single()
 
     if (error) return ApiError.internal(error.message)
