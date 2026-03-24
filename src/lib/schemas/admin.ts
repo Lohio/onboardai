@@ -28,6 +28,10 @@ export const actualizarEmpleadoSchema = crearEmpleadoSchema
     contacto_it_email:     z.string().email().trim().nullable().optional(),
     contacto_rrhh_nombre:  z.string().trim().max(200).nullable().optional(),
     contacto_rrhh_email:   z.string().email().trim().nullable().optional(),
+    rol_responsabilidades: z.array(z.string().trim().max(300)).max(10).nullable().optional(),
+    rol_kpis:              z.array(z.string().trim().max(300)).max(10).nullable().optional(),
+    rol_herramientas:      z.array(z.object({ nombre: z.string().trim().max(100), uso: z.string().trim().max(200) })).max(15).nullable().optional(),
+    rol_autonomia:         z.string().trim().max(2000).nullable().optional(),
   })
   .partial()
 

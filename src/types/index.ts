@@ -23,6 +23,10 @@ export interface Usuario {
   contacto_rrhh_email?: string
   password_corporativo?: string | null
   password_bitlocker?: string | null
+  rol_responsabilidades?: string[] | null
+  rol_kpis?: string[] | null
+  rol_herramientas?: Array<{ nombre: string; uso: string }> | null
+  rol_autonomia?: string | null
   created_at: string
 }
 

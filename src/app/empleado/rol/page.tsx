@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import {
   Briefcase, Wrench, CheckSquare, Target,
   ChevronDown, ExternalLink, Check,
-  Clock, Zap,
+  Clock, Zap, AlertTriangle,
   MessageSquare, FileText, Code, Globe,
   Mail, Calendar, BarChart2,
   ArrowRight, Sparkles,
@@ -561,6 +561,15 @@ export default function RolPage() {
   const [error, setError] = useState<string | null>(null)
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
+  // Datos por empleado (M3 dinámico)
+  const [rolResponsabilidades, setRolResponsabilidades] = useState<string[]>([])
+  const [rolKpis, setRolKpis] = useState<string[]>([])
+  const [rolHerramientasEmpleado, setRolHerramientasEmpleado] = useState<Array<{ nombre: string; uso: string }>>([])
+  const [rolAutonomiaEmpleado, setRolAutonomiaEmpleado] = useState<string>('')
+  const [nombreEmpleado, setNombreEmpleado] = useState<string>('')
+  const [puestoEmpleado, setPuestoEmpleado] = useState<string>('')
+  const [areaEmpleado, setAreaEmpleado] = useState<string>('')
+
   const progresoGlobal = tareas.length > 0
     ? Math.round(tareas.filter(t => t.completada).length / tareas.length * 100)
     : 0
@@ -575,12 +584,19 @@ export default function RolPage() {
 
       const { data: usuario, error: uErr } = await supabase
         .from('usuarios')
-        .select('empresa_id')
+        .select('empresa_id, nombre, puesto, area, rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia')
         .eq('id', user.id)
         .single()
       if (uErr || !usuario) throw new Error(uErr?.message ?? 'Usuario no encontrado')
 
       const eid = usuario.empresa_id
+      setNombreEmpleado((usuario.nombre as string) ?? '')
+      setPuestoEmpleado((usuario.puesto as string | null) ?? '')
+      setAreaEmpleado((usuario.area as string | null) ?? '')
+      setRolResponsabilidades((usuario.rol_responsabilidades as string[] | null) ?? [])
+      setRolKpis((usuario.rol_kpis as string[] | null) ?? [])
+      setRolHerramientasEmpleado((usuario.rol_herramientas as Array<{ nombre: string; uso: string }> | null) ?? [])
+      setRolAutonomiaEmpleado((usuario.rol_autonomia as string | null) ?? '')
 
       const [conocimientoRes, herramientasRes, tareasRes, objetivosRes] = await Promise.all([
         supabase.from('conocimiento').select('bloque, contenido').eq('empresa_id', eid).eq('modulo', 'rol'),
@@ -728,6 +744,94 @@ export default function RolPage() {
                 </div>
               </div>
             </motion.div>
+
+            {/* ══ SECCIÓN: Datos del empleado (dinámico por empleado) ══ */}
+            {(() => {
+              const tieneRol = rolResponsabilidades.length > 0 || rolKpis.length > 0 || rolHerramientasEmpleado.length > 0 || rolAutonomiaEmpleado
+              return (
+                <motion.section variants={sectionVariants}>
+                  <SectionHeader
+                    icon={<Briefcase className="w-4 h-4" />}
+                    title="Descripción de mi rol"
+                    subtitle={`${puestoEmpleado || 'Sin definir'} · ${areaEmpleado || 'Sin área'}`}
+                    iconBg="bg-amber-500/15"
+                    iconText="text-amber-400"
+                  />
+
+                  {!tieneRol ? (
+                    <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-400/60 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-white/60">Tu administrador aún no completó la descripción de tu rol.</p>
+                        <p className="text-xs text-white/35 mt-0.5">Consultá con tu manager o RRHH para más información.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-white/[0.07] overflow-hidden space-y-0 divide-y divide-white/[0.05]"
+                      style={{ background: 'rgba(255,255,255,0.02)' }}>
+
+                      {/* Autonomía */}
+                      {rolAutonomiaEmpleado && (
+                        <div className="p-5">
+                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2">Nivel de autonomía</p>
+                          <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{rolAutonomiaEmpleado}</p>
+                        </div>
+                      )}
+
+                      {/* Responsabilidades */}
+                      {rolResponsabilidades.length > 0 && (
+                        <div className="p-5">
+                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Responsabilidades</p>
+                          <ul className="space-y-2">
+                            {rolResponsabilidades.map((r, i) => (
+                              <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
+                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-400/50 flex-shrink-0" />
+                                {r}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* KPIs */}
+                      {rolKpis.length > 0 && (
+                        <div className="p-5">
+                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">KPIs / Métricas de éxito</p>
+                          <ul className="space-y-2">
+                            {rolKpis.map((k, i) => (
+                              <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
+                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-teal-400/50 flex-shrink-0" />
+                                {k}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Herramientas del rol */}
+                      {rolHerramientasEmpleado.length > 0 && (
+                        <div className="p-5">
+                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Herramientas del rol</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {rolHerramientasEmpleado.map((h, i) => (
+                              <div key={i} className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                                <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
+                                  <Wrench className="w-3.5 h-3.5 text-sky-400" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-white/85">{h.nombre}</p>
+                                  {h.uso && <p className="text-xs text-white/40 mt-0.5">{h.uso}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.section>
+              )
+            })()}
 
             {/* ══ SECCIÓN 1: Mi puesto ══ */}
             <motion.section variants={sectionVariants}>

@@ -41,6 +41,7 @@ const actualizarEmpleado = withHandler(
       'password_corporativo', 'password_bitlocker',
       'bio', 'contacto_it_nombre', 'contacto_it_email',
       'contacto_rrhh_nombre', 'contacto_rrhh_email',
+      'rol_responsabilidades', 'rol_kpis', 'rol_herramientas', 'rol_autonomia',
     ] as const
 
     for (const campo of camposSchema) {
@@ -53,7 +54,8 @@ const actualizarEmpleado = withHandler(
       .eq('id', id)
       .select(`id, nombre, email, puesto, area, rol, fecha_ingreso,
         modalidad_trabajo, manager_id, buddy_id, sobre_mi,
-        password_corporativo, password_bitlocker`)
+        password_corporativo, password_bitlocker,
+        rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia`)
       .single()
 
     if (error) return ApiError.internal(error.message)

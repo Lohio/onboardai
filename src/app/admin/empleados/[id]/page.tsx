@@ -8,7 +8,7 @@ import {
   ArrowLeft, Save, BookOpen, Wrench, MessageSquare,
   RotateCcw, CheckCircle2, Circle, Clock, AlertCircle,
   CalendarDays, Zap, Sparkles, CheckSquare, ChevronDown,
-  Pencil, BarChart2, Plus, Trash2, Lock, Eye, EyeOff, Check,
+  Pencil, BarChart2, Plus, Trash2, Lock, Eye, EyeOff, Check, Briefcase, Target,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -44,6 +44,10 @@ interface EmpleadoFull {
   fecha_acceso_preboarding: string | null
   password_corporativo: string | null
   password_bitlocker: string | null
+  rol_responsabilidades: string[] | null
+  rol_kpis: string[] | null
+  rol_herramientas: Array<{ nombre: string; uso: string }> | null
+  rol_autonomia: string | null
 }
 
 interface FormData {
@@ -262,6 +266,12 @@ export default function EmpleadoDetallePage() {
   const [showPassCorp, setShowPassCorp] = useState(false)
   const [showPassBitlocker, setShowPassBitlocker] = useState(false)
 
+  // Descripción del rol (listas dinámicas)
+  const [rolResponsabilidades, setRolResponsabilidades] = useState<string[]>([])
+  const [rolKpis, setRolKpis] = useState<string[]>([])
+  const [rolHerramientas, setRolHerramientas] = useState<Array<{ nombre: string; uso: string }>>([])
+  const [rolAutonomia, setRolAutonomia] = useState<string>('')
+
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
     try {
@@ -291,7 +301,8 @@ export default function EmpleadoDetallePage() {
           contacto_it_nombre, contacto_it_email,
           contacto_rrhh_nombre, contacto_rrhh_email,
           preboarding_activo, fecha_acceso_preboarding,
-          password_corporativo, password_bitlocker`)
+          password_corporativo, password_bitlocker,
+          rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia`)
         .eq('id', id)
         .single()
 
@@ -328,6 +339,10 @@ export default function EmpleadoDetallePage() {
         password_corporativo: empData.password_corporativo ?? '',
         password_bitlocker: empData.password_bitlocker ?? '',
       })
+      setRolResponsabilidades((empData.rol_responsabilidades as string[] | null) ?? [])
+      setRolKpis((empData.rol_kpis as string[] | null) ?? [])
+      setRolHerramientas((empData.rol_herramientas as Array<{ nombre: string; uso: string }> | null) ?? [])
+      setRolAutonomia((empData.rol_autonomia as string | null) ?? '')
 
       // ── Queries en paralelo: edición + progreso ──
       const [
@@ -482,8 +497,12 @@ export default function EmpleadoDetallePage() {
           contacto_it_email:    form.contacto_it_email.trim() || null,
           contacto_rrhh_nombre: form.contacto_rrhh_nombre.trim() || null,
           contacto_rrhh_email:  form.contacto_rrhh_email.trim() || null,
-          password_corporativo: form.password_corporativo.trim() || null,
-          password_bitlocker:   form.password_bitlocker.trim() || null,
+          password_corporativo:  form.password_corporativo.trim() || null,
+          password_bitlocker:    form.password_bitlocker.trim() || null,
+          rol_autonomia:         rolAutonomia.trim() || null,
+          rol_responsabilidades: rolResponsabilidades.filter(r => r.trim()).length > 0 ? rolResponsabilidades.filter(r => r.trim()) : null,
+          rol_kpis:              rolKpis.filter(k => k.trim()).length > 0 ? rolKpis.filter(k => k.trim()) : null,
+          rol_herramientas:      rolHerramientas.filter(h => h.nombre.trim()).length > 0 ? rolHerramientas.filter(h => h.nombre.trim()) : null,
         }),
       })
       const data = await res.json() as { usuario?: EmpleadoFull; error?: string }
@@ -947,6 +966,158 @@ export default function EmpleadoDetallePage() {
                         <input type="email" value={form.contacto_rrhh_email} onChange={e => setField('contacto_rrhh_email', e.target.value)} className={inputCls()} placeholder="rrhh@empresa.com" />
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* ── Descripción del rol ── */}
+                <div className="pt-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-sm font-semibold text-white/70 whitespace-nowrap flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-amber-400/60" />
+                      Descripción del rol
+                    </h3>
+                    <div className="flex-1 h-px bg-white/[0.06]" />
+                  </div>
+
+                  {/* Nivel de autonomía */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Nivel de autonomía</label>
+                    <textarea
+                      value={rolAutonomia}
+                      onChange={e => setRolAutonomia(e.target.value)}
+                      rows={3}
+                      maxLength={2000}
+                      placeholder="Describe el nivel de autonomía del empleado en su rol..."
+                      className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08] text-white/85 placeholder:text-white/20 outline-none transition-colors focus:bg-white/[0.06] focus:border-[#0EA5E9]/60 resize-none"
+                    />
+                  </div>
+
+                  {/* Responsabilidades */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Responsabilidades</label>
+                    <div className="space-y-2">
+                      {rolResponsabilidades.map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={item}
+                            onChange={e => {
+                              const next = [...rolResponsabilidades]
+                              next[idx] = e.target.value
+                              setRolResponsabilidades(next)
+                            }}
+                            placeholder="Ej: Gestionar pipeline de ventas"
+                            className={inputCls()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setRolResponsabilidades(prev => prev.filter((_, i) => i !== idx))}
+                            className="flex-shrink-0 w-8 h-9 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {rolResponsabilidades.length < 10 && (
+                      <button
+                        type="button"
+                        onClick={() => setRolResponsabilidades(prev => [...prev, ''])}
+                        className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" /> Agregar responsabilidad
+                      </button>
+                    )}
+                  </div>
+
+                  {/* KPIs */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-medium text-white/40 mb-1.5 flex items-center gap-1.5">
+                      <Target className="w-3 h-3" /> KPIs / Métricas de éxito
+                    </label>
+                    <div className="space-y-2">
+                      {rolKpis.map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={item}
+                            onChange={e => {
+                              const next = [...rolKpis]
+                              next[idx] = e.target.value
+                              setRolKpis(next)
+                            }}
+                            placeholder="Ej: Tasa de conversión > 15%"
+                            className={inputCls()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setRolKpis(prev => prev.filter((_, i) => i !== idx))}
+                            className="flex-shrink-0 w-8 h-9 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {rolKpis.length < 10 && (
+                      <button
+                        type="button"
+                        onClick={() => setRolKpis(prev => [...prev, ''])}
+                        className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" /> Agregar KPI
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Herramientas del rol */}
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Herramientas del rol</label>
+                    <div className="space-y-2">
+                      {rolHerramientas.map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={item.nombre}
+                            onChange={e => {
+                              const next = [...rolHerramientas]
+                              next[idx] = { ...next[idx], nombre: e.target.value }
+                              setRolHerramientas(next)
+                            }}
+                            placeholder="Ej: Figma"
+                            className={inputCls()}
+                            style={{ maxWidth: '140px' }}
+                          />
+                          <input
+                            type="text"
+                            value={item.uso}
+                            onChange={e => {
+                              const next = [...rolHerramientas]
+                              next[idx] = { ...next[idx], uso: e.target.value }
+                              setRolHerramientas(next)
+                            }}
+                            placeholder="Ej: Diseño de interfaces y prototipos"
+                            className={inputCls()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setRolHerramientas(prev => prev.filter((_, i) => i !== idx))}
+                            className="flex-shrink-0 w-8 h-9 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {rolHerramientas.length < 15 && (
+                      <button
+                        type="button"
+                        onClick={() => setRolHerramientas(prev => [...prev, { nombre: '', uso: '' }])}
+                        className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" /> Agregar herramienta
+                      </button>
+                    )}
                   </div>
                 </div>
 
