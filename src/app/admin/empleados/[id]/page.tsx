@@ -388,7 +388,7 @@ export default function EmpleadoDetallePage() {
       const convCount = convCountRes.count ?? 0
       setModulos([
         { modulo: 'cultura', total: totalesPorModulo['cultura'] ?? 5, completados: completadosPorModulo['cultura'] ?? 0, pct: 0 },
-        { modulo: 'rol', total: totalesPorModulo['rol'] ?? 1, completados: completadosPorModulo['rol'] ?? 0, pct: 0 },
+        { modulo: 'rol', total: 1, completados: completadosPorModulo['rol'] ?? 0, pct: 0 },
         { modulo: 'asistente', total: 1, completados: convCount > 0 ? 1 : 0, pct: 0 },
       ].map(m => ({ ...m, pct: m.total > 0 ? Math.min(100, Math.round((m.completados / m.total) * 100)) : 0 })))
 

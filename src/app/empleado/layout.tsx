@@ -66,75 +66,76 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     router.push('/auth/login')
   }, [router])
 
-  useEffect(() => {
-    async function cargarProgreso() {
-      const supabase = createClient()
+  const cargarProgreso = useCallback(async () => {
+    const supabase = createClient()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push('/auth/login')
-        return
-      }
-
-      setEmpleadoId(user.id)
-
-      // Datos del empleado para el avatar
-      const { data: usuarioData } = await supabase
-        .from('usuarios')
-        .select('nombre, puesto, empresa_id, fecha_ingreso')
-        .eq('id', user.id)
-        .single()
-
-      if (usuarioData) {
-        setEmpleadoNombre(usuarioData.nombre ?? '')
-        setEmpleadoPuesto(usuarioData.puesto ?? '')
-
-        // Calcular días de onboarding desde fecha_ingreso
-        if (usuarioData.fecha_ingreso) {
-          const dias = Math.max(1, Math.ceil(
-            (Date.now() - new Date(usuarioData.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)
-          ))
-          setDiasOnboarding(dias)
-        }
-      }
-
-      // Consultar progreso, cultura y accesos pendientes en paralelo
-      const [progresoRes, culturaCountRes, accesosRes] = await Promise.all([
-        supabase
-          .from('progreso_modulos')
-          .select('modulo, bloque, completado')
-          .eq('usuario_id', user.id),
-        usuarioData?.empresa_id
-          ? supabase
-              .from('conocimiento')
-              .select('*', { count: 'exact', head: true })
-              .eq('empresa_id', usuarioData.empresa_id)
-              .eq('modulo', 'cultura')
-          : Promise.resolve({ count: 0 }),
-        supabase
-          .from('accesos')
-          .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id)
-          .eq('estado', 'pendiente'),
-      ])
-
-      const progresoRows = progresoRes.data ?? []
-      const totalCultura = (culturaCountRes as { count: number | null }).count ?? 5
-
-      const estados = calcularEstadoModulos(progresoRows, totalCultura)
-      setModulos(estados)
-      setProgreso(calcularProgresoPct(estados))
-
-      // Accesos pendientes para el agente
-      const pendientes = (accesosRes as { count: number | null }).count ?? 0
-      setAccesosPendientes(pendientes)
+    if (!user) {
+      router.push('/auth/login')
+      return
     }
 
-    cargarProgreso()
-  }, [router, pathname]) // re-evalúa al cambiar de ruta
+    setEmpleadoId(user.id)
+
+    // Datos del empleado para el avatar
+    const { data: usuarioData } = await supabase
+      .from('usuarios')
+      .select('nombre, puesto, empresa_id, fecha_ingreso')
+      .eq('id', user.id)
+      .single()
+
+    if (usuarioData) {
+      setEmpleadoNombre(usuarioData.nombre ?? '')
+      setEmpleadoPuesto(usuarioData.puesto ?? '')
+
+      // Calcular días de onboarding desde fecha_ingreso
+      if (usuarioData.fecha_ingreso) {
+        const dias = Math.max(1, Math.ceil(
+          (Date.now() - new Date(usuarioData.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)
+        ))
+        setDiasOnboarding(dias)
+      }
+    }
+
+    // Consultar progreso, cultura y accesos pendientes en paralelo
+    const [progresoRes, culturaCountRes, accesosRes] = await Promise.all([
+      supabase
+        .from('progreso_modulos')
+        .select('modulo, bloque, completado')
+        .eq('usuario_id', user.id),
+      usuarioData?.empresa_id
+        ? supabase
+            .from('conocimiento')
+            .select('*', { count: 'exact', head: true })
+            .eq('empresa_id', usuarioData.empresa_id)
+            .eq('modulo', 'cultura')
+        : Promise.resolve({ count: 0 }),
+      supabase
+        .from('accesos')
+        .select('*', { count: 'exact', head: true })
+        .eq('usuario_id', user.id)
+        .eq('estado', 'pendiente'),
+    ])
+
+    const progresoRows = progresoRes.data ?? []
+    const totalCultura = (culturaCountRes as { count: number | null }).count ?? 5
+
+    const estados = calcularEstadoModulos(progresoRows, totalCultura)
+    setModulos(estados)
+    setProgreso(calcularProgresoPct(estados))
+
+    // Accesos pendientes para el agente
+    const pendientes = (accesosRes as { count: number | null }).count ?? 0
+    setAccesosPendientes(pendientes)
+  }, [router])
+
+  // Re-evalúa al cambiar de ruta
+  useEffect(() => {
+    void cargarProgreso()
+  }, [cargarProgreso, pathname])
 
   // Actualizar progreso cuando el empleado completa un bloque sin cambiar de ruta
   useEffect(() => {
