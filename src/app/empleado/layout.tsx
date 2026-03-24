@@ -136,6 +136,13 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     cargarProgreso()
   }, [router, pathname]) // re-evalúa al cambiar de ruta
 
+  // Actualizar progreso cuando el empleado completa un bloque sin cambiar de ruta
+  useEffect(() => {
+    const handler = () => void cargarProgreso()
+    window.addEventListener('progreso-actualizado', handler)
+    return () => window.removeEventListener('progreso-actualizado', handler)
+  }, [cargarProgreso])
+
   return (
     <ThemeProvider section="empleado">
     <div className="min-h-dvh flex flex-col">

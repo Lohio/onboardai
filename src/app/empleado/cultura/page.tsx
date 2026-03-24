@@ -1011,6 +1011,7 @@ export default function CulturaPage() {
         colors: ['#0EA5E9', '#0D9488', '#38BDF8', '#2DD4BF', '#ffffff'],
       })
       toast.success('¡Bloque completado! 🎉')
+      window.dispatchEvent(new CustomEvent('progreso-actualizado'))
     } catch (err) {
       console.error('Error guardando progreso:', err)
       toast.error('No se pudo guardar el progreso')
