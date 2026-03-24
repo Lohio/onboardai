@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Wrench, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen } from 'lucide-react'
+import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Portal } from '@/components/shared/Portal'
@@ -25,15 +25,6 @@ const MODULOS = [
       { key: 'como_trabajamos', label: 'Cómo trabajamos' },
       { key: 'expectativas', label: 'Expectativas' },
       { key: 'hitos', label: 'Hitos y logros' },
-    ],
-  },
-  {
-    key: 'rol',
-    label: 'Rol y Herramientas',
-    icon: <Wrench className="w-4 h-4" />,
-    bloques: [
-      { key: 'puesto', label: 'Descripción del puesto' },
-      { key: 'autonomia', label: 'Tabla de autonomía' },
     ],
   },
 ]
