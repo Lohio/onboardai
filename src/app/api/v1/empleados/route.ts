@@ -76,6 +76,27 @@ export const POST = withHandler(
 
     const sa = makeServiceClient()
 
+    // Validar que manager_id y buddy_id pertenecen a la empresa (si están presentes)
+    if (body.manager_id) {
+      const { data: manager } = await sa
+        .from('usuarios')
+        .select('id')
+        .eq('id', body.manager_id)
+        .eq('empresa_id', empresaId)
+        .single()
+      if (!manager) return ApiError.badRequest('manager_id no pertenece a esta empresa')
+    }
+
+    if (body.buddy_id) {
+      const { data: buddy } = await sa
+        .from('usuarios')
+        .select('id')
+        .eq('id', body.buddy_id)
+        .eq('empresa_id', empresaId)
+        .single()
+      if (!buddy) return ApiError.badRequest('buddy_id no pertenece a esta empresa')
+    }
+
     // 1. Crear auth user
     const { data: authData, error: authError } = await sa.auth.admin.createUser({
       email: email.trim().toLowerCase(),
