@@ -302,7 +302,7 @@ export default function PerfilPage() {
           .select('relacion, miembro_id')
           .eq('usuario_id', user.id),
         supabase
-          .from('accesos')
+          .from('accesos_herramientas')
           .select('*')
           .eq('usuario_id', user.id)
           .order('herramienta'),
@@ -328,7 +328,10 @@ export default function PerfilPage() {
         setAccesos(accesosRes.data as Acceso[])
       }
 
-      // 4. Miembros del equipo (depende de relaciones)
+      // 4. Miembros del equipo
+      // Primero intentar desde equipo_relaciones; si está vacío, fallback a manager_id/buddy_id del perfil
+      const ordenEquipo: Record<MiembroEquipo['relacion'], number> = { manager: 0, buddy: 1, companero: 2 }
+
       if (relacionesRes.data && relacionesRes.data.length > 0) {
         const miembroIds = relacionesRes.data.map(r => r.miembro_id)
 
@@ -352,14 +355,31 @@ export default function PerfilPage() {
             })
             .filter(m => m.nombre)
 
-          // Orden: manager → buddy → compañero
-          const order: Record<MiembroEquipo['relacion'], number> = {
-            manager: 0,
-            buddy: 1,
-            companero: 2,
-          }
-          miembros.sort((a, b) => order[a.relacion] - order[b.relacion])
+          miembros.sort((a, b) => ordenEquipo[a.relacion] - ordenEquipo[b.relacion])
           setEquipo(miembros)
+        }
+      } else if (perfilRes.data) {
+        // Fallback: resolver manager_id y buddy_id directamente desde usuarios
+        const fallbackIds = [perfilRes.data.manager_id, perfilRes.data.buddy_id].filter(Boolean) as string[]
+        if (fallbackIds.length > 0) {
+          const { data: fallbackUsuarios } = await supabase
+            .from('usuarios')
+            .select('id, nombre, email, puesto, foto_url')
+            .in('id', fallbackIds)
+
+          if (fallbackUsuarios) {
+            const miembros: MiembroEquipo[] = []
+            if (perfilRes.data.manager_id) {
+              const u = fallbackUsuarios.find(m => m.id === perfilRes.data!.manager_id)
+              if (u) miembros.push({ id: u.id, nombre: u.nombre, email: u.email, puesto: u.puesto ?? undefined, foto_url: u.foto_url ?? undefined, relacion: 'manager' })
+            }
+            if (perfilRes.data.buddy_id) {
+              const u = fallbackUsuarios.find(m => m.id === perfilRes.data!.buddy_id)
+              if (u) miembros.push({ id: u.id, nombre: u.nombre, email: u.email, puesto: u.puesto ?? undefined, foto_url: u.foto_url ?? undefined, relacion: 'buddy' })
+            }
+            miembros.sort((a, b) => ordenEquipo[a.relacion] - ordenEquipo[b.relacion])
+            setEquipo(miembros)
+          }
         }
       }
 

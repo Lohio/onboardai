@@ -8,7 +8,7 @@ export const crearEmpleadoSchema = z.object({
   nombre: nombreSchema,
   puesto: z.string().trim().max(200).optional(),
   area: z.string().trim().max(200).optional(),
-  fecha_ingreso: z.string().datetime().optional(),
+  fecha_ingreso: z.string().regex(/^\d{4}-\d{2}-\d{2}(T.*)?$/).optional(),
   modalidad_trabajo: modalidadSchema.optional(),
   manager_id: uuidSchema.optional(),
   buddy_id: uuidSchema.optional(),
