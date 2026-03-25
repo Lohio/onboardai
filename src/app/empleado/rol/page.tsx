@@ -8,12 +8,13 @@ import {
   Clock, Zap, AlertTriangle,
   MessageSquare, FileText, Code, Globe,
   Mail, Calendar, BarChart2,
-  ArrowRight, Sparkles,
+  ArrowRight, Sparkles, GitBranch,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
 import { ErrorState } from '@/components/shared/ErrorState'
+import Organigrama from '@/components/empleado/Organigrama'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn } from '@/lib/utils'
@@ -569,6 +570,9 @@ export default function RolPage() {
   const [nombreEmpleado, setNombreEmpleado] = useState<string>('')
   const [puestoEmpleado, setPuestoEmpleado] = useState<string>('')
   const [areaEmpleado, setAreaEmpleado] = useState<string>('')
+  const [userId, setUserId] = useState<string>('')
+  const [empresaId, setEmpresaId] = useState<string>('')
+  const [orgDescripcion, setOrgDescripcion] = useState<string>('')
 
   const progresoGlobal = tareas.length > 0
     ? Math.round(tareas.filter(t => t.completada).length / tareas.length * 100)
@@ -590,6 +594,8 @@ export default function RolPage() {
       if (uErr || !usuario) throw new Error(uErr?.message ?? 'Usuario no encontrado')
 
       const eid = usuario.empresa_id
+      setUserId(user.id)
+      setEmpresaId(eid)
       setNombreEmpleado((usuario.nombre as string) ?? '')
       setPuestoEmpleado((usuario.puesto as string | null) ?? '')
       setAreaEmpleado((usuario.area as string | null) ?? '')
@@ -598,17 +604,20 @@ export default function RolPage() {
       setRolHerramientasEmpleado((usuario.rol_herramientas as Array<{ nombre: string; uso: string }> | null) ?? [])
       setRolAutonomiaEmpleado((usuario.rol_autonomia as string | null) ?? '')
 
-      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes] = await Promise.all([
+      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes] = await Promise.all([
         supabase.from('conocimiento').select('bloque, contenido').eq('empresa_id', eid).eq('modulo', 'rol'),
         supabase.from('herramientas_rol').select('*').eq('empresa_id', eid).order('orden'),
         supabase.from('tareas_onboarding').select('*').eq('empresa_id', eid).eq('usuario_id', user.id).order('semana').order('orden'),
         supabase.from('objetivos_rol').select('*').eq('empresa_id', eid).order('semana'),
+        supabase.from('conocimiento').select('contenido').eq('empresa_id', eid).eq('modulo', 'organigrama').eq('bloque', 'descripcion').maybeSingle(),
       ])
 
       if (conocimientoRes.error) console.warn('[M3] conocimiento:', conocimientoRes.error.message)
       if (herramientasRes.error) console.warn('[M3] herramientas_rol:', herramientasRes.error.message)
       if (tareasRes.error)       console.warn('[M3] tareas_onboarding:', tareasRes.error.message)
       if (objetivosRes.error)    console.warn('[M3] objetivos_rol:', objetivosRes.error.message)
+      if (orgRes.error)          console.warn('[M3] organigrama:', orgRes.error.message)
+      setOrgDescripcion((orgRes.data?.contenido as string | null) ?? '')
 
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')
@@ -832,6 +841,27 @@ export default function RolPage() {
                 </motion.section>
               )
             })()}
+
+            {/* ══ SECCIÓN: Mi equipo (Organigrama) ══ */}
+            {userId && empresaId && (
+              <motion.section variants={sectionVariants}>
+                <SectionHeader
+                  icon={<GitBranch className="w-4 h-4" />}
+                  title={t('rol.organigrama')}
+                  subtitle={t('rol.organigrama.subtitle')}
+                  iconBg="bg-sky-500/15"
+                  iconText="text-sky-400"
+                />
+                {orgDescripcion && (
+                  <p className="text-sm text-white/50 mb-4">{orgDescripcion}</p>
+                )}
+                <Organigrama
+                  usuarioId={userId}
+                  empresaId={empresaId}
+                  descripcion={orgDescripcion}
+                />
+              </motion.section>
+            )}
 
             {/* ══ SECCIÓN 1: Mi puesto ══ */}
             <motion.section variants={sectionVariants}>
