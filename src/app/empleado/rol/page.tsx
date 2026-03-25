@@ -573,6 +573,7 @@ export default function RolPage() {
   const [userId, setUserId] = useState<string>('')
   const [empresaId, setEmpresaId] = useState<string>('')
   const [orgDescripcion, setOrgDescripcion] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'rol' | 'equipo' | 'herramientas' | 'tareas'>('rol')
 
   const progresoGlobal = tareas.length > 0
     ? Math.round(tareas.filter(t => t.completada).length / tareas.length * 100)
@@ -754,283 +755,312 @@ export default function RolPage() {
               </div>
             </motion.div>
 
-            {/* ══ SECCIÓN: Datos del empleado (dinámico por empleado) ══ */}
-            {(() => {
-              const tieneRol = rolResponsabilidades.length > 0 || rolKpis.length > 0 || rolHerramientasEmpleado.length > 0 || rolAutonomiaEmpleado
-              return (
-                <motion.section variants={sectionVariants}>
-                  <SectionHeader
-                    icon={<Briefcase className="w-4 h-4" />}
-                    title="Descripción de mi rol"
-                    subtitle={`${puestoEmpleado || 'Sin definir'} · ${areaEmpleado || 'Sin área'}`}
-                    iconBg="bg-amber-500/15"
-                    iconText="text-amber-400"
-                  />
+            {/* ══ Tab bar ══ */}
+            <motion.div variants={sectionVariants}>
+              <div className="flex gap-1 p-1 rounded-2xl bg-white/[0.04] border border-white/[0.06]">
+                {([
+                  { key: 'rol' as const,          label: 'Mi rol',        icon: <Briefcase className="w-3.5 h-3.5" /> },
+                  { key: 'equipo' as const,        label: 'Mi equipo',     icon: <GitBranch className="w-3.5 h-3.5" /> },
+                  { key: 'herramientas' as const,  label: 'Herramientas',  icon: <Wrench className="w-3.5 h-3.5" /> },
+                  { key: 'tareas' as const,        label: 'Tareas',        icon: <CheckSquare className="w-3.5 h-3.5" /> },
+                ]).map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-medium transition-all',
+                      activeTab === tab.key
+                        ? 'bg-white/[0.09] text-white shadow-sm'
+                        : 'text-white/35 hover:text-white/60'
+                    )}
+                  >
+                    {tab.icon}
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
 
-                  {!tieneRol ? (
-                    <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-400/60 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-white/60">Tu administrador aún no completó la descripción de tu rol.</p>
-                        <p className="text-xs text-white/35 mt-0.5">Consultá con tu manager o RRHH para más información.</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-white/[0.07] overflow-hidden space-y-0 divide-y divide-white/[0.05]"
-                      style={{ background: 'rgba(255,255,255,0.02)' }}>
+            {/* ══ Contenido por tab ══ */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-4 pb-8"
+              >
 
-                      {/* Autonomía */}
-                      {rolAutonomiaEmpleado && (
-                        <div className="p-5">
-                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2">Nivel de autonomía</p>
-                          <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{rolAutonomiaEmpleado}</p>
-                        </div>
-                      )}
-
-                      {/* Responsabilidades */}
-                      {rolResponsabilidades.length > 0 && (
-                        <div className="p-5">
-                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Responsabilidades</p>
-                          <ul className="space-y-2">
-                            {rolResponsabilidades.map((r, i) => (
-                              <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-400/50 flex-shrink-0" />
-                                {r}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* KPIs */}
-                      {rolKpis.length > 0 && (
-                        <div className="p-5">
-                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">KPIs / Métricas de éxito</p>
-                          <ul className="space-y-2">
-                            {rolKpis.map((k, i) => (
-                              <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-teal-400/50 flex-shrink-0" />
-                                {k}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Herramientas del rol */}
-                      {rolHerramientasEmpleado.length > 0 && (
-                        <div className="p-5">
-                          <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Herramientas del rol</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {rolHerramientasEmpleado.map((h, i) => (
-                              <div key={i} className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
-                                  <Wrench className="w-3.5 h-3.5 text-sky-400" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-white/85">{h.nombre}</p>
-                                  {h.uso && <p className="text-xs text-white/40 mt-0.5">{h.uso}</p>}
-                                </div>
+                {/* ── Tab: Mi rol ── */}
+                {activeTab === 'rol' && (
+                  <>
+                    {/* Descripción del empleado */}
+                    {(() => {
+                      const tieneRol = rolResponsabilidades.length > 0 || rolKpis.length > 0 || rolHerramientasEmpleado.length > 0 || rolAutonomiaEmpleado
+                      return (
+                        <section>
+                          <SectionHeader
+                            icon={<Briefcase className="w-4 h-4" />}
+                            title="Descripción de mi rol"
+                            subtitle={`${puestoEmpleado || 'Sin definir'} · ${areaEmpleado || 'Sin área'}`}
+                            iconBg="bg-amber-500/15"
+                            iconText="text-amber-400"
+                          />
+                          {!tieneRol ? (
+                            <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 flex items-start gap-3">
+                              <AlertTriangle className="w-5 h-5 text-amber-400/60 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm text-white/60">Tu administrador aún no completó la descripción de tu rol.</p>
+                                <p className="text-xs text-white/35 mt-0.5">Consultá con tu manager o RRHH para más información.</p>
                               </div>
-                            ))}
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-white/[0.07] overflow-hidden divide-y divide-white/[0.05]"
+                              style={{ background: 'rgba(255,255,255,0.02)' }}>
+                              {rolAutonomiaEmpleado && (
+                                <div className="p-5">
+                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2">Nivel de autonomía</p>
+                                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{rolAutonomiaEmpleado}</p>
+                                </div>
+                              )}
+                              {rolResponsabilidades.length > 0 && (
+                                <div className="p-5">
+                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Responsabilidades</p>
+                                  <ul className="space-y-2">
+                                    {rolResponsabilidades.map((r, i) => (
+                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
+                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-400/50 flex-shrink-0" />
+                                        {r}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {rolKpis.length > 0 && (
+                                <div className="p-5">
+                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">KPIs / Métricas de éxito</p>
+                                  <ul className="space-y-2">
+                                    {rolKpis.map((k, i) => (
+                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
+                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-teal-400/50 flex-shrink-0" />
+                                        {k}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {rolHerramientasEmpleado.length > 0 && (
+                                <div className="p-5">
+                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Herramientas del rol</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {rolHerramientasEmpleado.map((h, i) => (
+                                      <div key={i} className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                                        <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
+                                          <Wrench className="w-3.5 h-3.5 text-sky-400" />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-medium text-white/85">{h.nombre}</p>
+                                          {h.uso && <p className="text-xs text-white/40 mt-0.5">{h.uso}</p>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </section>
+                      )
+                    })()}
+
+                    {/* Mi puesto (conocimiento empresa) */}
+                    <section>
+                      <SectionHeader
+                        icon={<Briefcase className="w-4 h-4" />}
+                        title={t('rol.puesto.title')}
+                        subtitle={t('rol.puesto.subtitle')}
+                        iconBg="bg-amber-500/15"
+                        iconText="text-amber-400"
+                      />
+                      <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="p-5">
+                          {puesto ? (
+                            <MarkdownContent text={puesto} />
+                          ) : (
+                            <div className="py-6 text-center">
+                              <Briefcase className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                              <p className="text-sm text-white/30 italic">
+                                Tu empresa aún no ha cargado la descripción del puesto.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {autonomia.length > 0 && (
+                          <div className="border-t border-white/[0.06]">
+                            <div className="px-5 py-3">
+                              <span className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">
+                                Tabla de autonomía
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-white/[0.05]">
+                                    <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {autonomia.map((dec, i) => (
+                                    <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                                      <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
+                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
+                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
+                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
+                        )}
+                        {autonomia.length === 0 && puesto && (
+                          <div className="border-t border-white/[0.05] px-5 py-3">
+                            <p className="text-xs text-white/25 italic">Tabla de autonomía no configurada aún.</p>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  </>
+                )}
+
+                {/* ── Tab: Mi equipo ── */}
+                {activeTab === 'equipo' && userId && empresaId && (
+                  <section>
+                    <SectionHeader
+                      icon={<GitBranch className="w-4 h-4" />}
+                      title={t('rol.organigrama')}
+                      subtitle={t('rol.organigrama.subtitle')}
+                      iconBg="bg-sky-500/15"
+                      iconText="text-sky-400"
+                    />
+                    {orgDescripcion && (
+                      <p className="text-sm text-white/50 mb-4">{orgDescripcion}</p>
+                    )}
+                    <Organigrama
+                      usuarioId={userId}
+                      empresaId={empresaId}
+                      descripcion={orgDescripcion}
+                    />
+                  </section>
+                )}
+
+                {/* ── Tab: Herramientas ── */}
+                {activeTab === 'herramientas' && (
+                  <section>
+                    <SectionHeader
+                      icon={<Wrench className="w-4 h-4" />}
+                      title={t('rol.herramientas.title')}
+                      subtitle={t('rol.herramientas.subtitle')}
+                      iconBg="bg-sky-500/15"
+                      iconText="text-sky-400"
+                    />
+                    {herramientas.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {herramientas.map(h => <HerramientaCard key={h.id} herramienta={h} />)}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
+                        style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <Wrench className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                        <p className="text-sm text-white/30">Tu empresa aún no ha configurado las herramientas del rol.</p>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* ── Tab: Tareas ── */}
+                {activeTab === 'tareas' && (
+                  <>
+                    <section>
+                      <div className="flex items-center justify-between mb-4">
+                        <SectionHeader
+                          icon={<CheckSquare className="w-4 h-4" />}
+                          title={t('rol.tareas.title')}
+                          subtitle={tareas.length > 0 ? t('rol.tareas.completadas').replace('{done}', String(tareas.filter(tarea => tarea.completada).length)).replace('{total}', String(tareas.length)) : undefined}
+                          iconBg="bg-teal-500/15"
+                          iconText="text-teal-400"
+                        />
+                      </div>
+                      {semanas.length > 0 ? (
+                        <div className="space-y-3">
+                          {semanas.map(s => (
+                            <SemanaTareas
+                              key={s}
+                              semana={s}
+                              tareas={tareas.filter(t => t.semana === s)}
+                              onToggle={toggleTarea}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
+                          style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <CheckSquare className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                          <p className="text-sm text-white/30">Tu empresa aún no ha asignado tareas para tu onboarding.</p>
                         </div>
                       )}
-                    </div>
-                  )}
-                </motion.section>
-              )
-            })()}
+                    </section>
 
-            {/* ══ SECCIÓN: Mi equipo (Organigrama) ══ */}
-            {userId && empresaId && (
-              <motion.section variants={sectionVariants}>
-                <SectionHeader
-                  icon={<GitBranch className="w-4 h-4" />}
-                  title={t('rol.organigrama')}
-                  subtitle={t('rol.organigrama.subtitle')}
-                  iconBg="bg-sky-500/15"
-                  iconText="text-sky-400"
-                />
-                {orgDescripcion && (
-                  <p className="text-sm text-white/50 mb-4">{orgDescripcion}</p>
-                )}
-                <Organigrama
-                  usuarioId={userId}
-                  empresaId={empresaId}
-                  descripcion={orgDescripcion}
-                />
-              </motion.section>
-            )}
+                    <section>
+                      <SectionHeader
+                        icon={<Target className="w-4 h-4" />}
+                        title={t('rol.objetivos.title')}
+                        subtitle={t('rol.objetivos.subtitle')}
+                        iconBg="bg-rose-500/15"
+                        iconText="text-rose-400"
+                      />
+                      {objetivos.length > 0 ? (
+                        <div className="rounded-2xl border border-white/[0.07] p-5"
+                          style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <motion.div variants={containerVariants} initial="hidden" animate="show">
+                            {objetivos.map((obj, i) => (
+                              <ObjetivoItem key={obj.id} objetivo={obj} isLast={i === objetivos.length - 1} estadoConfig={ESTADO_CONFIG} />
+                            ))}
+                          </motion.div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
+                          style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <Target className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                          <p className="text-sm text-white/30">Tu empresa aún no ha definido los objetivos del mes.</p>
+                        </div>
+                      )}
+                    </section>
 
-            {/* ══ SECCIÓN 1: Mi puesto ══ */}
-            <motion.section variants={sectionVariants}>
-              <SectionHeader
-                icon={<Briefcase className="w-4 h-4" />}
-                title={t('rol.puesto.title')}
-                subtitle={t('rol.puesto.subtitle')}
-                iconBg="bg-amber-500/15"
-                iconText="text-amber-400"
-              />
-
-              <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.02)' }}>
-                {/* Descripción */}
-                <div className="p-5">
-                  {puesto ? (
-                    <MarkdownContent text={puesto} />
-                  ) : (
-                    <div className="py-6 text-center">
-                      <Briefcase className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                      <p className="text-sm text-white/30 italic">
-                        Tu empresa aún no ha cargado la descripción del puesto.
+                    {/* CTA al chat */}
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-[#0EA5E9]/15"
+                      style={{ background: 'rgba(99,102,241,0.06)' }}>
+                      <div className="w-9 h-9 rounded-xl bg-[#0EA5E9]/12 flex items-center justify-center flex-shrink-0">
+                        <MessageSquare className="w-4 h-4 text-[#38BDF8]" />
+                      </div>
+                      <p className="text-xs text-white/50 flex-1">
+                        ¿Tenés dudas sobre tu rol? Preguntale al asistente de onboarding.
                       </p>
+                      <a href="/empleado/asistente"
+                        className="flex items-center gap-1.5 text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC] transition-colors flex-shrink-0">
+                        Ir al chat <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
                     </div>
-                  )}
-                </div>
-
-                {/* Tabla de autonomía */}
-                {autonomia.length > 0 && (
-                  <div className="border-t border-white/[0.06]">
-                    <div className="px-5 py-3 flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">
-                        Tabla de autonomía
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-white/[0.05]">
-                            <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
-                            <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
-                            <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
-                            <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {autonomia.map((dec, i) => (
-                            <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
-                              <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
-                              <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
-                              <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
-                              <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  </>
                 )}
-                {autonomia.length === 0 && puesto && (
-                  <div className="border-t border-white/[0.05] px-5 py-3">
-                    <p className="text-xs text-white/25 italic">Tabla de autonomía no configurada aún.</p>
-                  </div>
-                )}
-              </div>
-            </motion.section>
 
-            {/* ══ SECCIÓN 2: Mis herramientas ══ */}
-            <motion.section variants={sectionVariants}>
-              <SectionHeader
-                icon={<Wrench className="w-4 h-4" />}
-                title={t('rol.herramientas.title')}
-                subtitle={t('rol.herramientas.subtitle')}
-                iconBg="bg-sky-500/15"
-                iconText="text-sky-400"
-              />
-
-              {herramientas.length > 0 ? (
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                >
-                  {herramientas.map(h => <HerramientaCard key={h.id} herramienta={h} />)}
-                </motion.div>
-              ) : (
-                <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <Wrench className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-sm text-white/30">Tu empresa aún no ha configurado las herramientas del rol.</p>
-                </div>
-              )}
-            </motion.section>
-
-            {/* ══ SECCIÓN 3: Mis primeras tareas ══ */}
-            <motion.section variants={sectionVariants}>
-              <div className="flex items-center justify-between mb-4">
-                <SectionHeader
-                  icon={<CheckSquare className="w-4 h-4" />}
-                  title={t('rol.tareas.title')}
-                  subtitle={tareas.length > 0 ? t('rol.tareas.completadas').replace('{done}', String(tareas.filter(tarea => tarea.completada).length)).replace('{total}', String(tareas.length)) : undefined}
-                  iconBg="bg-teal-500/15"
-                  iconText="text-teal-400"
-                />
-              </div>
-
-              {semanas.length > 0 ? (
-                <div className="space-y-3">
-                  {semanas.map(s => (
-                    <SemanaTareas
-                      key={s}
-                      semana={s}
-                      tareas={tareas.filter(t => t.semana === s)}
-                      onToggle={toggleTarea}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <CheckSquare className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-sm text-white/30">Tu empresa aún no ha asignado tareas para tu onboarding.</p>
-                </div>
-              )}
-            </motion.section>
-
-            {/* ══ SECCIÓN 4: Mis objetivos del mes ══ */}
-            <motion.section variants={sectionVariants} className="pb-8">
-              <SectionHeader
-                icon={<Target className="w-4 h-4" />}
-                title={t('rol.objetivos.title')}
-                subtitle={t('rol.objetivos.subtitle')}
-                iconBg="bg-rose-500/15"
-                iconText="text-rose-400"
-              />
-
-              {objetivos.length > 0 ? (
-                <div className="rounded-2xl border border-white/[0.07] p-5"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <motion.div variants={containerVariants} initial="hidden" animate="show">
-                    {objetivos.map((obj, i) => (
-                      <ObjetivoItem key={obj.id} objetivo={obj} isLast={i === objetivos.length - 1} estadoConfig={ESTADO_CONFIG} />
-                    ))}
-                  </motion.div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-white/[0.06] p-8 text-center"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <Target className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-sm text-white/30">Tu empresa aún no ha definido los objetivos del mes.</p>
-                </div>
-              )}
-
-              {/* CTA al chat */}
-              <div className="mt-4 flex items-center gap-3 p-4 rounded-2xl border border-[#0EA5E9]/15"
-                style={{ background: 'rgba(99,102,241,0.06)' }}>
-                <div className="w-9 h-9 rounded-xl bg-[#0EA5E9]/12 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-4 h-4 text-[#38BDF8]" />
-                </div>
-                <p className="text-xs text-white/50 flex-1">
-                  ¿Tenés dudas sobre tu rol? Preguntale al asistente de onboarding.
-                </p>
-                <a href="/empleado/asistente"
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC] transition-colors flex-shrink-0">
-                  Ir al chat <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </motion.section>
+              </motion.div>
+            </AnimatePresence>
 
           </motion.div>
         </div>
