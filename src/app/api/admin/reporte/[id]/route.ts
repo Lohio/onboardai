@@ -3,6 +3,7 @@ import { anthropic } from '@/lib/claude'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
+import { logStreamError } from '@/lib/api-error'
 
 export const POST = withHandler(
   {
@@ -12,8 +13,9 @@ export const POST = withHandler(
     rateLimit: RATE_LIMITS.reporte,
     bodyType: 'none',
   },
-  async ({ supabase, user, params }) => {
+  async ({ supabase, user, params, requestId }) => {
     const empleadoId = params.id
+    const capturedRequestId = requestId
 
   // 2. Cargar datos del empleado
   const [empleadoRes, progresoRes, tareasRes, culturaCntRes] = await Promise.all([
@@ -131,6 +133,8 @@ Extensión: 300-400 palabras. Idioma: español rioplatense. Tono: profesional pe
             controller.enqueue(encoder.encode(event.delta.text))
           }
         }
+      } catch (err) {
+        logStreamError('admin/reporte', err, capturedRequestId)
       } finally {
         controller.close()
       }

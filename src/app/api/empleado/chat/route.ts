@@ -3,6 +3,7 @@ import { streamChat, logMensaje } from '@/lib/claude'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { chatSchema } from '@/lib/schemas/empleado'
+import { logStreamError } from '@/lib/api-error'
 
 // ─────────────────────────────────────────────
 // POST /api/empleado/chat
@@ -17,7 +18,7 @@ export const POST = withHandler(
     streaming: true,
     rateLimit: RATE_LIMITS.chat,
   },
-  async ({ body, supabase, user }) => {
+  async ({ body, supabase, user, requestId }) => {
     const { mensaje, conversacionId } = body
 
     // ── Datos del empleado ────────────────────────────────────────
@@ -90,6 +91,7 @@ export const POST = withHandler(
     // Capturar referencias para uso dentro del ReadableStream
     const supabaseRef = supabase!
     const userId = user!.id
+    const capturedRequestId = requestId
 
     const readable = new ReadableStream({
       async start(controller) {
@@ -151,7 +153,7 @@ export const POST = withHandler(
 
 
         } catch (err) {
-          console.error('Error durante streaming de chat:', err)
+          logStreamError('chat-stream', err, capturedRequestId)
         } finally {
           controller.close()
         }

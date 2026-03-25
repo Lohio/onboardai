@@ -9,6 +9,7 @@ import { ZodType, ZodError } from 'zod'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { ApiError } from '@/lib/errors'
+import { classifyError } from '@/lib/api-error'
 import { generateRequestId } from '@/lib/api/requestId'
 import { logRequest } from '@/lib/api/logger'
 import { UserRole } from '@/types'
@@ -271,13 +272,23 @@ export function withHandler<TBody = unknown>(
         )
       }
 
-      // Fallback: error interno
-      status = 500
-      // Siempre loguear errores internos (crítico para debugging en producción)
-      if (err instanceof Error) {
-        console.error(`[withHandler] Error interno [${requestId}]:`, err.message, process.env.NODE_ENV !== 'production' ? err.stack : '')
-      }
-      return ApiError.internal(undefined, requestId)
+      // Fallback: clasificar el error para dar respuesta precisa
+      const classified = classifyError(err)
+      status = classified.status
+
+      console.error(
+        `[withHandler][${requestId}] ${classified.source} — ${classified.logMessage}`,
+        process.env.NODE_ENV !== 'production' && err instanceof Error ? err.stack : ''
+      )
+
+      return NextResponse.json(
+        {
+          error: classified.message,
+          retryable: classified.retryable,
+          requestId,
+        },
+        { status: classified.status }
+      )
     } finally {
       // ── Log estructurado ─────────────────────────────────────────────
       logRequest({
