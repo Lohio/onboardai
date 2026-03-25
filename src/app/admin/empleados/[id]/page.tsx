@@ -398,7 +398,8 @@ export default function EmpleadoDetallePage() {
       if (accesosRes.data) setAccesos(accesosRes.data as AccesoRow[])
 
       // Módulos para tab progreso (con chart)
-      const totalCultura = culturaCntRes.count ?? 0
+      // Total siempre 5: los 5 bloques únicos de cultura (historia, mision, como_trabajamos, expectativas, hitos)
+      const totalCultura = 5
       const compCultura = progresoRows.filter(p => p.modulo === 'cultura' && p.completado).length
       const compRol = progresoRows.filter(p => p.modulo === 'rol' && p.completado).length
       setProgresos([

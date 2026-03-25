@@ -121,7 +121,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     ])
 
     const progresoRows = progresoRes.data ?? []
-    const totalCultura = (culturaCountRes as { count: number | null }).count ?? 5
+    // Total siempre 5: los 5 bloques únicos de cultura (historia, mision, como_trabajamos, expectativas, hitos)
+    const totalCultura = 5
 
     const estados = calcularEstadoModulos(progresoRows, totalCultura)
     setModulos(estados)
