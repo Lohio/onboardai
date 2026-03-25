@@ -74,6 +74,7 @@ export const POST = withHandler(
 
     // ── Streaming ────────────────────────────────────────────────
     let respuestaCompleta = ''
+    let tokenUsage = { inputTokens: 0, outputTokens: 0 }
 
     // Contexto del empleado para personalizar el system prompt
     const diasOnboarding = usuario.fecha_ingreso
@@ -95,7 +96,7 @@ export const POST = withHandler(
         const encoder = new TextEncoder()
 
         try {
-          await streamChat({
+          tokenUsage = await streamChat({
             empresaId,
             contextoEmpleado,
             mensajes: [
@@ -137,6 +138,15 @@ export const POST = withHandler(
               rol: 'assistant',
               contenido: respuestaCompleta,
             })
+
+            // Registro de uso de tokens (visible en logs de Vercel/servidor)
+            console.log('[chat:tokens]', JSON.stringify({
+              usuario_id: userId,
+              empresa_id: empresaId,
+              input_tokens: tokenUsage.inputTokens,
+              output_tokens: tokenUsage.outputTokens,
+              total_tokens: tokenUsage.inputTokens + tokenUsage.outputTokens,
+            }))
           }
 
           // Enviar conversacionId al final del stream (parseado por el cliente)

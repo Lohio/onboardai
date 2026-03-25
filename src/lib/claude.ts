@@ -32,6 +32,11 @@ export interface StreamChatParams {
   onDone: () => void
 }
 
+export interface TokenUsage {
+  inputTokens: number
+  outputTokens: number
+}
+
 export interface LogMensajeParams {
   usuarioId: string
   empresaId: string
@@ -180,7 +185,7 @@ export async function streamChat({
   mensajes,
   onChunk,
   onDone,
-}: StreamChatParams): Promise<void> {
+}: StreamChatParams): Promise<TokenUsage> {
   // buildSystemPromptWithConfig devuelve el prompt Y la config en una sola llamada
   // (evita la doble query a app_config que existía antes)
   const { systemPrompt, config } = await buildSystemPromptWithConfig(empresaId, contextoEmpleado)
@@ -202,7 +207,15 @@ export async function streamChat({
     }
   }
 
+  // Capturar uso de tokens del mensaje final
+  const finalMsg = await stream.finalMessage()
+  const usage: TokenUsage = {
+    inputTokens: finalMsg.usage.input_tokens,
+    outputTokens: finalMsg.usage.output_tokens,
+  }
+
   onDone()
+  return usage
   // Los errores del stream se propagan naturalmente al caller
 }
 

@@ -51,7 +51,7 @@ function SidebarContent({
           flex items-center justify-center flex-shrink-0">
           <Terminal className="w-4 h-4 text-amber-400" />
         </div>
-        <span className="font-semibold text-white text-sm">Dev Tools</span>
+        <span className="font-semibold text-white text-sm">Herramientas Dev</span>
         {onClose && (
           <button
             onClick={onClose}
@@ -196,7 +196,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-semibold text-white/70">Dev Tools</span>
+            <span className="text-sm font-semibold text-white/70">Herramientas Dev</span>
           </div>
         </header>
 

@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 // ─────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',   href: '/superadmin',              icon: LayoutDashboard, exact: true  },
+  { label: 'Panel',        href: '/superadmin',              icon: LayoutDashboard, exact: true  },
   { label: 'Empresas',    href: '/superadmin/empresas',     icon: Building2,       exact: false },
   { label: 'Empleados',   href: '/superadmin/empleados',    icon: Users,           exact: false },
   { label: 'Analítica',   href: '/superadmin/analitica',    icon: BarChart3,       exact: false },

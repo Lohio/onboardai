@@ -10,7 +10,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   TEAMS_WEBHOOK_TOKEN: z.string().optional(),
   GCHAT_SERVICE_ACCOUNT_JSON: z.string().optional(),
-  CRON_SECRET: z.string().optional(),
+  CRON_SECRET: z.string().min(32),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
 })
 
