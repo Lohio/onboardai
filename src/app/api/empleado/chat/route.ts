@@ -149,10 +149,7 @@ export const POST = withHandler(
             }))
           }
 
-          // Enviar conversacionId al final del stream (parseado por el cliente)
-          if (convId) {
-            controller.enqueue(encoder.encode(`|--|${convId}`))
-          }
+
         } catch (err) {
           console.error('Error durante streaming de chat:', err)
         } finally {

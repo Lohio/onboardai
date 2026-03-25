@@ -284,12 +284,7 @@ export default function AsistentePage() {
 
         const chunk = decoder.decode(value, { stream: true })
 
-        // Filtrar el separador legacy |--| por compatibilidad (ya no debería llegar)
-        if (chunk.includes('|--|')) {
-          acumulado += chunk.split('|--|')[0]
-        } else {
-          acumulado += chunk
-        }
+        acumulado += chunk
 
         const contenidoActual = acumulado
         setMensajes(prev =>
