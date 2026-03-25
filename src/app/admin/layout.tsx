@@ -303,7 +303,7 @@ function AdminHeader({
       </button>
 
       {/* Título */}
-      <h1 className="text-sm font-semibold text-white/80 flex-1">Dashboard</h1>
+      <h1 className="text-sm font-semibold text-white/80 flex-1">{t('nav.dashboard')}</h1>
 
       {/* Bell + badge */}
       <button
