@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
-  Save, Check, Plus, MessageSquareMore,
+  Save, Check, Plus, MessageSquareMore, Bot,
   Trash2, ExternalLink, Key, ChevronRight, Palette, PlayCircle, Globe,
 } from 'lucide-react'
 import { ThemeSelector } from '@/components/shared/ThemeSelector'
@@ -50,6 +50,11 @@ export default function ConfiguracionPage() {
   const [originalTeamsUrl, setOriginalTeamsUrl] = useState('')
   const [savingBot, setSavingBot]               = useState(false)
   const [savedBot, setSavedBot]                 = useState(false)
+
+  // Personalización del asistente IA
+  const [promptPersonalizado, setPromptPersonalizado] = useState('')
+  const [originalPrompt, setOriginalPrompt]           = useState('')
+  const [savingPrompt, setSavingPrompt]               = useState(false)
 
   // Bot — vinculaciones
   interface BotVinculacion {
@@ -116,7 +121,7 @@ export default function ConfiguracionPage() {
       const [empresaRes, vinRes] = await Promise.all([
         supabase
           .from('empresas')
-          .select('herramientas_contacto, teams_webhook_url')
+          .select('herramientas_contacto, teams_webhook_url, prompt_personalizado')
           .eq('id', adminData.empresa_id)
           .single(),
         supabase
@@ -131,6 +136,9 @@ export default function ConfiguracionPage() {
         setTeamsWebhookUrl(empresaData.teams_webhook_url)
         setOriginalTeamsUrl(empresaData.teams_webhook_url)
       }
+
+      setPromptPersonalizado(empresaData?.prompt_personalizado ?? '')
+      setOriginalPrompt(empresaData?.prompt_personalizado ?? '')
       setVinculaciones((vinRes.data ?? []) as BotVinculacion[])
 
       if (empresaData?.herramientas_contacto) {
@@ -209,6 +217,25 @@ export default function ConfiguracionPage() {
       setSavingBot(false)
     }
   }
+
+  const guardarPrompt = useCallback(async () => {
+    if (!empresaId) return
+    setSavingPrompt(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('empresas')
+        .update({ prompt_personalizado: promptPersonalizado.trim() || null })
+        .eq('id', empresaId)
+      if (error) throw error
+      setOriginalPrompt(promptPersonalizado.trim())
+      toast.success('Personalización del asistente guardada')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al guardar')
+    } finally {
+      setSavingPrompt(false)
+    }
+  }, [empresaId, promptPersonalizado])
 
   const herramientaPreview = arrayFinal[0] ?? 'email'
 
@@ -682,6 +709,54 @@ export default function ConfiguracionPage() {
                 </div>
               </Card>
             )}
+
+            {/* ── Personalización del asistente IA ── */}
+            <Card padding="md" className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20
+                  flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white/85">Personalización del asistente</h3>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Instrucciones adicionales para el asistente IA de tu empresa.
+                    Se combinan con el conocimiento cargado.
+                  </p>
+                </div>
+              </div>
+
+              <textarea
+                value={promptPersonalizado}
+                onChange={e => setPromptPersonalizado(e.target.value)}
+                placeholder={
+                  'Ejemplos:\n' +
+                  '- "Siempre mencioná que los beneficios se gestionan en el portal HR."\n' +
+                  '- "El tono debe ser muy informal, usá tuteo siempre."\n' +
+                  '- "Si preguntan por vacaciones, redirigí al Artículo 5 del reglamento."'
+                }
+                rows={5}
+                className="w-full px-3 py-2.5 rounded-xl text-sm bg-white/[0.03] border border-white/[0.07]
+                  text-white/80 placeholder:text-white/20 outline-none resize-none
+                  focus:border-indigo-500/40 transition-colors font-mono"
+              />
+
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-white/30">
+                  {promptPersonalizado.length} caracteres
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={savingPrompt}
+                  disabled={promptPersonalizado === originalPrompt}
+                  onClick={guardarPrompt}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Guardar personalización
+                </Button>
+              </div>
+            </Card>
 
             {/* API Keys */}
             <Card>
