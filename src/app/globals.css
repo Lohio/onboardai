@@ -9,12 +9,12 @@
    ========================================== */
 
 @theme {
-  /* Fondos oscuros cálidos */
-  --color-heero-950: #0d0d0c;
-  --color-heero-900: #111110;
-  --color-heero-800: #1a1a18;
-  --color-heero-700: #222220;
-  --color-heero-600: #2a2a28;
+  /* Fondos navy oscuros */
+  --color-heero-950: #070d1a;
+  --color-heero-900: #0A1628;
+  --color-heero-800: #0F1F3D;
+  --color-heero-700: #162440;
+  --color-heero-600: #1d2d52;
 
   /* Paleta Sky (acento principal) */
   --color-sky-700: #0369a1;
@@ -30,14 +30,14 @@
   --color-success-500: #22c55e;
   --color-success-400: #4ade80;
 
-  /* Superficies dark */
-  --color-surface-950: #0d0d0c;
-  --color-surface-900: #111110;
-  --color-surface-800: #1a1a18;
-  --color-surface-700: #222220;
-  --color-surface-600: #2a2a28;
-  --color-surface-500: #333330;
-  --color-surface-400: #3d3d3a;
+  /* Superficies dark navy */
+  --color-surface-950: #070d1a;
+  --color-surface-900: #0A1628;
+  --color-surface-800: #0F1F3D;
+  --color-surface-700: #162440;
+  --color-surface-600: #1d2d52;
+  --color-surface-500: #243260;
+  --color-surface-400: #2c3c72;
 
   /* Fuentes */
   --font-sans:    'DM Sans', system-ui, sans-serif;
@@ -51,20 +51,20 @@
 /* ── Tema oscuro (default) ── */
 :root,
 .theme-dark {
-  --background: #111110;
+  --background: #0A1628;
   --foreground: #ffffff;
-  --surface: #1a1a18;
-  --surface-2: #222220;
+  --surface: #0F1F3D;
+  --surface-2: #162440;
   --border: rgba(255, 255, 255, 0.08);
   --text-muted: rgba(255, 255, 255, 0.40);
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --sidebar-bg: #1a1a18;
+  --sidebar-bg: #080F1E;
   --gradient-bg:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14, 165, 233, 0.12) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(14, 165, 233, 0.05) 0%, transparent 55%),
-    radial-gradient(ellipse 30% 25% at 10% 60%, rgba(14, 165, 233, 0.04) 0%, transparent 50%),
-    #111110;
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59, 79, 216, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 85%, rgba(13, 148, 136, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 10% 60%, rgba(59, 79, 216, 0.05) 0%, transparent 50%),
+    #0A1628;
   color-scheme: dark;
 
   /* ── Tokens por módulo ── */
