@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut } from 'lucide-react'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
+import { esTrial } from '@/lib/trial'
 import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
 import AgenteFlotante from '@/components/empleado/AgenteFlotante'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -45,6 +46,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const [empleadoId, setEmpleadoId] = useState('')
   const [diasOnboarding, setDiasOnboarding] = useState(1)
   const [accesosPendientes, setAccesosPendientes] = useState(0)
+  const [planEmpresa, setPlanEmpresa]             = useState<string>('trial')
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { t } = useLanguage()
@@ -97,6 +99,16 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           (Date.now() - new Date(usuarioData.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)
         ))
         setDiasOnboarding(dias)
+      }
+
+      // Cargar plan de la empresa
+      if (usuarioData.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('plan')
+          .eq('id', usuarioData.empresa_id)
+          .single()
+        setPlanEmpresa(empresaData?.plan ?? 'trial')
       }
     }
 
@@ -166,6 +178,21 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             {MODULOS.map((mod, idx) => {
               const completado = modulos[mod.key]
               const esActual = pathname.startsWith(mod.href)
+              const bloqueado = esTrial(planEmpresa) && idx === 2
+
+              if (bloqueado) {
+                return (
+                  <span
+                    key={mod.key}
+                    className="text-[11px] text-white/20 cursor-not-allowed px-2 min-h-[36px]
+                      flex items-center gap-1.5"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                    M{idx + 1}
+                    <span className="text-[9px] text-amber-500/60 ml-0.5">Pro</span>
+                  </span>
+                )
+              }
 
               return (
                 <Link

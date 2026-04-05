@@ -4,6 +4,7 @@ import { withHandler } from '@/lib/api/withHandler'
 import { crearEmpleadoSchema } from '@/lib/schemas/admin'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
+import { esTrial, TRIAL_LIMITS, UPGRADE_MSG } from '@/lib/trial'
 
 // ─────────────────────────────────────────────
 // POST /api/admin/empleados
@@ -18,8 +19,27 @@ export const POST = withHandler(
     schema: crearEmpleadoSchema,
     rateLimit: RATE_LIMITS.crearEmpleado,
   },
-  async ({ body, user }) => {
+  async ({ body, user, supabase }) => {
     const { email, password, nombre } = body
+
+    // Verificar límite trial
+    const { data: empresaData } = await supabase!
+      .from('empresas')
+      .select('plan')
+      .eq('id', user!.empresaId)
+      .single()
+
+    if (esTrial(empresaData?.plan)) {
+      const { count } = await supabase!
+        .from('usuarios')
+        .select('*', { count: 'exact', head: true })
+        .eq('empresa_id', user!.empresaId)
+        .eq('rol', 'empleado')
+
+      if ((count ?? 0) >= TRIAL_LIMITS.maxEmpleados) {
+        return ApiError.badRequest(UPGRADE_MSG.empleados)
+      }
+    }
 
     // Crear cliente con service role key
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
