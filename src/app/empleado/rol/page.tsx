@@ -719,18 +719,12 @@ export default function RolPage() {
                   <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
                   <motion.circle
                     cx="32" cy="32" r="26" fill="none"
-                    stroke="url(#rol-gradient)"
+                    stroke="#F59E0B"
                     strokeWidth="4" strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 26}`}
                     animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - progresoGlobal / 100) }}
                     transition={{ duration: 0.6, ease: 'easeOut' }}
                   />
-                  <defs>
-                    <linearGradient id="rol-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#ef4444" />
-                    </linearGradient>
-                  </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-sm font-bold text-white">{progresoGlobal}%</span>

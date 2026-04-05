@@ -221,23 +221,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
               </Link>
             )
           })}
-          {/* M4 Asistente */}
-          <Link href="/empleado/asistente"
-            className={cn(
-              'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-colors duration-150 text-[13px] mb-0.5 border',
-              pathname.startsWith('/empleado/asistente')
-                ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
-                : 'text-white/50 hover:text-white/90 hover:bg-white/[0.04] border-transparent',
-              esTrial(planEmpresa) ? 'opacity-40 pointer-events-none' : ''
-            )}
-          >
-            <div className="w-[7px] h-[7px] rounded-full bg-white/20 flex-shrink-0" />
-            <span className="flex-1">M4 — Asistente</span>
-            {esTrial(planEmpresa) && (
-              <span className="text-[9px] text-amber-500/60 font-semibold">Pro</span>
-            )}
-          </Link>
-
           {/* Quick access */}
           <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] px-2 pt-4 pb-2 mt-2">
             Accesos rápidos

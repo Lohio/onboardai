@@ -30,7 +30,6 @@ interface EstadoModulos {
   M1: boolean
   M2: boolean
   M3: boolean
-  M4: boolean
 }
 
 // ─────────────────────────────────────────────
@@ -115,7 +114,6 @@ const MODULO_INFO = [
   { key: 'M1' as const, label: 'Perfil',     Icon: User           },
   { key: 'M2' as const, label: 'Rol',        Icon: Briefcase      },
   { key: 'M3' as const, label: 'Cultura',    Icon: BookOpen       },
-  { key: 'M4' as const, label: 'Asistente',  Icon: MessageSquare  },
 ]
 
 // ─────────────────────────────────────────────
@@ -279,7 +277,6 @@ export default function PerfilPage() {
     M1: true,
     M2: false,
     M3: false,
-    M4: false,
   })
 
   const cargarDatos = useCallback(async () => {
@@ -407,19 +404,7 @@ export default function PerfilPage() {
         const m2 = culturaCompletados >= CULTURA_TOTAL
         const m3 = progresoRows.some(r => r.modulo === 'rol' && r.completado)
 
-        // M4: al menos una conversación de IA
-        let m4 = false
-        try {
-          const { count } = await supabase
-            .from('conversaciones_ia')
-            .select('*', { count: 'exact', head: true })
-            .eq('usuario_id', user.id)
-          m4 = (count ?? 0) > 0
-        } catch {
-          // tabla puede no existir aún
-        }
-
-        setModulosProgreso({ M1: true, M2: m2, M3: m3, M4: m4 })
+        setModulosProgreso({ M1: true, M2: m2, M3: m3 })
       } catch (err) {
         console.warn('[Perfil] progreso_modulos:', err)
       }
@@ -510,7 +495,7 @@ export default function PerfilPage() {
 
   // Métricas de progreso global
   const modulosCompletados = Object.values(modulosProgreso).filter(Boolean).length
-  const progresoTotal      = Math.round((modulosCompletados / 4) * 100)
+  const progresoTotal      = Math.round((modulosCompletados / 3) * 100)
 
   // ── Render: loading ──
   if (loading) {
@@ -891,7 +876,7 @@ export default function PerfilPage() {
                     Mi onboarding
                   </h2>
                   <span className="text-xs text-white/40 font-mono tabular-nums">
-                    {modulosCompletados} / 4 módulos
+                    {modulosCompletados} / 3 módulos
                   </span>
                 </div>
 
