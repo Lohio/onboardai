@@ -730,109 +730,77 @@ export default function PerfilPage() {
 
           </div>{/* /Row 1 */}
 
-          {/* ── Row 2: Hero + Onboarding ── */}
+          {/* ── Row 2: (Hero + Contactos) | Tracker ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-          {/* ── Bloque A: Hero Card ── */}
-          <motion.section id="tour-hero-card" variants={blockVariants}>
-            <Card padding="none" className="overflow-hidden">
+            {/* Columna izquierda: Hero gradient + Contactos */}
+            <div className="space-y-4">
 
-              {/* Banner decorativo */}
-              <div
-                className="relative h-20 overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #1a2d5a 0%, #162440 50%, #0f1e3d 100%)',
-                }}
-              >
-                {/* Overlay radial indigo en esquina izquierda */}
+              {/* Bloque A: Profile hero — gradient style */}
+              <motion.section id="tour-hero-card" variants={blockVariants}>
+                {/* Hero card */}
                 <div
-                  className="absolute inset-0 pointer-events-none"
+                  className="rounded-xl p-5 flex items-start gap-4"
                   style={{
-                    background:
-                      'radial-gradient(ellipse at -10% 50%, rgba(99,102,241,0.25) 0%, transparent 60%)',
+                    background: 'linear-gradient(135deg, rgba(59,79,216,0.12) 0%, rgba(13,148,136,0.08) 100%)',
+                    border: '1px solid rgba(59,79,216,0.2)',
                   }}
-                />
-                {/* Pulso sutil en esquina derecha */}
-                <div
-                  className="absolute inset-0 pointer-events-none animate-pulse opacity-50"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse at 110% 50%, rgba(14,165,233,0.15) 0%, transparent 55%)',
-                  }}
-                />
-              </div>
-
-              {/* Body */}
-              <div className="px-6 pb-6">
-
-                {/* Fila: avatar (sobresale del banner) + badge día */}
-                <div className="flex items-end justify-between -mt-7">
+                >
                   <HeroAvatar
                     src={perfil.foto_url}
                     nombre={perfil.nombre}
                     onUpload={handleAvatarUpload}
                   />
-                  {perfil.fecha_ingreso && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/[0.06] mb-1"
-                      style={{ background: 'rgba(10,22,40,0.8)' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
-                      <span className="text-[11px] text-white/50">
-                        Día {diasDesde(perfil.fecha_ingreso) ?? 1} de onboarding
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Nombre y puesto */}
-                <div className="mt-3">
-                  <h2 className="text-xl font-semibold text-white/90 leading-tight">
-                    {perfil.nombre}
-                  </h2>
-                  {(perfil.puesto || perfil.area) && (
-                    <p className="text-sm text-white/45 mt-0.5">
-                      {[perfil.puesto, perfil.area].filter(Boolean).join(' · ')}
-                    </p>
-                  )}
-                </div>
-
-                {/* Meta row: fecha · email copiable · modalidad */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3">
-                  {perfil.fecha_ingreso && (
-                    <span className="flex items-center gap-1.5 text-xs text-white/45">
-                      <Calendar className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-                      {formatFecha(perfil.fecha_ingreso)}
-                    </span>
-                  )}
-                  <button
-                    onClick={handleCopyEmail}
-                    className="flex items-center gap-1.5 text-xs text-white/45 hover:text-[#7DD3FC] transition-colors duration-150 group"
-                    title="Copiar email"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-white/30 group-hover:text-[#0EA5E9] transition-colors flex-shrink-0" />
-                    <span className="font-mono">{perfil.email}</span>
-                    <span className="ml-0.5">
-                      {emailCopied ? (
-                        <Check className="w-3 h-3 text-teal-400" />
-                      ) : (
-                        <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h2 className="text-[17px] font-bold text-white/95 leading-tight truncate">
+                          {perfil.nombre}
+                        </h2>
+                        {(perfil.puesto || perfil.area) && (
+                          <p className="text-[13px] text-white/50 mt-0.5 truncate">
+                            {[perfil.puesto, perfil.area].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                      {perfil.fecha_ingreso && (
+                        <div
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/[0.06] flex-shrink-0"
+                          style={{ background: 'rgba(10,22,40,0.8)' }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
+                          <span className="text-[10px] text-white/45 whitespace-nowrap">
+                            Día {diasDesde(perfil.fecha_ingreso) ?? 1}
+                          </span>
+                        </div>
                       )}
-                    </span>
-                  </button>
-                  {perfil.modalidad && (
-                    <Badge variant={modalidadVariant(perfil.modalidad)}>
-                      {modalidadLabel(perfil.modalidad, t)}
-                    </Badge>
-                  )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                      {perfil.modalidad && (
+                        <Badge variant={modalidadVariant(perfil.modalidad)}>
+                          {modalidadLabel(perfil.modalidad, t)}
+                        </Badge>
+                      )}
+                      <button
+                        onClick={handleCopyEmail}
+                        className="flex items-center gap-1 text-[11px] text-white/35 hover:text-white/70 transition-colors group"
+                        title="Copiar email"
+                      >
+                        <Mail className="w-3 h-3 flex-shrink-0" />
+                        <span className="font-mono truncate max-w-[160px]">{perfil.email}</span>
+                        {emailCopied
+                          ? <Check className="w-2.5 h-2.5 text-teal-400 flex-shrink-0" />
+                          : <Copy className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        }
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Divider */}
-                <div className="h-px bg-white/[0.06] my-4" />
-
-                {/* Sobre mí — editable inline (lógica sin cambios) */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+                {/* Sobre mí — editable inline */}
+                <Card className="mt-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">
                       Sobre mí
                     </span>
                     <AnimatePresence>
@@ -848,7 +816,6 @@ export default function PerfilPage() {
                       )}
                     </AnimatePresence>
                   </div>
-
                   {editandoBio ? (
                     <textarea
                       autoFocus
@@ -859,7 +826,7 @@ export default function PerfilPage() {
                       placeholder="Contá algo sobre vos..."
                       className={cn(
                         'w-full text-sm text-white/80 bg-surface-800/60 rounded-lg',
-                        'border border-white/10 focus:border-[#0EA5E9]/40',
+                        'border border-white/10 focus:border-[#3B4FD8]/40',
                         'p-2.5 resize-none outline-none',
                         'placeholder:text-white/25 transition-colors duration-150',
                       )}
@@ -876,117 +843,117 @@ export default function PerfilPage() {
                       {bio || 'Contá algo sobre vos...'}
                     </p>
                   )}
+                </Card>
+              </motion.section>
+
+              {/* Bloque D: Contactos clave */}
+              <motion.section variants={blockVariants}>
+                <Card>
+                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                    Contactos clave
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <ContactoCard
+                      tipo="manager"
+                      nombre={manager?.nombre}
+                      email={manager?.email}
+                      herramienta={herramientaContacto}
+                    />
+                    <ContactoCard
+                      tipo="buddy"
+                      nombre={buddy?.nombre}
+                      email={buddy?.email}
+                      herramienta={herramientaContacto}
+                    />
+                    <ContactoCard
+                      tipo="it"
+                      nombre={perfil.contacto_it_nombre}
+                      email={perfil.contacto_it_email}
+                      herramienta={herramientaContacto}
+                    />
+                    <ContactoCard
+                      tipo="rrhh"
+                      nombre={perfil.contacto_rrhh_nombre}
+                      email={perfil.contacto_rrhh_email}
+                      herramienta={herramientaContacto}
+                    />
+                  </div>
+                </Card>
+              </motion.section>
+
+            </div>{/* /columna izquierda */}
+
+            {/* Columna derecha: Onboarding tracker — vertical stepper */}
+            <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
+              <Card>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+                    Mi onboarding
+                  </h2>
+                  <span className="text-xs text-white/40 font-mono tabular-nums">
+                    {modulosCompletados} / 4 módulos
+                  </span>
                 </div>
-              </div>
-            </Card>
-          </motion.section>
 
-          {/* ── Bloque B: Mi onboarding ── */}
-          <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
-            <Card>
-              {/* Header */}
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-                  Mi onboarding
-                </h2>
-                <span className="text-xs text-white/40 font-mono tabular-nums">
-                  {modulosCompletados} / 4 módulos
-                </span>
-              </div>
+                <ProgressBar value={progresoTotal} showPercentage={false} />
 
-              {/* Barra de progreso animada */}
-              <ProgressBar value={progresoTotal} showPercentage={false} />
-
-              {/* Grid de 4 módulos — 2 cols en mobile, 4 en desktop */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                {MODULO_INFO.map(({ key, label, Icon }) => {
-                  const completado = modulosProgreso[key]
-                  const activo     = moduloActivo === key
-
-                  const iconBg = completado
-                    ? 'bg-teal-500/15'
-                    : activo
-                    ? 'bg-[#0EA5E9]/20'
-                    : 'bg-white/[0.03]'
-
-                  const iconText = completado
-                    ? 'text-teal-400'
-                    : activo
-                    ? 'text-[#38BDF8]'
-                    : 'text-white/20'
-
-                  const estadoLabel = completado
-                    ? 'Completado'
-                    : activo
-                    ? 'En curso'
-                    : 'Bloqueado'
-
-                  const estadoColor = completado
-                    ? 'text-teal-400'
-                    : activo
-                    ? 'text-[#38BDF8]'
-                    : 'text-white/20'
-
-                  return (
-                    <motion.div
-                      key={key}
-                      variants={itemVariants}
-                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]"
-                    >
-                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', iconBg)}>
-                        <Icon className={cn('w-4 h-4', iconText)} />
+                {/* Vertical stepper */}
+                <div className="mt-5">
+                  {MODULO_INFO.map(({ key, label }, idx) => {
+                    const completado = modulosProgreso[key]
+                    const activo     = moduloActivo === key
+                    return (
+                      <div key={key} className="relative flex items-start gap-3 pb-4">
+                        {/* Connecting line */}
+                        {idx < MODULO_INFO.length - 1 && (
+                          <div className="absolute left-[11px] top-7 w-px h-[calc(100%-4px)] bg-white/[0.08]" />
+                        )}
+                        {/* Step dot */}
+                        <div className={cn(
+                          'w-6 h-6 rounded-full flex items-center justify-center',
+                          'text-[11px] font-bold flex-shrink-0 relative z-10 mt-0.5',
+                          completado
+                            ? 'bg-teal-500/20 text-[#2DD4BF] border-[1.5px] border-[#0D9488]'
+                            : activo
+                            ? 'bg-[#3B4FD8]/20 text-[#818CF8] border-[1.5px] border-[#3B4FD8]'
+                            : 'bg-white/[0.04] text-white/25 border-[1.5px] border-white/[0.1]'
+                        )}>
+                          {completado ? '✓' : idx + 1}
+                        </div>
+                        {/* Label */}
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            'text-[13px] font-medium leading-tight',
+                            completado ? 'text-white/90' : activo ? 'text-[#818CF8]' : 'text-white/30'
+                          )}>
+                            {key} — {label}
+                          </p>
+                          <p className="text-[11px] text-white/30 mt-0.5">
+                            {completado ? 'Completado' : activo ? 'En curso' : 'Bloqueado'}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-[11px] font-medium text-white/60 text-center leading-tight">
-                        {label}
-                      </span>
-                      <span className={cn('text-[10px] text-center leading-tight', estadoColor)}>
-                        {estadoLabel}
-                      </span>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            </Card>
-          </motion.section>
+                    )
+                  })}
+                </div>
+
+                {/* Progress summary */}
+                <div className="border-t border-white/[0.06] pt-3 mt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] text-white/35">Progreso total</span>
+                    <span className="text-[13px] font-bold text-[#818CF8]">{progresoTotal}%</span>
+                  </div>
+                  <div className="h-[5px] bg-white/[0.06] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${progresoTotal}%`, background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </motion.section>
 
           </div>{/* /Row 2 */}
-
-          {/* ── Bloque D: Contactos clave ── */}
-          <motion.section variants={blockVariants}>
-            <Card>
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                Contactos clave
-              </h2>
-
-              {/* 2 cols en mobile, 4 en desktop */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <ContactoCard
-                  tipo="manager"
-                  nombre={manager?.nombre}
-                  email={manager?.email}
-                  herramienta={herramientaContacto}
-                />
-                <ContactoCard
-                  tipo="buddy"
-                  nombre={buddy?.nombre}
-                  email={buddy?.email}
-                  herramienta={herramientaContacto}
-                />
-                <ContactoCard
-                  tipo="it"
-                  nombre={perfil.contacto_it_nombre}
-                  email={perfil.contacto_it_email}
-                  herramienta={herramientaContacto}
-                />
-                <ContactoCard
-                  tipo="rrhh"
-                  nombre={perfil.contacto_rrhh_nombre}
-                  email={perfil.contacto_rrhh_email}
-                  herramienta={herramientaContacto}
-                />
-              </div>
-            </Card>
-          </motion.section>
 
           {/* ── Bloque C: Mi equipo ── */}
           {equipo.length > 0 && (
