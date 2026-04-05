@@ -13,6 +13,7 @@ import AgenteFlotante from '@/components/empleado/AgenteFlotante'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { SettingsDropdown } from '@/components/shared/SettingsDropdown'
 import { useLanguage } from '@/components/LanguageProvider'
+import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -26,6 +27,12 @@ const MODULOS = [
 
 type ModuloKey = (typeof MODULOS)[number]['key']
 type EstadoModulos = Record<ModuloKey, boolean>
+
+const MODULO_LABELS: Record<string, string> = {
+  M1: 'Perfil',
+  M2: 'Rol',
+  M3: 'Cultura',
+}
 
 // ─────────────────────────────────────────────
 // Layout
@@ -159,7 +166,112 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
   return (
     <ThemeProvider section="empleado">
-    <div className="min-h-dvh flex flex-col">
+    <div className="min-h-dvh flex">
+      {/* ── Sidebar (desktop only) ── */}
+      <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 border-r border-white/[0.06]"
+        style={{ background: '#080F1E' }}
+      >
+        {/* Logo */}
+        <div className="px-[18px] py-5 border-b border-white/[0.06] flex items-center gap-2.5">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] font-bold text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #3B4FD8, #0D9488)' }}
+          >
+            H
+          </div>
+          <span className="text-sm font-semibold text-white/90 tracking-tight">Heero</span>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 p-3">
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] px-2 py-2">
+            Módulos
+          </p>
+          {MODULOS.map((mod, idx) => {
+            const completado = modulos[mod.key]
+            const esActual   = pathname.startsWith(mod.href)
+            const bloqueado  = esTrial(planEmpresa) && idx === 2
+            if (bloqueado) {
+              return (
+                <div key={mod.key}
+                  className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg opacity-40 cursor-not-allowed mb-0.5"
+                >
+                  <div className="w-[7px] h-[7px] rounded-full bg-white/15 flex-shrink-0" />
+                  <span className="text-[13px] text-white/40 flex-1">
+                    {mod.key} — {MODULO_LABELS[mod.key]}
+                  </span>
+                  <span className="text-[9px] text-amber-500/60 font-semibold">Pro</span>
+                </div>
+              )
+            }
+            return (
+              <Link key={mod.key} href={mod.href}
+                className={cn(
+                  'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-colors duration-150 text-[13px] mb-0.5 border',
+                  esActual
+                    ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
+                    : 'text-white/50 hover:text-white/90 hover:bg-white/[0.04] border-transparent'
+                )}
+              >
+                <div className={cn(
+                  'w-[7px] h-[7px] rounded-full flex-shrink-0',
+                  completado ? 'bg-[#0D9488]' : esActual ? 'bg-[#818CF8]' : 'bg-white/20'
+                )} />
+                {mod.key} — {MODULO_LABELS[mod.key]}
+              </Link>
+            )
+          })}
+          {/* M4 Asistente */}
+          <Link href="/empleado/asistente"
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-colors duration-150 text-[13px] mb-0.5 border',
+              pathname.startsWith('/empleado/asistente')
+                ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
+                : 'text-white/50 hover:text-white/90 hover:bg-white/[0.04] border-transparent',
+              esTrial(planEmpresa) ? 'opacity-40 pointer-events-none' : ''
+            )}
+          >
+            <div className="w-[7px] h-[7px] rounded-full bg-white/20 flex-shrink-0" />
+            <span className="flex-1">M4 — Asistente</span>
+            {esTrial(planEmpresa) && (
+              <span className="text-[9px] text-amber-500/60 font-semibold">Pro</span>
+            )}
+          </Link>
+
+          {/* Quick access */}
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] px-2 pt-4 pb-2 mt-2">
+            Accesos rápidos
+          </p>
+          <Link href="/empleado"
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-colors border border-transparent"
+          >
+            <span className="text-sm leading-none">📋</span> Mi progreso
+          </Link>
+        </nav>
+
+        {/* User info */}
+        <div className="px-3.5 py-3.5 border-t border-white/[0.06] flex items-center gap-2.5">
+          <div
+            className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #3B4FD8, #0D9488)' }}
+          >
+            {empleadoNombre
+              ? empleadoNombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+              : 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-semibold text-white/90 truncate">
+              {empleadoNombre || 'Empleado'}
+            </p>
+            <p className="text-[11px] text-white/30 truncate">
+              {empleadoPuesto || ''}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Header + Main (flex-col wrapper) ── */}
+      <div className="flex-1 flex flex-col min-w-0">
       {/* ── Header de progreso (sticky) ── */}
       <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#111110]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 h-12">
@@ -310,6 +422,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       <main className="flex-1 flex flex-col">
         {children}
       </main>
+      </div>{/* end flex-col wrapper */}
 
       {/* Agente flotante proactivo (M1–M4) */}
       {(() => {
