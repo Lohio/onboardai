@@ -550,14 +550,36 @@ export default function PerfilPage() {
     <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-4">
 
-        <motion.h1
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="text-2xl font-semibold text-white mb-6"
-        >
-          Mi perfil
-        </motion.h1>
+        {/* ── Page header M1 ── */}
+        <div className="mod-m1-header flex items-center justify-between gap-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#3B4FD8]/20 flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 text-[#818CF8]" />
+            </div>
+            <div>
+              <p className="tag-m1 mb-1">Módulo 1</p>
+              <h1 className="text-xl font-bold text-white leading-tight">Mi perfil</h1>
+              <p className="text-sm text-white/45 mt-0.5">
+                Tus accesos, credenciales e información de equipo
+              </p>
+            </div>
+          </div>
+          {/* Progress ring */}
+          <div className="flex-shrink-0 relative w-14 h-14">
+            <svg className="w-14 h-14 -rotate-90" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
+              <circle
+                cx="26" cy="26" r="22" fill="none"
+                stroke="#3B4FD8" strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 22}`}
+                strokeDashoffset={2 * Math.PI * 22 * (1 - progresoTotal / 100)}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-white">{progresoTotal}%</span>
+            </div>
+          </div>
+        </div>
 
         <motion.div
           variants={containerVariants}
