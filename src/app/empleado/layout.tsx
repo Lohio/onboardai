@@ -20,8 +20,8 @@ import { useLanguage } from '@/components/LanguageProvider'
 
 const MODULOS = [
   { key: 'M1', href: '/empleado/perfil' },
-  { key: 'M2', href: '/empleado/cultura' },
-  { key: 'M3', href: '/empleado/rol' },
+  { key: 'M2', href: '/empleado/rol' },
+  { key: 'M3', href: '/empleado/cultura' },
 ] as const
 
 type ModuloKey = (typeof MODULOS)[number]['key']
@@ -322,8 +322,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
         const moduloKey =
           moduloActual === 'perfil' ? 'M1' as const
-          : moduloActual === 'cultura' ? 'M2' as const
-          : moduloActual === 'rol' ? 'M3' as const
+          : moduloActual === 'rol' ? 'M2' as const
+          : moduloActual === 'cultura' ? 'M3' as const
           : null
 
         return (
