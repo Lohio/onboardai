@@ -701,59 +701,42 @@ export default function RolPage() {
         <div className="max-w-3xl mx-auto">
           <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
-            {/* ── Header Banner ── */}
-            <motion.div
-              variants={sectionVariants}
-              className="relative rounded-2xl overflow-hidden p-6"
-              style={{
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.08) 50%, rgba(10,22,40,0.6) 100%)',
-                border: '1px solid rgba(245,158,11,0.2)',
-              }}
-            >
-              {/* Glows */}
-              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)' }} />
-              <div className="absolute -bottom-4 left-12 w-24 h-24 rounded-full opacity-15 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #ef4444 0%, transparent 70%)' }} />
-
-              <div className="relative flex items-start justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                      <Briefcase className="w-4 h-4 text-amber-400" />
-                    </div>
-                    <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-widest">Módulo 3</span>
-                  </div>
-                  <h1 className="text-2xl font-bold text-white">Mi rol y herramientas</h1>
-                  <p className="text-sm text-white/45 mt-1">
-                    Conocé tu puesto, las herramientas y tus objetivos del mes
-                  </p>
+            {/* ── Page header M2 ── */}
+            <div className="mod-m2-header flex items-center justify-between gap-6 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/20 flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-5 h-5 text-[#FCD34D]" />
                 </div>
-                {/* Círculo de progreso */}
-                <div className="flex-shrink-0 relative w-16 h-16">
-                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                    <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                    <motion.circle
-                      cx="32" cy="32" r="26" fill="none"
-                      stroke="url(#rol-gradient)"
-                      strokeWidth="4" strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 26}`}
-                      animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - progresoGlobal / 100) }}
-                      transition={{ duration: 0.6, ease: 'easeOut' }}
-                    />
-                    <defs>
-                      <linearGradient id="rol-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#f59e0b" />
-                        <stop offset="100%" stopColor="#ef4444" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-sm font-bold text-white">{progresoGlobal}%</span>
-                  </div>
+                <div>
+                  <p className="tag-m2 mb-1">Módulo 2</p>
+                  <h1 className="text-xl font-bold text-white leading-tight">Mi rol y herramientas</h1>
+                  <p className="text-sm text-white/45 mt-0.5">Conocé tu puesto, las herramientas y tus objetivos del mes</p>
                 </div>
               </div>
-            </motion.div>
+              {/* Círculo de progreso */}
+              <div className="flex-shrink-0 relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                  <motion.circle
+                    cx="32" cy="32" r="26" fill="none"
+                    stroke="url(#rol-gradient)"
+                    strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 26}`}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - progresoGlobal / 100) }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                  />
+                  <defs>
+                    <linearGradient id="rol-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#ef4444" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-sm font-bold text-white">{progresoGlobal}%</span>
+                </div>
+              </div>
+            </div>
 
             {/* ══ Tab bar ══ */}
             <motion.div variants={sectionVariants}>
@@ -768,10 +751,10 @@ export default function RolPage() {
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-medium transition-all',
+                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-medium transition-all',
                       activeTab === tab.key
-                        ? 'bg-white/[0.09] text-white shadow-sm'
-                        : 'text-white/35 hover:text-white/60'
+                        ? 'bg-[#F59E0B]/12 text-[#FCD34D] border border-[#F59E0B]/22 rounded-lg'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded-lg'
                     )}
                   >
                     {tab.icon}

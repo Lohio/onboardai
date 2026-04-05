@@ -1076,74 +1076,47 @@ export default function CulturaPage() {
       <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8 pt-6">
         <div className="max-w-5xl mx-auto">
 
-          {/* ── Header con banner decorativo ── */}
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="relative rounded-2xl overflow-hidden mb-8 p-6"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(20,184,166,0.08) 50%, rgba(10,22,40,0.6) 100%)',
-              border: '1px solid rgba(99,102,241,0.2)',
-            }}
-          >
-            {/* Glow decorativo */}
-            <div
-              className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
-            />
-            <div
-              className="absolute -bottom-4 left-8 w-24 h-24 rounded-full opacity-15 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #14b8a6 0%, transparent 70%)' }}
-            />
-
-            <div className="relative flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/25 flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-[#0EA5E9]" />
-                  </div>
-                  <span className="text-[11px] font-medium text-[#0EA5E9]/70 uppercase tracking-widest">
-                    Módulo 2
-                  </span>
-                </div>
-                <h1 className="text-2xl font-bold text-white">Cultura e identidad</h1>
-                <p className="text-sm text-white/45 mt-1">
-                  {todoCompleto
-                    ? '¡Módulo completado! Conocés la empresa y sus valores.'
-                    : 'Conocé la historia, misión y forma de trabajar de la empresa.'}
-                </p>
+          {/* ── Page header M3 ── */}
+          <div className="mod-m3-header flex items-center justify-between gap-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-[#0D9488]/20 flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 text-[#2DD4BF]" />
               </div>
-
-              {/* Círculo de progreso */}
-              <div className="flex-shrink-0 relative w-16 h-16">
-                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                  <motion.circle
-                    cx="32" cy="32" r="26"
-                    fill="none"
-                    stroke="url(#prog-gradient)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 26}`}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                  />
-                  <defs>
-                    <linearGradient id="prog-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#14b8a6" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
-                </div>
+              <div>
+                <p className="tag-m3 mb-1">Módulo 3</p>
+                <h1 className="text-xl font-bold text-white leading-tight">Cultura e identidad</h1>
+                <p className="text-sm text-white/45 mt-0.5">Historia, misión, valores y forma de trabajar</p>
               </div>
             </div>
+            {/* Círculo de progreso */}
+            <div className="flex-shrink-0 relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                <motion.circle
+                  cx="32" cy="32" r="26"
+                  fill="none"
+                  stroke="url(#prog-gradient)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+                <defs>
+                  <linearGradient id="prog-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#0D9488" />
+                    <stop offset="100%" stopColor="#2DD4BF" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
+              </div>
+            </div>
+          </div>
 
-            {/* Chips de progreso */}
-            <div className="relative flex items-center gap-2 mt-4 flex-wrap">
+          {/* Chips de progreso */}
+          <div className="flex items-center gap-2 mb-8 flex-wrap">
               {BLOQUES_ORDEN.map((bKey, idx) => {
                 const completado = progreso[bKey]?.completado
                 const cfg = BLOQUES_CONFIG[bKey]
@@ -1172,8 +1145,7 @@ export default function CulturaPage() {
               <span className="ml-auto text-xs text-white/30 font-mono">
                 {totalCompletados}/{BLOQUES_ORDEN.length} bloques
               </span>
-            </div>
-          </motion.div>
+          </div>
 
           {/* ── Layout: stepper + bloques ── */}
           <div className="flex gap-6 items-start">
