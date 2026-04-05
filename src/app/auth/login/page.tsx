@@ -247,59 +247,52 @@ export default function LoginPage() {
               </motion.button>
             </form>
 
-            {/* Separador: Google */}
+            {/* OAuth: íconos Google + Microsoft */}
             <div className="mt-5">
-              <p className="text-xs text-[#717171] leading-snug mb-3" style={{ letterSpacing: '-0.5px' }}>
-                Usá tu cuenta corporativa de<br />Google.
-              </p>
-              <motion.button
-                type="button"
-                onClick={() => handleOAuth('google')}
-                disabled={!!oauthLoading || loading}
-                whileHover={!oauthLoading ? { scale: 1.02 } : undefined}
-                whileTap={!oauthLoading ? { scale: 0.97 } : undefined}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="w-full h-8 rounded-lg bg-white text-black text-[10px] font-bold
-                           flex items-center justify-center gap-2
-                           hover:bg-gray-100 transition-colors duration-150 cursor-pointer
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {oauthLoading === 'google'
-                  ? <span className="w-3.5 h-3.5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
-                  : <Image src="/google-g-logo.svg" alt="" width={13} height={13} className="flex-shrink-0" />}
-                {oauthLoading === 'google' ? 'Conectando...' : 'Continuar con Google'}
-              </motion.button>
-            </div>
+              <p className="text-[9px] text-[#717171] text-center mb-3">o ingresá con</p>
+              <div className="flex gap-2">
+                <motion.button
+                  type="button"
+                  onClick={() => handleOAuth('google')}
+                  disabled={!!oauthLoading || loading}
+                  whileHover={!oauthLoading ? { scale: 1.05 } : undefined}
+                  whileTap={!oauthLoading ? { scale: 0.95 } : undefined}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  title="Continuar con Google"
+                  className="flex-1 h-8 rounded-lg bg-white flex items-center justify-center
+                             hover:bg-gray-100 transition-colors duration-150 cursor-pointer
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {oauthLoading === 'google'
+                    ? <span className="w-3.5 h-3.5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+                    : <Image src="/google-g-logo.svg" alt="Google" width={16} height={16} />}
+                </motion.button>
 
-            {/* Separador: SSO */}
-            <div className="mt-4">
-              <p className="text-[9px] text-[#717171] text-center mb-3">
-                o para empresas
-              </p>
-              <motion.button
-                type="button"
-                onClick={() => handleOAuth('azure')}
-                disabled={!!oauthLoading || loading}
-                whileHover={!oauthLoading ? { scale: 1.02 } : undefined}
-                whileTap={!oauthLoading ? { scale: 0.97 } : undefined}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="w-full h-8 rounded-lg bg-[#1f1f1f] border border-[#545454]
-                           text-white text-[11px] flex items-center justify-center gap-2
-                           hover:bg-[#2a2a2a] transition-colors duration-150 cursor-pointer
-                           disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {oauthLoading === 'azure'
-                  ? <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                  : (
-                    <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" aria-hidden>
-                      <path fill="#F25022" d="M1 1h10v10H1z"/>
-                      <path fill="#7FBA00" d="M13 1h10v10H13z"/>
-                      <path fill="#00A4EF" d="M1 13h10v10H1z"/>
-                      <path fill="#FFB900" d="M13 13h10v10H13z"/>
-                    </svg>
-                  )}
-                {oauthLoading === 'azure' ? 'Conectando...' : 'Iniciar sesión con Microsoft 365'}
-              </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleOAuth('azure')}
+                  disabled={!!oauthLoading || loading}
+                  whileHover={!oauthLoading ? { scale: 1.05 } : undefined}
+                  whileTap={!oauthLoading ? { scale: 0.95 } : undefined}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  title="Iniciar sesión con Microsoft 365"
+                  className="flex-1 h-8 rounded-lg bg-[#1f1f1f] border border-[#545454]
+                             flex items-center justify-center
+                             hover:bg-[#2a2a2a] transition-colors duration-150 cursor-pointer
+                             disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {oauthLoading === 'azure'
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                    : (
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden>
+                        <path fill="#F25022" d="M1 1h10v10H1z"/>
+                        <path fill="#7FBA00" d="M13 1h10v10H13z"/>
+                        <path fill="#00A4EF" d="M1 13h10v10H1z"/>
+                        <path fill="#FFB900" d="M13 13h10v10H13z"/>
+                      </svg>
+                    )}
+                </motion.button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
