@@ -158,3 +158,12 @@ export interface AdminEmpleadoConProgreso {
   fecha_ingreso?: string
   progreso: number // 0-100, calculado client-side
 }
+
+export interface OrgNode {
+  id: string
+  nombre: string
+  puesto?: string | null
+  area?: string | null
+  relacion: 'self' | 'manager' | 'buddy' | 'companero' | 'director'
+  children: OrgNode[]
+}
