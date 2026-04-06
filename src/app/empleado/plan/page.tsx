@@ -17,46 +17,38 @@ import type { PlanFase, PlanItem } from '@/types'
 
 const FASES: PlanFase[] = ['30', '60', '90']
 
-const FASE_CONFIG: Record<PlanFase, {
-  rango: string
-  sublabel: string
-  descripcion: string
-  colorBg: string
-  colorText: string
-  colorBorder: string
-  dotColor: string
-  ringStroke: string
-}> = {
+const FASES_CONFIG = {
   '30': {
-    rango: 'Días 1–30',
-    sublabel: 'Aprender',
-    descripcion: 'Conocé la empresa, las herramientas y a tu equipo',
-    colorBg: 'bg-indigo-500/15',
-    colorText: 'text-indigo-300',
-    colorBorder: 'border-indigo-500/30',
-    dotColor: 'bg-indigo-400',
-    ringStroke: '#6366F1',
+    label: 'Días 1-30',
+    titulo: 'Aprender',
+    descripcion: 'Conocé la empresa, las herramientas y a tu equipo. Completá los módulos de cultura y perfil.',
+    color: 'teal',
+    iconBg: 'bg-teal-500/15',
+    iconText: 'text-teal-400',
   },
   '60': {
-    rango: 'Días 31–60',
-    sublabel: 'Contribuir',
-    descripcion: 'Empezá a aportar valor y a ganar autonomía en tu rol',
-    colorBg: 'bg-teal-500/15',
-    colorText: 'text-teal-300',
-    colorBorder: 'border-teal-500/30',
-    dotColor: 'bg-teal-400',
-    ringStroke: '#0D9488',
+    label: 'Días 31-60',
+    titulo: 'Contribuir',
+    descripcion: 'Empezá a aportar en proyectos reales. Colaborá con tu equipo y tomá ownership de tareas.',
+    color: 'amber',
+    iconBg: 'bg-amber-500/15',
+    iconText: 'text-amber-400',
   },
   '90': {
-    rango: 'Días 61–90',
-    sublabel: 'Liderar',
-    descripcion: 'Tomá iniciativa, mostrá tu impacto y liderá con autonomía',
-    colorBg: 'bg-amber-500/15',
-    colorText: 'text-amber-300',
-    colorBorder: 'border-amber-500/30',
-    dotColor: 'bg-amber-400',
-    ringStroke: '#F59E0B',
+    label: 'Días 61-90',
+    titulo: 'Liderar',
+    descripcion: 'Demostrá autonomía. Proponé mejoras, liderá iniciativas y consolidá tu impacto.',
+    color: 'indigo',
+    iconBg: 'bg-indigo-500/15',
+    iconText: 'text-indigo-400',
   },
+} as const
+
+// Extras derivados del color (border, dot, ring) no incluidos en FASES_CONFIG
+const COLOR_EXTRAS: Record<string, { border: string; dot: string; ring: string }> = {
+  teal:   { border: 'border-teal-500/30',   dot: 'bg-teal-400',   ring: '#0D9488' },
+  amber:  { border: 'border-amber-500/30',  dot: 'bg-amber-400',  ring: '#F59E0B' },
+  indigo: { border: 'border-indigo-500/30', dot: 'bg-indigo-400', ring: '#6366F1' },
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -300,7 +292,7 @@ export default function PlanPage() {
   const logros = useMemo(() => itemsFase.filter(i => i.tipo === 'logro'), [itemsFase])
 
   const faseActual: PlanFase = diasOnboarding <= 30 ? '30' : diasOnboarding <= 60 ? '60' : '90'
-  const cfg = FASE_CONFIG[faseActiva]
+  const cfg = FASES_CONFIG[faseActiva]
   const circumference = 2 * Math.PI * 26
 
   if (loading) {
@@ -369,7 +361,8 @@ export default function PlanPage() {
         {/* ── Timeline de fases ── */}
         <div className="flex items-stretch gap-1">
           {FASES.map((fase, idx) => {
-            const fcfg = FASE_CONFIG[fase]
+            const fcfg = FASES_CONFIG[fase]
+            const extras = COLOR_EXTRAS[fcfg.color]
             const activa = faseActiva === fase
             const esFaseActual = faseActual === fase
             const pasada = FASES.indexOf(fase) < FASES.indexOf(faseActual)
@@ -381,7 +374,7 @@ export default function PlanPage() {
                   className={cn(
                     'flex-1 flex flex-col items-center gap-1 px-2 py-3 rounded-xl transition-all duration-200 relative border',
                     activa
-                      ? cn(fcfg.colorBg, fcfg.colorBorder)
+                      ? cn(fcfg.iconBg, extras.border)
                       : 'border-transparent hover:bg-white/[0.04]',
                   )}
                 >
@@ -389,24 +382,24 @@ export default function PlanPage() {
                   <div className={cn(
                     'w-2 h-2 rounded-full transition-all duration-300',
                     esFaseActual
-                      ? cn(fcfg.dotColor, 'scale-125 shadow-[0_0_8px_currentColor]')
+                      ? cn(extras.dot, 'scale-125 shadow-[0_0_8px_currentColor]')
                       : pasada
                       ? 'bg-teal-400/50'
                       : activa
-                      ? fcfg.dotColor
+                      ? extras.dot
                       : 'bg-white/15',
                   )} />
                   <span className={cn(
                     'text-[10px] font-mono font-bold leading-tight',
-                    activa ? fcfg.colorText : 'text-white/30',
+                    activa ? fcfg.iconText : 'text-white/30',
                   )}>
-                    {fcfg.rango}
+                    {fcfg.label}
                   </span>
                   <span className={cn(
                     'text-[11px] font-semibold',
-                    activa ? fcfg.colorText : 'text-white/30',
+                    activa ? fcfg.iconText : 'text-white/30',
                   )}>
-                    {fcfg.sublabel}
+                    {fcfg.titulo}
                   </span>
                   {esFaseActual && (
                     <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
@@ -434,10 +427,10 @@ export default function PlanPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className={cn('px-4 py-2.5 rounded-xl border text-sm', cfg.colorBg, cfg.colorBorder)}
+            className={cn('px-4 py-2.5 rounded-xl border text-sm', cfg.iconBg, COLOR_EXTRAS[cfg.color].border)}
           >
-            <span className={cn('font-semibold', cfg.colorText)}>
-              {cfg.rango} — {cfg.sublabel}:{' '}
+            <span className={cn('font-semibold', cfg.iconText)}>
+              {cfg.label} — {cfg.titulo}:{' '}
             </span>
             <span className="text-white/55">{cfg.descripcion}</span>
           </motion.div>
