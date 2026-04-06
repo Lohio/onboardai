@@ -3,7 +3,7 @@
 // Usado por: layout del empleado, home del empleado, admin dashboard
 // ─────────────────────────────────────────────
 
-import type { ProgresoModulo, PlanFase } from '@/types'
+import type { ProgresoModulo, PlanFase, PlanItem } from '@/types'
 
 // ─── Plan 30-60-90 ────────────────────────────────────────────
 
@@ -26,6 +26,19 @@ export function calcularDiaOnboarding(fechaIngreso: string): number {
   return Math.max(1, Math.floor(
     (Date.now() - new Date(fechaIngreso).getTime()) / (1000 * 60 * 60 * 24)
   ) + 1)
+}
+
+/** Porcentaje de ítems completados en una fase del plan 30-60-90. */
+export function calcularProgresoPlanFase(items: PlanItem[], fase: PlanFase): number {
+  const faseItems = items.filter(i => i.fase === fase)
+  if (faseItems.length === 0) return 0
+  return Math.round((faseItems.filter(i => i.completado).length / faseItems.length) * 100)
+}
+
+/** Porcentaje global de ítems completados en todo el plan 30-60-90. */
+export function calcularProgresoPlanGlobal(items: PlanItem[]): number {
+  if (items.length === 0) return 0
+  return Math.round((items.filter(i => i.completado).length / items.length) * 100)
 }
 
 export interface EstadoModulos {

@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
-import { calcularFaseActual, calcularDiaOnboarding } from '@/lib/progreso'
+import { calcularFaseActual, calcularDiaOnboarding, calcularProgresoPlanGlobal } from '@/lib/progreso'
 import type { PlanFase, PlanItem } from '@/types'
 
 // ─── Configuración de fases ────────────────────────────────────────────────────
@@ -297,15 +297,7 @@ export default function PlanPage() {
     }
   }
 
-  const { porcentaje } = useMemo(() => {
-    const total = items.filter(i => i.tipo === 'objetivo').length
-    const completados = items.filter(i => i.tipo === 'objetivo' && i.completado).length
-    return {
-      totalObjetivos: total,
-      objetivosCompletados: completados,
-      porcentaje: total > 0 ? (completados / total) * 100 : 0,
-    }
-  }, [items])
+  const porcentaje = useMemo(() => calcularProgresoPlanGlobal(items), [items])
 
   const itemsFase = useMemo(() => items.filter(i => i.fase === faseActiva), [items, faseActiva])
   const objetivos = useMemo(() => itemsFase.filter(i => i.tipo === 'objetivo'), [itemsFase])
