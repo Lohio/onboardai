@@ -243,13 +243,13 @@ export default function PlanPage() {
       }
 
       const { data: planData, error: planError } = await supabase
-        .from('plan_items')
+        .from('plan_30_60_90')
         .select('*')
         .eq('usuario_id', user.id)
         .order('orden', { ascending: true })
 
       if (planError) {
-        console.warn('[Plan] plan_items:', planError.message)
+        console.warn('[Plan] plan_30_60_90:', planError.message)
       } else {
         setItems((planData ?? []) as PlanItem[])
       }
@@ -268,33 +268,28 @@ export default function PlanPage() {
     setToggling(item.id)
 
     // Optimistic update
-    const nuevoEstado = !item.completado
     setItems(prev => prev.map(i =>
       i.id === item.id
-        ? { ...i, completado: nuevoEstado, completado_at: nuevoEstado ? new Date().toISOString() : undefined }
+        ? { ...i, completado: !i.completado, completado_at: !i.completado ? new Date().toISOString() : undefined }
         : i
     ))
 
-    try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('plan_items')
-        .update({
-          completado: nuevoEstado,
-          completado_at: nuevoEstado ? new Date().toISOString() : null,
-        })
-        .eq('id', item.id)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('plan_30_60_90')
+      .update({
+        completado: !item.completado,
+        completado_at: !item.completado ? new Date().toISOString() : null,
+      })
+      .eq('id', item.id)
 
-      if (error) throw error
-      toast.success(nuevoEstado ? '¡Objetivo completado!' : 'Objetivo pendiente')
-    } catch (err) {
-      console.error('Error actualizando objetivo:', err)
+    if (error) {
       // Rollback
       setItems(prev => prev.map(i => i.id === item.id ? item : i))
-      toast.error('No se pudo actualizar el objetivo')
-    } finally {
-      setToggling(null)
+      toast.error('Error al actualizar')
     }
+
+    setToggling(null)
   }
 
   const porcentaje = useMemo(() => calcularProgresoPlanGlobal(items), [items])
