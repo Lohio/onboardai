@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
+import { calcularFaseActual, calcularDiaOnboarding } from '@/lib/progreso'
 import type { PlanFase, PlanItem } from '@/types'
 
 // ─── Configuración de fases ────────────────────────────────────────────────────
@@ -59,12 +60,6 @@ const FASE_CONFIG: Record<PlanFase, {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-
-function faseDesdeDias(dias: number): PlanFase {
-  if (dias <= 30) return '30'
-  if (dias <= 60) return '60'
-  return '90'
-}
 
 function formatFecha(fechaStr?: string): string {
   if (!fechaStr) return ''
@@ -240,14 +235,11 @@ export default function PlanPage() {
 
       if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
-      // Calcular días de onboarding
+      // Calcular días de onboarding y fase actual
       if (perfil.fecha_ingreso) {
-        const ingreso = new Date(perfil.fecha_ingreso)
-        const hoy = new Date()
-        const diff = Math.floor((hoy.getTime() - ingreso.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        const dias = Math.max(1, Math.min(90, diff))
+        const dias = Math.min(90, calcularDiaOnboarding(perfil.fecha_ingreso))
         setDiasOnboarding(dias)
-        setFaseActiva(faseDesdeDias(dias))
+        setFaseActiva(calcularFaseActual(perfil.fecha_ingreso))
       }
 
       const { data: planData, error: planError } = await supabase
@@ -320,7 +312,7 @@ export default function PlanPage() {
   const checkins = useMemo(() => itemsFase.filter(i => i.tipo === 'checkin'), [itemsFase])
   const logros = useMemo(() => itemsFase.filter(i => i.tipo === 'logro'), [itemsFase])
 
-  const faseActual = faseDesdeDias(diasOnboarding)
+  const faseActual: PlanFase = diasOnboarding <= 30 ? '30' : diasOnboarding <= 60 ? '60' : '90'
   const cfg = FASE_CONFIG[faseActiva]
   const circumference = 2 * Math.PI * 26
 

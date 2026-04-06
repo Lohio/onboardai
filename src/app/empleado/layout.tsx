@@ -232,6 +232,16 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           >
             <span className="text-sm leading-none">📋</span> Mi progreso
           </Link>
+          <Link href="/empleado/plan"
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors border',
+              pathname.startsWith('/empleado/plan')
+                ? 'bg-violet-500/10 text-violet-300 border-violet-500/20'
+                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04] border-transparent'
+            )}
+          >
+            <span className="text-sm leading-none">🗺️</span> Plan 30-60-90
+          </Link>
         </nav>
 
         {/* User info */}

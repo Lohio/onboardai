@@ -1,9 +1,32 @@
 // ─────────────────────────────────────────────
-// Lógica centralizada de cálculo de progreso de módulos
+// Lógica centralizada de cálculo de progreso de módulos y plan 30-60-90
 // Usado por: layout del empleado, home del empleado, admin dashboard
 // ─────────────────────────────────────────────
 
-import type { ProgresoModulo } from '@/types'
+import type { ProgresoModulo, PlanFase } from '@/types'
+
+// ─── Plan 30-60-90 ────────────────────────────────────────────
+
+/**
+ * Devuelve la fase del plan (30/60/90) correspondiente a la fecha de ingreso.
+ */
+export function calcularFaseActual(fechaIngreso: string): PlanFase {
+  const dias = Math.floor(
+    (Date.now() - new Date(fechaIngreso).getTime()) / (1000 * 60 * 60 * 24)
+  )
+  if (dias <= 30) return '30'
+  if (dias <= 60) return '60'
+  return '90'
+}
+
+/**
+ * Devuelve el día de onboarding (1-based) a partir de la fecha de ingreso.
+ */
+export function calcularDiaOnboarding(fechaIngreso: string): number {
+  return Math.max(1, Math.floor(
+    (Date.now() - new Date(fechaIngreso).getTime()) / (1000 * 60 * 60 * 24)
+  ) + 1)
+}
 
 export interface EstadoModulos {
   M1: boolean
