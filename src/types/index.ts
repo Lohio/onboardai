@@ -167,3 +167,21 @@ export interface OrgNode {
   relacion: 'self' | 'manager' | 'buddy' | 'companero' | 'director'
   children: OrgNode[]
 }
+
+export type PlanFase = '30' | '60' | '90'
+export type PlanTipo = 'objetivo' | 'checkin' | 'logro'
+
+export interface PlanItem {
+  id: string
+  empresa_id: string
+  usuario_id: string
+  fase: PlanFase
+  tipo: PlanTipo
+  titulo: string
+  descripcion?: string
+  completado: boolean
+  completado_at?: string
+  fecha_target?: string
+  orden: number
+  created_at: string
+}
