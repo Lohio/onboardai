@@ -845,7 +845,6 @@ export default function CulturaPage() {
   })
   const [completando, setCompletando] = useState<BloqueKey | null>(null)
   const [hasError, setHasError] = useState(false)
-  const [m2Completado, setM2Completado] = useState(false)
   const [bloqueActivo, setBloqueActivo] = useState<BloqueKey | null>(null)
 
   const contentRefsObj = useRef<Partial<Record<BloqueKey, HTMLDivElement | null>>>({})
@@ -877,7 +876,7 @@ export default function CulturaPage() {
 
       if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
-      const [contenidosRes, progresoRes, rolRes] = await Promise.all([
+      const [contenidosRes, progresoRes] = await Promise.all([
         supabase
           .from('conocimiento')
           .select('*')
@@ -888,15 +887,7 @@ export default function CulturaPage() {
           .select('*')
           .eq('usuario_id', user.id)
           .eq('modulo', 'cultura'),
-        supabase
-          .from('progreso_modulos')
-          .select('id', { count: 'exact', head: true })
-          .eq('usuario_id', user.id)
-          .eq('modulo', 'rol')
-          .eq('completado', true),
       ])
-
-      setM2Completado((rolRes.count ?? 0) > 0)
 
       if (contenidosRes.data) {
         const mapa: Partial<Record<BloqueKey, ContenidoBloque>> = {}
@@ -1097,35 +1088,26 @@ export default function CulturaPage() {
                 <p className="text-sm text-white/45 mt-0.5">Historia, misión, valores y reglas de trabajo</p>
               </div>
             </div>
-            {/* Círculo de progreso o lock */}
-            {m2Completado ? (
-              <div className="flex-shrink-0 relative w-16 h-16">
-                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                  <motion.circle
-                    cx="32" cy="32" r="26"
-                    fill="none"
-                    stroke="#0D9488"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 26}`}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
-                </div>
+            {/* Círculo de progreso */}
+            <div className="flex-shrink-0 relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                <motion.circle
+                  cx="32" cy="32" r="26"
+                  fill="none"
+                  stroke="#0D9488"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
               </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/45 flex-shrink-0">
-                🔒 Bloqueado — completá M2 primero
-              </div>
-            )}
+            </div>
           </div>
-
-          {/* Contenido del módulo (bloqueado si M2 no completado) */}
-          <div className={m2Completado ? '' : 'opacity-50 pointer-events-none select-none'}>
 
           {/* Chips de progreso */}
           <div className="flex items-center gap-2 mb-8 flex-wrap">
@@ -1239,8 +1221,6 @@ export default function CulturaPage() {
               </AnimatePresence>
             </div>
           </div>
-
-          </div>{/* /lock wrapper */}
         </div>
       </div>
     </>
