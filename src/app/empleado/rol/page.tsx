@@ -8,7 +8,7 @@ import {
   Clock, Zap, AlertTriangle,
   MessageSquare, FileText, Code, Globe,
   Mail, Calendar, BarChart2,
-  ArrowRight, Sparkles, GitBranch,
+  ArrowRight, Sparkles, GitBranch, Scale,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -898,67 +898,43 @@ export default function RolPage() {
                       </div>
                     </div>
 
-                    {/* Mi puesto (conocimiento empresa) */}
-                    <section>
-                      <SectionHeader
-                        icon={<Briefcase className="w-4 h-4" />}
-                        title={t('rol.puesto.title')}
-                        subtitle={t('rol.puesto.subtitle')}
-                        iconBg="bg-amber-500/15"
-                        iconText="text-amber-400"
-                      />
-                      <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
-                        style={{ background: 'rgba(255,255,255,0.02)' }}>
-                        <div className="p-5">
-                          {puesto ? (
-                            <MarkdownContent text={puesto} />
-                          ) : (
-                            <div className="py-6 text-center">
-                              <Briefcase className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                              <p className="text-sm text-white/30 italic">
-                                Tu empresa aún no ha cargado la descripción del puesto.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        {autonomia.length > 0 && (
-                          <div className="border-t border-white/[0.06]">
-                            <div className="px-5 py-3">
-                              <span className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">
-                                Tabla de autonomía
-                              </span>
-                            </div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="border-b border-white/[0.05]">
-                                    <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
+                    {/* Autonomía de decisiones */}
+                    {autonomia.length > 0 && (
+                      <section>
+                        <SectionHeader
+                          icon={<Scale className="w-4 h-4" />}
+                          title="Autonomía de decisiones"
+                          subtitle="Qué podés decidir solo, qué consultar y qué escalar"
+                          iconBg="bg-teal-500/15"
+                          iconText="text-teal-400"
+                        />
+                        <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
+                          style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-white/[0.05]">
+                                  <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {autonomia.map((dec, i) => (
+                                  <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  {autonomia.map((dec, i) => (
-                                    <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
-                                      <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        )}
-                        {autonomia.length === 0 && puesto && (
-                          <div className="border-t border-white/[0.05] px-5 py-3">
-                            <p className="text-xs text-white/25 italic">Tabla de autonomía no configurada aún.</p>
-                          </div>
-                        )}
-                      </div>
-                    </section>
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
 

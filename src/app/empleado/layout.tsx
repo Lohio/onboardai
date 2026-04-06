@@ -23,6 +23,7 @@ const MODULOS = [
   { key: 'M1', href: '/empleado/perfil' },
   { key: 'M2', href: '/empleado/rol' },
   { key: 'M3', href: '/empleado/cultura' },
+  { key: 'plan', href: '/empleado/plan' },
 ] as const
 
 type ModuloKey = (typeof MODULOS)[number]['key']
@@ -32,6 +33,7 @@ const MODULO_LABELS: Record<string, string> = {
   M1: 'Perfil',
   M2: 'Rol',
   M3: 'Cultura',
+  plan: 'Plan 30-60-90',
 }
 
 // ─────────────────────────────────────────────
@@ -48,6 +50,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     M1: false,
     M2: false,
     M3: false,
+    plan: false,
   })
   const [empleadoNombre, setEmpleadoNombre] = useState('')
   const [empleadoPuesto, setEmpleadoPuesto] = useState('')
@@ -121,8 +124,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       }
     }
 
-    // Consultar progreso, cultura y accesos pendientes en paralelo
-    const [progresoRes, culturaCountRes, accesosRes] = await Promise.all([
+    // Consultar progreso, cultura, accesos y plan en paralelo
+    const [progresoRes, culturaCountRes, accesosRes, planRes] = await Promise.all([
       supabase
         .from('progreso_modulos')
         .select('modulo, bloque, completado')
@@ -139,6 +142,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         .select('*', { count: 'exact', head: true })
         .eq('usuario_id', user.id)
         .eq('estado', 'pendiente'),
+      supabase
+        .from('plan_30_60_90')
+        .select('completado')
+        .eq('usuario_id', user.id),
     ])
 
     const progresoRows = progresoRes.data ?? []
@@ -146,7 +153,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     const totalCultura = 5
 
     const estados = calcularEstadoModulos(progresoRows, totalCultura)
-    setModulos(estados)
+    const planRows = planRes.data ?? []
+    const planCompletado = planRows.length > 0 && planRows.every(r => r.completado)
+    setModulos({ ...estados, plan: planCompletado })
     setProgreso(calcularProgresoPct(estados))
 
     // Accesos pendientes para el agente
@@ -219,29 +228,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                   'w-[7px] h-[7px] rounded-full flex-shrink-0',
                   completado ? 'bg-[#0D9488]' : esActual ? 'bg-[#818CF8]' : 'bg-white/20'
                 )} />
-                {mod.key} — {MODULO_LABELS[mod.key]}
+                {mod.key === 'plan' ? MODULO_LABELS[mod.key] : `${mod.key} — ${MODULO_LABELS[mod.key]}`}
               </Link>
             )
           })}
-          {/* Quick access */}
-          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] px-2 pt-4 pb-2 mt-2">
-            Accesos rápidos
-          </p>
-          <Link href="/empleado"
-            className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-colors border border-transparent"
-          >
-            <span className="text-sm leading-none">📋</span> Mi progreso
-          </Link>
-          <Link href="/empleado/plan"
-            className={cn(
-              'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors border',
-              pathname.startsWith('/empleado/plan')
-                ? 'bg-violet-500/10 text-violet-300 border-violet-500/20'
-                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04] border-transparent'
-            )}
-          >
-            <span className="text-sm leading-none">🗺️</span> Plan 30-60-90
-          </Link>
         </nav>
 
         {/* User info */}
@@ -288,7 +278,29 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             </>
           )}
 
-          <div className="flex-1" />
+          {/* Módulos — centro */}
+          <div className="hidden md:flex items-center gap-1.5 flex-1 justify-center">
+            {MODULOS.map(mod => {
+              const completado = modulos[mod.key]
+              const esActual = pathname.startsWith(mod.href)
+              return (
+                <Link key={mod.key} href={mod.href}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-150 border',
+                    esActual
+                      ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
+                      : 'text-white/30 hover:text-white/60 border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]'
+                  )}
+                >
+                  <span className={cn(
+                    'w-[5px] h-[5px] rounded-full flex-shrink-0',
+                    completado ? 'bg-[#0D9488]' : esActual ? 'bg-[#818CF8]' : 'bg-white/20'
+                  )} />
+                  {mod.key === 'plan' ? '30-60-90' : mod.key}
+                </Link>
+              )
+            })}
+          </div>
 
           {/* Barra de progreso global — DERECHA */}
           <div className="flex items-center gap-2 flex-shrink-0">
