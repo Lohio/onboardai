@@ -705,6 +705,142 @@ export default function PerfilPage() {
                 </Card>
               </motion.section>
 
+              {/* Bloque F: Credenciales */}
+              {(perfil.password_corporativo || perfil.password_bitlocker) && (
+                <motion.section variants={blockVariants}>
+                  <Card>
+                    <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                      Credenciales
+                    </h2>
+                    <div className="space-y-3">
+                      {perfil.password_corporativo && (
+                        <div className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0">
+                          <div className="w-7 h-7 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                            <KeyRound className="w-3.5 h-3.5 text-[#38BDF8]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
+                            <p className="text-sm font-mono text-white/70 truncate">
+                              {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
+                            </p>
+                          </div>
+                          <button onClick={() => setShowPassCorp(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                            {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      )}
+                      {perfil.password_bitlocker && (
+                        <div className="flex items-center gap-3 py-2.5">
+                          <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
+                            <p className="text-sm font-mono text-white/70 truncate">
+                              {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
+                            </p>
+                          </div>
+                          <button onClick={() => setShowPassBitlocker(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                            {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </motion.section>
+              )}
+
+              {/* Bloque E: Mis accesos */}
+              <motion.section variants={blockVariants}>
+                <Card>
+                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                    Mis accesos
+                  </h2>
+
+                  {accesosRlsBlock ? (
+                    <p className="text-sm text-amber-400/60 italic py-2">
+                      Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
+                    </p>
+                  ) : accesos.length === 0 ? (
+                    <p className="text-sm text-white/30 italic py-2">
+                      Tus accesos aparecerán aquí cuando el admin los configure.
+                    </p>
+                  ) : (
+                    <motion.div
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="show"
+                      className="space-y-0"
+                    >
+                      {accesos.map(acceso => (
+                        <motion.div
+                          key={acceso.id}
+                          variants={itemVariants}
+                          className="py-2.5 border-b border-white/[0.04] last:border-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
+                              <ToolIcon name={acceso.herramienta} className="text-white/50" />
+                            </div>
+
+                            <span className="flex-1 text-sm text-white/70 truncate">
+                              {acceso.herramienta}
+                            </span>
+
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {acceso.estado === 'activo' && (
+                                <>
+                                  <Badge variant="success">Activo</Badge>
+                                  {acceso.url && (
+                                    <a
+                                      href={acceso.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-white/25 hover:text-teal-400 transition-colors duration-150"
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </>
+                              )}
+                              {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
+                              {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
+                            </div>
+                          </div>
+
+                          {(acceso.usuario_acceso || acceso.password_acceso) && (
+                            <div className="mt-2 ml-10 space-y-1">
+                              {acceso.usuario_acceso && (
+                                <p className="text-xs text-white/40">
+                                  <span className="text-white/25">Usuario: </span>
+                                  {acceso.usuario_acceso}
+                                </p>
+                              )}
+                              {acceso.password_acceso && (
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-white/40">
+                                    <span className="text-white/25">Pass: </span>
+                                    <span className="font-mono">
+                                      {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
+                                    </span>
+                                  </p>
+                                  <button
+                                    onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
+                                    className="text-white/20 hover:text-white/50 transition-colors"
+                                  >
+                                    {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </Card>
+              </motion.section>
+
               {/* Bloque D: Contactos clave */}
               <motion.section variants={blockVariants}>
                 <Card>
@@ -779,147 +915,6 @@ export default function PerfilPage() {
 
           </div>{/* /Row 2 (now first) */}
 
-          {/* ── Row 1 (now second): Accesos + Credenciales ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* ── Bloque E: Mis accesos ── */}
-          <motion.section variants={blockVariants}>
-            <Card>
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                Mis accesos
-              </h2>
-
-              {accesosRlsBlock ? (
-                <p className="text-sm text-amber-400/60 italic py-2">
-                  Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
-                </p>
-              ) : accesos.length === 0 ? (
-                <p className="text-sm text-white/30 italic py-2">
-                  Tus accesos aparecerán aquí cuando el admin los configure.
-                </p>
-              ) : (
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-0"
-                >
-                  {accesos.map(acceso => (
-                    <motion.div
-                      key={acceso.id}
-                      variants={itemVariants}
-                      className="py-2.5 border-b border-white/[0.04] last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
-                          <ToolIcon name={acceso.herramienta} className="text-white/50" />
-                        </div>
-
-                        <span className="flex-1 text-sm text-white/70 truncate">
-                          {acceso.herramienta}
-                        </span>
-
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {acceso.estado === 'activo' && (
-                            <>
-                              <Badge variant="success">Activo</Badge>
-                              {acceso.url && (
-                                <a
-                                  href={acceso.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-white/25 hover:text-teal-400 transition-colors duration-150"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
-                            </>
-                          )}
-                          {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
-                          {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
-                        </div>
-                      </div>
-
-                      {/* Usuario y contraseña del acceso */}
-                      {(acceso.usuario_acceso || acceso.password_acceso) && (
-                        <div className="mt-2 ml-10 space-y-1">
-                          {acceso.usuario_acceso && (
-                            <p className="text-xs text-white/40">
-                              <span className="text-white/25">Usuario: </span>
-                              {acceso.usuario_acceso}
-                            </p>
-                          )}
-                          {acceso.password_acceso && (
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs text-white/40">
-                                <span className="text-white/25">Pass: </span>
-                                <span className="font-mono">
-                                  {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
-                                </span>
-                              </p>
-                              <button
-                                onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
-                                className="text-white/20 hover:text-white/50 transition-colors"
-                              >
-                                {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </Card>
-          </motion.section>
-
-          {/* ── Bloque F: Credenciales ── */}
-          {(perfil.password_corporativo || perfil.password_bitlocker) && (
-            <motion.section variants={blockVariants}>
-              <Card>
-                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                  Credenciales
-                </h2>
-                <div className="space-y-3">
-                  {perfil.password_corporativo && (
-                    <div className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0">
-                      <div className="w-7 h-7 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
-                        <KeyRound className="w-3.5 h-3.5 text-[#38BDF8]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
-                        <p className="text-sm font-mono text-white/70 truncate">
-                          {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
-                        </p>
-                      </div>
-                      <button onClick={() => setShowPassCorp(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
-                        {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  )}
-                  {perfil.password_bitlocker && (
-                    <div className="flex items-center gap-3 py-2.5">
-                      <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
-                        <p className="text-sm font-mono text-white/70 truncate">
-                          {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
-                        </p>
-                      </div>
-                      <button onClick={() => setShowPassBitlocker(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
-                        {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.section>
-          )}
-
-          </div>{/* /Row 1 (now second) */}
 
           {/* ── Bloque C: Mi equipo ── */}
           {equipo.length > 0 && (
