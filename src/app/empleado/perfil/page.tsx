@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera, Mail, ExternalLink, Copy, Check,
   MessageSquare, FileText, Code, Globe,
-  Calendar, User, BookOpen, Briefcase, KeyRound, ShieldAlert, Eye, EyeOff,
+  Calendar, User, Users, BookOpen, Briefcase, KeyRound, ShieldAlert, Eye, EyeOff,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -881,11 +881,17 @@ export default function PerfilPage() {
 
               {/* Contactos Claves */}
               <motion.section variants={blockVariants}>
-                <Card>
-                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                    Contactos Claves
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3">
+                <div
+                  className="rounded-2xl p-4"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="w-3.5 h-3.5 text-white/30" />
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                      Contactos Claves
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     <ContactoCard
                       tipo="manager"
                       nombre={manager?.nombre}
@@ -911,7 +917,7 @@ export default function PerfilPage() {
                       herramienta={herramientaContacto}
                     />
                   </div>
-                </Card>
+                </div>
               </motion.section>
             </div>{/* /columna derecha */}
 
