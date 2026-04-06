@@ -24,6 +24,16 @@ import type {
 } from '@/types'
 
 // ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function modalidadVariant(m: string): 'info' | 'default' | 'success' {
+  if (m === 'presencial') return 'info'
+  if (m === 'remoto') return 'success'
+  return 'default'
+}
+
+// ─────────────────────────────────────────────
 // Scroll progress bar (sticky top)
 // ─────────────────────────────────────────────
 
@@ -565,6 +575,8 @@ export default function RolPage() {
   // Datos por empleado (M3 dinámico)
   const [rolResponsabilidades, setRolResponsabilidades] = useState<string[]>([])
   const [rolKpis, setRolKpis] = useState<string[]>([])
+  const [modalidadEmpleado, setModalidadEmpleado] = useState<string>('')
+  const [managerNombre, setManagerNombre] = useState<string>('')
   const [rolHerramientasEmpleado, setRolHerramientasEmpleado] = useState<Array<{ nombre: string; uso: string }>>([])
   const [rolAutonomiaEmpleado, setRolAutonomiaEmpleado] = useState<string>('')
   const [nombreEmpleado, setNombreEmpleado] = useState<string>('')
@@ -589,7 +601,7 @@ export default function RolPage() {
 
       const { data: usuario, error: uErr } = await supabase
         .from('usuarios')
-        .select('empresa_id, nombre, puesto, area, rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia')
+        .select('empresa_id, nombre, puesto, area, modalidad, rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia')
         .eq('id', user.id)
         .single()
       if (uErr || !usuario) throw new Error(uErr?.message ?? 'Usuario no encontrado')
@@ -604,13 +616,15 @@ export default function RolPage() {
       setRolKpis((usuario.rol_kpis as string[] | null) ?? [])
       setRolHerramientasEmpleado((usuario.rol_herramientas as Array<{ nombre: string; uso: string }> | null) ?? [])
       setRolAutonomiaEmpleado((usuario.rol_autonomia as string | null) ?? '')
+      setModalidadEmpleado((usuario.modalidad as string | null) ?? '')
 
-      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes] = await Promise.all([
+      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes, managerRes] = await Promise.all([
         supabase.from('conocimiento').select('bloque, contenido').eq('empresa_id', eid).eq('modulo', 'rol'),
         supabase.from('herramientas_rol').select('*').eq('empresa_id', eid).order('orden'),
         supabase.from('tareas_onboarding').select('*').eq('empresa_id', eid).eq('usuario_id', user.id).order('semana').order('orden'),
         supabase.from('objetivos_rol').select('*').eq('empresa_id', eid).order('semana'),
         supabase.from('conocimiento').select('contenido').eq('empresa_id', eid).eq('modulo', 'organigrama').eq('bloque', 'descripcion').maybeSingle(),
+        supabase.from('equipo_relaciones').select('miembro:usuarios!equipo_relaciones_miembro_id_fkey(nombre)').eq('empleado_id', user.id).eq('relacion', 'manager').maybeSingle(),
       ])
 
       if (conocimientoRes.error) console.warn('[M3] conocimiento:', conocimientoRes.error.message)
@@ -619,6 +633,8 @@ export default function RolPage() {
       if (objetivosRes.error)    console.warn('[M3] objetivos_rol:', objetivosRes.error.message)
       if (orgRes.error)          console.warn('[M3] organigrama:', orgRes.error.message)
       setOrgDescripcion((orgRes.data?.contenido as string | null) ?? '')
+      const mgr = managerRes.data?.miembro as unknown as { nombre: string } | null
+      setManagerNombre(mgr?.nombre ?? '')
 
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')
@@ -777,84 +793,92 @@ export default function RolPage() {
                 {/* ── Tab: Mi rol ── */}
                 {activeTab === 'rol' && (
                   <>
-                    {/* Descripción del empleado */}
-                    {(() => {
-                      const tieneRol = rolResponsabilidades.length > 0 || rolKpis.length > 0 || rolHerramientasEmpleado.length > 0 || rolAutonomiaEmpleado
-                      return (
-                        <section>
-                          <SectionHeader
-                            icon={<Briefcase className="w-4 h-4" />}
-                            title="Descripción de mi rol"
-                            subtitle={`${puestoEmpleado || 'Sin definir'} · ${areaEmpleado || 'Sin área'}`}
-                            iconBg="bg-amber-500/15"
-                            iconText="text-amber-400"
-                          />
-                          {!tieneRol ? (
-                            <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 flex items-start gap-3">
-                              <AlertTriangle className="w-5 h-5 text-amber-400/60 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-sm text-white/60">Tu administrador aún no completó la descripción de tu rol.</p>
-                                <p className="text-xs text-white/35 mt-0.5">Consultá con tu manager o RRHH para más información.</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="rounded-2xl border border-white/[0.07] overflow-hidden divide-y divide-white/[0.05]"
-                              style={{ background: 'rgba(255,255,255,0.02)' }}>
-                              {rolAutonomiaEmpleado && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2">Nivel de autonomía</p>
-                                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{rolAutonomiaEmpleado}</p>
-                                </div>
-                              )}
-                              {rolResponsabilidades.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Responsabilidades</p>
-                                  <ul className="space-y-2">
-                                    {rolResponsabilidades.map((r, i) => (
-                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-400/50 flex-shrink-0" />
-                                        {r}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {rolKpis.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">KPIs / Métricas de éxito</p>
-                                  <ul className="space-y-2">
-                                    {rolKpis.map((k, i) => (
-                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-teal-400/50 flex-shrink-0" />
-                                        {k}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {rolHerramientasEmpleado.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Herramientas del rol</p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {rolHerramientasEmpleado.map((h, i) => (
-                                      <div key={i} className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                        <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
-                                          <Wrench className="w-3.5 h-3.5 text-sky-400" />
-                                        </div>
-                                        <div>
-                                          <p className="text-sm font-medium text-white/85">{h.nombre}</p>
-                                          {h.uso && <p className="text-xs text-white/40 mt-0.5">{h.uso}</p>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                    {/* Descripción del rol — 2 columnas */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Columna izquierda: datos del puesto */}
+                      <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                        <SectionHeader
+                          icon={<Briefcase className="w-4 h-4" />}
+                          title="Descripción de mi rol"
+                          iconBg="bg-amber-500/15"
+                          iconText="text-amber-400"
+                        />
+
+                        {!puesto && (
+                          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 mb-4">
+                            <p className="text-xs text-amber-300/80">
+                              Tu admin aún no completó la descripción del rol.
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="space-y-3 mt-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Puesto</span>
+                            <span className="text-sm text-white font-medium">{puestoEmpleado || '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Área</span>
+                            <span className="text-sm text-white font-medium">{areaEmpleado || '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Reporta a</span>
+                            <span className="text-sm text-white font-medium">{managerNombre || '—'}</span>
+                          </div>
+                          {modalidadEmpleado && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-white/40 w-20">Modalidad</span>
+                              <Badge variant={modalidadVariant(modalidadEmpleado)}>{modalidadEmpleado}</Badge>
                             </div>
                           )}
-                        </section>
-                      )
-                    })()}
+                        </div>
+                      </div>
+
+                      {/* Columna derecha: responsabilidades + métricas */}
+                      <div className="space-y-4">
+                        {/* Responsabilidades */}
+                        <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                          <h3 className="text-[11px] font-medium text-amber-400/60 uppercase tracking-widest mb-3">
+                            Responsabilidades
+                          </h3>
+                          {rolResponsabilidades.length > 0 ? (
+                            <div className="space-y-2.5">
+                              {rolResponsabilidades.map((r, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                  <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    {i + 1}
+                                  </span>
+                                  <span className="text-sm text-white/70">{r}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-white/25 italic">Próximamente configuradas por tu admin</p>
+                          )}
+                        </div>
+
+                        {/* Métricas de éxito */}
+                        <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                          <h3 className="text-[11px] font-medium text-blue-400/60 uppercase tracking-widest mb-3">
+                            Métricas de éxito
+                          </h3>
+                          {rolKpis.length > 0 ? (
+                            <div className="space-y-2.5">
+                              {rolKpis.map((k, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                  <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    {i + 1}
+                                  </span>
+                                  <span className="text-sm text-white/70">{k}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-white/25 italic">Próximamente configuradas por tu manager</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Mi puesto (conocimiento empresa) */}
                     <section>
