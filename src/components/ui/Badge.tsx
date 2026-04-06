@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { ReactNode } from 'react'
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info'
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'teal' | 'amber' | 'indigo'
 
 interface BadgeProps {
   variant?: BadgeVariant
@@ -19,6 +19,9 @@ const variantStyles: Record<BadgeVariant, string> = {
   warning: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
   error:   'bg-red-500/15 text-red-300 border-red-500/25',
   info:    'bg-[#0EA5E9]/10 text-[#7DD3FC] border-[#0EA5E9]/20',
+  teal:    'bg-teal-500/15 text-teal-300 border-teal-500/25',
+  amber:   'bg-amber-500/15 text-amber-300 border-amber-500/25',
+  indigo:  'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
 }
 
 export function Badge({ variant = 'default', children, className }: BadgeProps) {
