@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn, getInitials, formatFecha, diasDesde } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
+import { ProgresoPanel } from '@/components/empleado/ProgresoPanel'
 import { useLanguage } from '@/components/LanguageProvider'
 import ProductTour from '@/components/empleado/ProductTour'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
@@ -278,6 +279,7 @@ export default function PerfilPage() {
     M2: false,
     M3: false,
   })
+  const [encuestasPulso, setEncuestasPulso] = useState<{ dia: 7|30|60, respondida: boolean }[]>([])
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -408,6 +410,19 @@ export default function PerfilPage() {
       } catch (err) {
         console.warn('[Perfil] progreso_modulos:', err)
       }
+
+      // 7. Encuestas de pulso (no bloqueante)
+      const { data: encuestasData } = await supabase
+        .from('encuestas_pulso')
+        .select('dia_onboarding, respondida')
+        .eq('usuario_id', user.id)
+
+      setEncuestasPulso(
+        (encuestasData ?? []).map(e => ({
+          dia: e.dia_onboarding as 7 | 30 | 60,
+          respondida: e.respondida ?? false,
+        }))
+      )
     } catch (err) {
       console.error('Error cargando perfil:', err)
       toast.error('Error al cargar el perfil')
@@ -496,6 +511,7 @@ export default function PerfilPage() {
   // Métricas de progreso global
   const modulosCompletados = Object.values(modulosProgreso).filter(Boolean).length
   const progresoTotal      = Math.round((modulosCompletados / 3) * 100)
+  const diasOnboarding     = diasDesde(perfil?.fecha_ingreso) ?? 1
 
   // ── Render: loading ──
   if (loading) {
@@ -573,149 +589,7 @@ export default function PerfilPage() {
           className="space-y-4"
         >
 
-          {/* ── Row 1: Accesos + Credenciales ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* ── Bloque E: Mis accesos ── */}
-          <motion.section variants={blockVariants}>
-            <Card>
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                Mis accesos
-              </h2>
-
-              {accesosRlsBlock ? (
-                <p className="text-sm text-amber-400/60 italic py-2">
-                  Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
-                </p>
-              ) : accesos.length === 0 ? (
-                <p className="text-sm text-white/30 italic py-2">
-                  Tus accesos aparecerán aquí cuando el admin los configure.
-                </p>
-              ) : (
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-0"
-                >
-                  {accesos.map(acceso => (
-                    <motion.div
-                      key={acceso.id}
-                      variants={itemVariants}
-                      className="py-2.5 border-b border-white/[0.04] last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
-                          <ToolIcon name={acceso.herramienta} className="text-white/50" />
-                        </div>
-
-                        <span className="flex-1 text-sm text-white/70 truncate">
-                          {acceso.herramienta}
-                        </span>
-
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {acceso.estado === 'activo' && (
-                            <>
-                              <Badge variant="success">Activo</Badge>
-                              {acceso.url && (
-                                <a
-                                  href={acceso.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-white/25 hover:text-teal-400 transition-colors duration-150"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
-                            </>
-                          )}
-                          {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
-                          {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
-                        </div>
-                      </div>
-
-                      {/* Usuario y contraseña del acceso */}
-                      {(acceso.usuario_acceso || acceso.password_acceso) && (
-                        <div className="mt-2 ml-10 space-y-1">
-                          {acceso.usuario_acceso && (
-                            <p className="text-xs text-white/40">
-                              <span className="text-white/25">Usuario: </span>
-                              {acceso.usuario_acceso}
-                            </p>
-                          )}
-                          {acceso.password_acceso && (
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs text-white/40">
-                                <span className="text-white/25">Pass: </span>
-                                <span className="font-mono">
-                                  {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
-                                </span>
-                              </p>
-                              <button
-                                onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
-                                className="text-white/20 hover:text-white/50 transition-colors"
-                              >
-                                {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </Card>
-          </motion.section>
-
-          {/* ── Bloque F: Credenciales ── */}
-          {(perfil.password_corporativo || perfil.password_bitlocker) && (
-            <motion.section variants={blockVariants}>
-              <Card>
-                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                  Credenciales
-                </h2>
-                <div className="space-y-3">
-                  {perfil.password_corporativo && (
-                    <div className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0">
-                      <div className="w-7 h-7 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
-                        <KeyRound className="w-3.5 h-3.5 text-[#38BDF8]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
-                        <p className="text-sm font-mono text-white/70 truncate">
-                          {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
-                        </p>
-                      </div>
-                      <button onClick={() => setShowPassCorp(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
-                        {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  )}
-                  {perfil.password_bitlocker && (
-                    <div className="flex items-center gap-3 py-2.5">
-                      <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
-                        <p className="text-sm font-mono text-white/70 truncate">
-                          {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
-                        </p>
-                      </div>
-                      <button onClick={() => setShowPassBitlocker(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
-                        {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.section>
-          )}
-
-          </div>{/* /Row 1 */}
-
-          {/* ── Row 2: (Hero + Contactos) | Tracker ── */}
+          {/* ── Row 2 (now first): (Hero + Contactos) | Tracker ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* Columna izquierda: Hero gradient + Contactos */}
@@ -868,77 +742,184 @@ export default function PerfilPage() {
 
             </div>{/* /columna izquierda */}
 
-            {/* Columna derecha: Onboarding tracker — vertical stepper */}
+            {/* Columna derecha: ProgresoPanel */}
             <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
-              <Card>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-                    Mi onboarding
-                  </h2>
-                  <span className="text-xs text-white/40 font-mono tabular-nums">
-                    {modulosCompletados} / 3 módulos
-                  </span>
-                </div>
+              <ProgresoPanel
+                modulos={[
+                  {
+                    key: 'M1', label: 'Perfil',
+                    href: '/empleado/perfil',
+                    completado: modulosProgreso['M1'] ?? false,
+                    activo: true,
+                    accent: '#818CF8',
+                    accentBg: 'rgba(59,79,216,0.10)',
+                  },
+                  {
+                    key: 'M2', label: 'Rol',
+                    href: '/empleado/rol',
+                    completado: modulosProgreso['M2'] ?? false,
+                    activo: !(modulosProgreso['M1'] === false),
+                    accent: '#FCD34D',
+                    accentBg: 'rgba(245,158,11,0.10)',
+                  },
+                  {
+                    key: 'M3', label: 'Cultura',
+                    href: '/empleado/cultura',
+                    completado: modulosProgreso['M3'] ?? false,
+                    activo: modulosProgreso['M2'] ?? false,
+                    accent: '#2DD4BF',
+                    accentBg: 'rgba(13,148,136,0.10)',
+                  },
+                ]}
+                progresoTotal={progresoTotal}
+                encuestas={encuestasPulso}
+                diasOnboarding={diasOnboarding}
+              />
+            </motion.section>
 
-                <ProgressBar value={progresoTotal} showPercentage={false} />
+          </div>{/* /Row 2 (now first) */}
 
-                {/* Vertical stepper */}
-                <div className="mt-5">
-                  {MODULO_INFO.map(({ key, label }, idx) => {
-                    const completado = modulosProgreso[key]
-                    const activo     = moduloActivo === key
-                    return (
-                      <div key={key} className="relative flex items-start gap-3 pb-4">
-                        {/* Connecting line */}
-                        {idx < MODULO_INFO.length - 1 && (
-                          <div className="absolute left-[11px] top-7 w-px h-[calc(100%-4px)] bg-white/[0.08]" />
-                        )}
-                        {/* Step dot */}
-                        <div className={cn(
-                          'w-6 h-6 rounded-full flex items-center justify-center',
-                          'text-[11px] font-bold flex-shrink-0 relative z-10 mt-0.5',
-                          completado
-                            ? 'bg-teal-500/20 text-[#2DD4BF] border-[1.5px] border-[#0D9488]'
-                            : activo
-                            ? 'bg-[#3B4FD8]/20 text-[#818CF8] border-[1.5px] border-[#3B4FD8]'
-                            : 'bg-white/[0.04] text-white/25 border-[1.5px] border-white/[0.1]'
-                        )}>
-                          {completado ? '✓' : idx + 1}
+          {/* ── Row 1 (now second): Accesos + Credenciales ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+          {/* ── Bloque E: Mis accesos ── */}
+          <motion.section variants={blockVariants}>
+            <Card>
+              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                Mis accesos
+              </h2>
+
+              {accesosRlsBlock ? (
+                <p className="text-sm text-amber-400/60 italic py-2">
+                  Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
+                </p>
+              ) : accesos.length === 0 ? (
+                <p className="text-sm text-white/30 italic py-2">
+                  Tus accesos aparecerán aquí cuando el admin los configure.
+                </p>
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-0"
+                >
+                  {accesos.map(acceso => (
+                    <motion.div
+                      key={acceso.id}
+                      variants={itemVariants}
+                      className="py-2.5 border-b border-white/[0.04] last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
+                          <ToolIcon name={acceso.herramienta} className="text-white/50" />
                         </div>
-                        {/* Label */}
-                        <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            'text-[13px] font-medium leading-tight',
-                            completado ? 'text-white/90' : activo ? 'text-[#818CF8]' : 'text-white/30'
-                          )}>
-                            {key} — {label}
-                          </p>
-                          <p className="text-[11px] text-white/30 mt-0.5">
-                            {completado ? 'Completado' : activo ? 'En curso' : 'Bloqueado'}
-                          </p>
+
+                        <span className="flex-1 text-sm text-white/70 truncate">
+                          {acceso.herramienta}
+                        </span>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {acceso.estado === 'activo' && (
+                            <>
+                              <Badge variant="success">Activo</Badge>
+                              {acceso.url && (
+                                <a
+                                  href={acceso.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-white/25 hover:text-teal-400 transition-colors duration-150"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </>
+                          )}
+                          {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
+                          {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
 
-                {/* Progress summary */}
-                <div className="border-t border-white/[0.06] pt-3 mt-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[12px] text-white/35">Progreso total</span>
-                    <span className="text-[13px] font-bold text-[#818CF8]">{progresoTotal}%</span>
-                  </div>
-                  <div className="h-[5px] bg-white/[0.06] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${progresoTotal}%`, background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
-                    />
-                  </div>
+                      {/* Usuario y contraseña del acceso */}
+                      {(acceso.usuario_acceso || acceso.password_acceso) && (
+                        <div className="mt-2 ml-10 space-y-1">
+                          {acceso.usuario_acceso && (
+                            <p className="text-xs text-white/40">
+                              <span className="text-white/25">Usuario: </span>
+                              {acceso.usuario_acceso}
+                            </p>
+                          )}
+                          {acceso.password_acceso && (
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-white/40">
+                                <span className="text-white/25">Pass: </span>
+                                <span className="font-mono">
+                                  {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
+                                </span>
+                              </p>
+                              <button
+                                onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
+                                className="text-white/20 hover:text-white/50 transition-colors"
+                              >
+                                {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </Card>
+          </motion.section>
+
+          {/* ── Bloque F: Credenciales ── */}
+          {(perfil.password_corporativo || perfil.password_bitlocker) && (
+            <motion.section variants={blockVariants}>
+              <Card>
+                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                  Credenciales
+                </h2>
+                <div className="space-y-3">
+                  {perfil.password_corporativo && (
+                    <div className="flex items-center gap-3 py-2.5 border-b border-white/[0.04] last:border-0">
+                      <div className="w-7 h-7 rounded-md bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                        <KeyRound className="w-3.5 h-3.5 text-[#38BDF8]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/35 mb-0.5">Contraseña corporativa</p>
+                        <p className="text-sm font-mono text-white/70 truncate">
+                          {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
+                        </p>
+                      </div>
+                      <button onClick={() => setShowPassCorp(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                        {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  )}
+                  {perfil.password_bitlocker && (
+                    <div className="flex items-center gap-3 py-2.5">
+                      <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/35 mb-0.5">Clave BitLocker</p>
+                        <p className="text-sm font-mono text-white/70 truncate">
+                          {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
+                        </p>
+                      </div>
+                      <button onClick={() => setShowPassBitlocker(v => !v)} className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0">
+                        {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </Card>
             </motion.section>
+          )}
 
-          </div>{/* /Row 2 */}
+          </div>{/* /Row 1 (now second) */}
 
           {/* ── Bloque C: Mi equipo ── */}
           {equipo.length > 0 && (

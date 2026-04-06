@@ -702,14 +702,20 @@ export default function RolPage() {
           <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
             {/* ── Page header M2 ── */}
-            <div className="mod-m2-header flex items-center justify-between gap-6 mb-6">
+            <div
+              className="rounded-2xl mb-6 p-5 flex items-center justify-between gap-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.05) 100%)',
+                border: '1px solid rgba(245,158,11,0.22)',
+              }}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/20 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="w-5 h-5 text-[#FCD34D]" />
+                  <Briefcase className="w-5 h-5" style={{ color: '#FCD34D' }} />
                 </div>
                 <div>
-                  <p className="tag-m2 mb-1">Módulo 2</p>
-                  <h1 className="text-xl font-bold text-white leading-tight">Mi rol y herramientas</h1>
+                  <p className="tag-m2 mb-1" style={{ color: '#FCD34D' }}>MÓDULO 2</p>
+                  <h1 className="text-xl font-bold text-white">Mi rol y herramientas</h1>
                   <p className="text-sm text-white/45 mt-0.5">Conocé tu puesto, las herramientas y tus objetivos del mes</p>
                 </div>
               </div>
@@ -745,11 +751,10 @@ export default function RolPage() {
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-medium transition-all',
-                      activeTab === tab.key
-                        ? 'bg-[#F59E0B]/12 text-[#FCD34D] border border-[#F59E0B]/22 rounded-lg'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded-lg'
+                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-medium transition-all rounded-lg',
+                      activeTab !== tab.key && 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]',
                     )}
+                    style={activeTab === tab.key ? { background: 'rgba(245,158,11,0.12)', color: '#FCD34D', border: '1px solid rgba(245,158,11,0.22)' } : undefined}
                   >
                     {tab.icon}
                     <span className="hidden sm:inline">{tab.label}</span>

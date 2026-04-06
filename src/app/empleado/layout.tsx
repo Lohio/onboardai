@@ -42,6 +42,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const router = useRouter()
   const pathname = usePathname()
 
+  const [nombreEmpresa, setNombreEmpresa] = useState('')
   const [progreso, setProgreso] = useState(0)
   const [modulos, setModulos] = useState<EstadoModulos>({
     M1: false,
@@ -112,10 +113,11 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       if (usuarioData.empresa_id) {
         const { data: empresaData } = await supabase
           .from('empresas')
-          .select('plan')
+          .select('plan, nombre')
           .eq('id', usuarioData.empresa_id)
           .single()
         setPlanEmpresa(empresaData?.plan ?? 'trial')
+        setNombreEmpresa(empresaData?.nombre ?? '')
       }
     }
 
@@ -256,82 +258,34 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       {/* ── Header + Main (flex-col wrapper) ── */}
       <div className="flex-1 flex flex-col min-w-0">
       {/* ── Header de progreso (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#111110]/80 backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 h-12">
-          {/* Logo */}
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#0A1628]/90 backdrop-blur-xl h-12 relative">
+        <div className="flex items-center gap-3 px-4 h-full">
+
+          {/* Logo — IZQUIERDA */}
           <Link
             href="/empleado/perfil"
-            className="flex-shrink-0 hover:opacity-75 transition-opacity duration-150"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity flex-shrink-0"
           >
             <HeeroLogo size="sm" />
           </Link>
 
-          <div className="h-4 w-px bg-white/[0.07] hidden sm:block flex-shrink-0" />
-
-          {/* Indicadores de módulos */}
-          <div id="tour-navbar-modulos" className="flex items-center gap-0.5 flex-shrink-0">
-            {MODULOS.map((mod, idx) => {
-              const completado = modulos[mod.key]
-              const esActual = pathname.startsWith(mod.href)
-              const bloqueado = esTrial(planEmpresa) && idx === 2
-
-              if (bloqueado) {
-                return (
-                  <span
-                    key={mod.key}
-                    className="text-[11px] text-white/20 cursor-not-allowed px-2 min-h-[36px]
-                      flex items-center gap-1.5"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
-                    M{idx + 1}
-                    <span className="text-[9px] text-amber-500/60 ml-0.5">Pro</span>
-                  </span>
-                )
-              }
-
-              return (
-                <Link
-                  key={mod.key}
-                  href={mod.href}
-                  className={`flex items-center gap-1.5 px-2 min-h-[36px] rounded-md
-                    transition-colors duration-150 ${
-                      esActual
-                        ? 'bg-[#0EA5E9]/10'
-                        : 'hover:bg-white/[0.04]'
-                    }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-                      completado
-                        ? 'bg-[#22c55e]'
-                        : esActual
-                        ? 'bg-[#0EA5E9]'
-                        : 'bg-white/15'
-                    }`}
-                  />
-                  <span
-                    className={`text-[11px] font-medium ${
-                      esActual
-                        ? 'text-[#38BDF8]'
-                        : completado
-                        ? 'text-[#22c55e]/60'
-                        : 'text-white/30'
-                    }`}
-                  >
-                    M{idx + 1}
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
+          {nombreEmpresa && (
+            <>
+              <div className="h-4 w-px bg-white/10 flex-shrink-0" />
+              <span className="text-xs font-medium text-white/40 truncate max-w-[160px]">
+                {nombreEmpresa}
+              </span>
+            </>
+          )}
 
           <div className="flex-1" />
 
-          {/* Barra de progreso global */}
+          {/* Barra de progreso global — DERECHA */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-20 sm:w-28 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="hidden sm:block w-28 h-1 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#38BDF8]"
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
                 initial={{ width: '0%' }}
                 animate={{ width: `${progreso}%` }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -356,7 +310,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             >
               <span className="text-[#38BDF8] text-[11px] font-semibold">
                 {empleadoNombre
-                  ? empleadoNombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+                  ? empleadoNombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
                   : 'U'}
               </span>
             </button>
@@ -372,7 +326,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                     rounded-xl border border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
                     shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
-                  {/* Info del usuario */}
                   <div className="px-3 py-3 border-b border-white/[0.06]">
                     <p className="text-xs font-medium text-white/80 truncate">
                       {empleadoNombre || 'Empleado'}
@@ -381,8 +334,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                       {empleadoPuesto || 'Empleado'}
                     </p>
                   </div>
-
-                  {/* Cerrar sesión */}
                   <div className="p-1.5">
                     <button
                       onClick={() => { setMenuAbierto(false); handleLogout() }}
@@ -398,7 +349,16 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
               )}
             </AnimatePresence>
           </div>
+
         </div>
+        {/* Línea de progreso al fondo del header */}
+        <motion.div
+          className="absolute bottom-0 left-0 h-[2px]"
+          style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${progreso}%` }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        />
       </header>
 
       {/* Contenido de la página */}
