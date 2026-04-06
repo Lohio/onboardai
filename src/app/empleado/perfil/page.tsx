@@ -750,178 +750,181 @@ export default function PerfilPage() {
                 </motion.section>
               )}
 
-              {/* Bloque E: Mis accesos */}
-              <motion.section variants={blockVariants}>
-                <Card>
-                  <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                    Mis accesos
-                  </h2>
+            </div>{/* /columna izquierda: hero + sobre mí + credenciales */}
 
-                  {accesosRlsBlock ? (
-                    <p className="text-sm text-amber-400/60 italic py-2">
-                      Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
-                    </p>
-                  ) : accesos.length === 0 ? (
-                    <p className="text-sm text-white/30 italic py-2">
-                      Tus accesos aparecerán aquí cuando el admin los configure.
-                    </p>
-                  ) : (
-                    <motion.div
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="show"
-                      className="space-y-0"
-                    >
-                      {accesos.map(acceso => (
-                        <motion.div
-                          key={acceso.id}
-                          variants={itemVariants}
-                          className="py-2.5 border-b border-white/[0.04] last:border-0"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
-                              <ToolIcon name={acceso.herramienta} className="text-white/50" />
-                            </div>
+            {/* Columna derecha: ProgresoPanel */}
+            <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
+              <ProgresoPanel
+                modulos={[
+                  {
+                    key: 'M1', label: 'Perfil',
+                    href: '/empleado/perfil',
+                    completado: modulosProgreso['M1'] ?? false,
+                    activo: true,
+                    accent: '#818CF8',
+                    accentBg: 'rgba(59,79,216,0.10)',
+                  },
+                  {
+                    key: 'M2', label: 'Rol',
+                    href: '/empleado/rol',
+                    completado: modulosProgreso['M2'] ?? false,
+                    activo: !(modulosProgreso['M1'] === false),
+                    accent: '#FCD34D',
+                    accentBg: 'rgba(245,158,11,0.10)',
+                  },
+                  {
+                    key: 'M3', label: 'Cultura',
+                    href: '/empleado/cultura',
+                    completado: modulosProgreso['M3'] ?? false,
+                    activo: modulosProgreso['M2'] ?? false,
+                    accent: '#2DD4BF',
+                    accentBg: 'rgba(13,148,136,0.10)',
+                  },
+                ]}
+                progresoTotal={progresoTotal}
+                encuestas={encuestasPulso}
+                diasOnboarding={diasOnboarding}
+              />
+            </motion.section>
 
-                            <span className="flex-1 text-sm text-white/70 truncate">
-                              {acceso.herramienta}
-                            </span>
+          </div>{/* /fila 1: hero+credenciales | tracker */}
 
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {acceso.estado === 'activo' && (
-                                <>
-                                  <Badge variant="success">Activo</Badge>
-                                  {acceso.url && (
-                                    <a
-                                      href={acceso.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-white/25 hover:text-teal-400 transition-colors duration-150"
-                                    >
-                                      <ExternalLink className="w-3.5 h-3.5" />
-                                    </a>
-                                  )}
-                                </>
-                              )}
-                              {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
-                              {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
-                            </div>
+          {/* ── Fila 2: Mis Accesos | Contactos Claves ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+            {/* Mis accesos */}
+            <motion.section variants={blockVariants}>
+              <Card>
+                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+                  Mis accesos
+                </h2>
+
+                {accesosRlsBlock ? (
+                  <p className="text-sm text-amber-400/60 italic py-2">
+                    Sin permisos para ver accesos. Pedile al admin que configure los permisos de la tabla.
+                  </p>
+                ) : accesos.length === 0 ? (
+                  <p className="text-sm text-white/30 italic py-2">
+                    Tus accesos aparecerán aquí cuando el admin los configure.
+                  </p>
+                ) : (
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-0"
+                  >
+                    {accesos.map(acceso => (
+                      <motion.div
+                        key={acceso.id}
+                        variants={itemVariants}
+                        className="py-2.5 border-b border-white/[0.04] last:border-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
+                            <ToolIcon name={acceso.herramienta} className="text-white/50" />
                           </div>
 
-                          {(acceso.usuario_acceso || acceso.password_acceso) && (
-                            <div className="mt-2 ml-10 space-y-1">
-                              {acceso.usuario_acceso && (
-                                <p className="text-xs text-white/40">
-                                  <span className="text-white/25">Usuario: </span>
-                                  {acceso.usuario_acceso}
-                                </p>
-                              )}
-                              {acceso.password_acceso && (
-                                <div className="flex items-center gap-2">
-                                  <p className="text-xs text-white/40">
-                                    <span className="text-white/25">Pass: </span>
-                                    <span className="font-mono">
-                                      {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
-                                    </span>
-                                  </p>
-                                  <button
-                                    onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
-                                    className="text-white/20 hover:text-white/50 transition-colors"
+                          <span className="flex-1 text-sm text-white/70 truncate">
+                            {acceso.herramienta}
+                          </span>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {acceso.estado === 'activo' && (
+                              <>
+                                <Badge variant="success">Activo</Badge>
+                                {acceso.url && (
+                                  <a
+                                    href={acceso.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-white/25 hover:text-teal-400 transition-colors duration-150"
                                   >
-                                    {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  )}
-                </Card>
-              </motion.section>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </>
+                            )}
+                            {acceso.estado === 'pendiente' && <Badge variant="warning">En proceso</Badge>}
+                            {acceso.estado === 'sin_acceso' && <Badge variant="error">Sin acceso</Badge>}
+                          </div>
+                        </div>
 
-            </div>{/* /columna izquierda */}
+                        {(acceso.usuario_acceso || acceso.password_acceso) && (
+                          <div className="mt-2 ml-10 space-y-1">
+                            {acceso.usuario_acceso && (
+                              <p className="text-xs text-white/40">
+                                <span className="text-white/25">Usuario: </span>
+                                {acceso.usuario_acceso}
+                              </p>
+                            )}
+                            {acceso.password_acceso && (
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-white/40">
+                                  <span className="text-white/25">Pass: </span>
+                                  <span className="font-mono">
+                                    {showPassAcceso[acceso.id] ? acceso.password_acceso : '••••••••'}
+                                  </span>
+                                </p>
+                                <button
+                                  onClick={() => setShowPassAcceso(prev => ({ ...prev, [acceso.id]: !prev[acceso.id] }))}
+                                  className="text-white/20 hover:text-white/50 transition-colors"
+                                >
+                                  {showPassAcceso[acceso.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </Card>
+            </motion.section>
 
-            {/* Columna derecha: ProgresoPanel + Contactos Claves */}
-            <div className="space-y-4">
-              <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
-                <ProgresoPanel
-                  modulos={[
-                    {
-                      key: 'M1', label: 'Perfil',
-                      href: '/empleado/perfil',
-                      completado: modulosProgreso['M1'] ?? false,
-                      activo: true,
-                      accent: '#818CF8',
-                      accentBg: 'rgba(59,79,216,0.10)',
-                    },
-                    {
-                      key: 'M2', label: 'Rol',
-                      href: '/empleado/rol',
-                      completado: modulosProgreso['M2'] ?? false,
-                      activo: !(modulosProgreso['M1'] === false),
-                      accent: '#FCD34D',
-                      accentBg: 'rgba(245,158,11,0.10)',
-                    },
-                    {
-                      key: 'M3', label: 'Cultura',
-                      href: '/empleado/cultura',
-                      completado: modulosProgreso['M3'] ?? false,
-                      activo: modulosProgreso['M2'] ?? false,
-                      accent: '#2DD4BF',
-                      accentBg: 'rgba(13,148,136,0.10)',
-                    },
-                  ]}
-                  progresoTotal={progresoTotal}
-                  encuestas={encuestasPulso}
-                  diasOnboarding={diasOnboarding}
-                />
-              </motion.section>
-
-              {/* Contactos Claves */}
-              <motion.section variants={blockVariants}>
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-3.5 h-3.5 text-white/30" />
-                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                      Contactos Claves
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <ContactoCard
-                      tipo="manager"
-                      nombre={manager?.nombre}
-                      email={manager?.email}
-                      herramienta={herramientaContacto}
-                    />
-                    <ContactoCard
-                      tipo="buddy"
-                      nombre={buddy?.nombre}
-                      email={buddy?.email}
-                      herramienta={herramientaContacto}
-                    />
-                    <ContactoCard
-                      tipo="it"
-                      nombre={perfil.contacto_it_nombre}
-                      email={perfil.contacto_it_email}
-                      herramienta={herramientaContacto}
-                    />
-                    <ContactoCard
-                      tipo="rrhh"
-                      nombre={perfil.contacto_rrhh_nombre}
-                      email={perfil.contacto_rrhh_email}
-                      herramienta={herramientaContacto}
-                    />
-                  </div>
+            {/* Contactos Claves */}
+            <motion.section variants={blockVariants}>
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="w-3.5 h-3.5 text-white/30" />
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                    Contactos Claves
+                  </span>
                 </div>
-              </motion.section>
-            </div>{/* /columna derecha */}
+                <div className="grid grid-cols-2 gap-2">
+                  <ContactoCard
+                    tipo="manager"
+                    nombre={manager?.nombre}
+                    email={manager?.email}
+                    herramienta={herramientaContacto}
+                  />
+                  <ContactoCard
+                    tipo="buddy"
+                    nombre={buddy?.nombre}
+                    email={buddy?.email}
+                    herramienta={herramientaContacto}
+                  />
+                  <ContactoCard
+                    tipo="it"
+                    nombre={perfil.contacto_it_nombre}
+                    email={perfil.contacto_it_email}
+                    herramienta={herramientaContacto}
+                  />
+                  <ContactoCard
+                    tipo="rrhh"
+                    nombre={perfil.contacto_rrhh_nombre}
+                    email={perfil.contacto_rrhh_email}
+                    herramienta={herramientaContacto}
+                  />
+                </div>
+              </div>
+            </motion.section>
 
-          </div>{/* /Row 2 (now first) */}
+          </div>{/* /fila 2: accesos | contactos */}
 
 
           {/* ── Bloque C: Mi equipo ── */}
