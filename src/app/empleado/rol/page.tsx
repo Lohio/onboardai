@@ -818,7 +818,8 @@ export default function RolPage() {
 
                         {!puesto && (
                           <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 mb-4">
-                            <p className="text-xs text-amber-300/80">
+                            <p className="text-xs text-amber-300/80 flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                               Tu admin aún no completó la descripción del rol.
                             </p>
                           </div>
