@@ -841,13 +841,51 @@ export default function PerfilPage() {
                 </Card>
               </motion.section>
 
-              {/* Bloque D: Contactos clave */}
+            </div>{/* /columna izquierda */}
+
+            {/* Columna derecha: ProgresoPanel + Contactos Claves */}
+            <div className="space-y-4">
+              <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
+                <ProgresoPanel
+                  modulos={[
+                    {
+                      key: 'M1', label: 'Perfil',
+                      href: '/empleado/perfil',
+                      completado: modulosProgreso['M1'] ?? false,
+                      activo: true,
+                      accent: '#818CF8',
+                      accentBg: 'rgba(59,79,216,0.10)',
+                    },
+                    {
+                      key: 'M2', label: 'Rol',
+                      href: '/empleado/rol',
+                      completado: modulosProgreso['M2'] ?? false,
+                      activo: !(modulosProgreso['M1'] === false),
+                      accent: '#FCD34D',
+                      accentBg: 'rgba(245,158,11,0.10)',
+                    },
+                    {
+                      key: 'M3', label: 'Cultura',
+                      href: '/empleado/cultura',
+                      completado: modulosProgreso['M3'] ?? false,
+                      activo: modulosProgreso['M2'] ?? false,
+                      accent: '#2DD4BF',
+                      accentBg: 'rgba(13,148,136,0.10)',
+                    },
+                  ]}
+                  progresoTotal={progresoTotal}
+                  encuestas={encuestasPulso}
+                  diasOnboarding={diasOnboarding}
+                />
+              </motion.section>
+
+              {/* Contactos Claves */}
               <motion.section variants={blockVariants}>
                 <Card>
                   <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                    Contactos clave
+                    Contactos Claves
                   </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <ContactoCard
                       tipo="manager"
                       nombre={manager?.nombre}
@@ -875,43 +913,7 @@ export default function PerfilPage() {
                   </div>
                 </Card>
               </motion.section>
-
-            </div>{/* /columna izquierda */}
-
-            {/* Columna derecha: ProgresoPanel */}
-            <motion.section id="tour-onboarding-tracker" variants={blockVariants}>
-              <ProgresoPanel
-                modulos={[
-                  {
-                    key: 'M1', label: 'Perfil',
-                    href: '/empleado/perfil',
-                    completado: modulosProgreso['M1'] ?? false,
-                    activo: true,
-                    accent: '#818CF8',
-                    accentBg: 'rgba(59,79,216,0.10)',
-                  },
-                  {
-                    key: 'M2', label: 'Rol',
-                    href: '/empleado/rol',
-                    completado: modulosProgreso['M2'] ?? false,
-                    activo: !(modulosProgreso['M1'] === false),
-                    accent: '#FCD34D',
-                    accentBg: 'rgba(245,158,11,0.10)',
-                  },
-                  {
-                    key: 'M3', label: 'Cultura',
-                    href: '/empleado/cultura',
-                    completado: modulosProgreso['M3'] ?? false,
-                    activo: modulosProgreso['M2'] ?? false,
-                    accent: '#2DD4BF',
-                    accentBg: 'rgba(13,148,136,0.10)',
-                  },
-                ]}
-                progresoTotal={progresoTotal}
-                encuestas={encuestasPulso}
-                diasOnboarding={diasOnboarding}
-              />
-            </motion.section>
+            </div>{/* /columna derecha */}
 
           </div>{/* /Row 2 (now first) */}
 
