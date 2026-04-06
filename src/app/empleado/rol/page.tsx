@@ -577,6 +577,8 @@ export default function RolPage() {
   const [rolKpis, setRolKpis] = useState<string[]>([])
   const [modalidadEmpleado, setModalidadEmpleado] = useState<string>('')
   const [managerNombre, setManagerNombre] = useState<string>('')
+  const [responsabilidadesKnowledge, setResponsabilidadesKnowledge] = useState<string[]>([])
+  const [metricasKnowledge, setMetricasKnowledge] = useState<string | null>(null)
   const [rolHerramientasEmpleado, setRolHerramientasEmpleado] = useState<Array<{ nombre: string; uso: string }>>([])
   const [rolAutonomiaEmpleado, setRolAutonomiaEmpleado] = useState<string>('')
   const [nombreEmpleado, setNombreEmpleado] = useState<string>('')
@@ -639,6 +641,8 @@ export default function RolPage() {
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')
       const autonomiaBloque = bloques.find(b => b.bloque === 'autonomia')
+      const responsabilidadesBloque = bloques.find(b => b.bloque === 'responsabilidades')
+      const metricasBloque = bloques.find(b => b.bloque === 'metricas')
 
       setPuesto(puestoBloque?.contenido ?? '')
       try {
@@ -646,6 +650,14 @@ export default function RolPage() {
       } catch {
         setAutonomia([])
       }
+      try {
+        setResponsabilidadesKnowledge(
+          responsabilidadesBloque?.contenido ? JSON.parse(responsabilidadesBloque.contenido) : []
+        )
+      } catch {
+        setResponsabilidadesKnowledge([])
+      }
+      setMetricasKnowledge(metricasBloque?.contenido ?? null)
 
       setHerramientas(herramientasRes.data ?? [])
       setTareas(tareasRes.data ?? [])
@@ -841,20 +853,23 @@ export default function RolPage() {
                           <h3 className="text-[11px] font-medium text-amber-400/60 uppercase tracking-widest mb-3">
                             Responsabilidades
                           </h3>
-                          {rolResponsabilidades.length > 0 ? (
-                            <div className="space-y-2.5">
-                              {rolResponsabilidades.map((r, i) => (
-                                <div key={i} className="flex items-start gap-3">
-                                  <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    {i + 1}
-                                  </span>
-                                  <span className="text-sm text-white/70">{r}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-white/25 italic">Próximamente configuradas por tu admin</p>
-                          )}
+                          {(() => {
+                            const items = responsabilidadesKnowledge.length > 0 ? responsabilidadesKnowledge : rolResponsabilidades
+                            return items.length > 0 ? (
+                              <div className="space-y-2.5">
+                                {items.map((r, i) => (
+                                  <div key={i} className="flex items-start gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      {i + 1}
+                                    </span>
+                                    <span className="text-sm text-white/70">{r}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-white/25 italic">Próximamente configuradas por tu admin</p>
+                            )
+                          })()}
                         </div>
 
                         {/* Métricas de éxito */}
@@ -862,7 +877,9 @@ export default function RolPage() {
                           <h3 className="text-[11px] font-medium text-blue-400/60 uppercase tracking-widest mb-3">
                             Métricas de éxito
                           </h3>
-                          {rolKpis.length > 0 ? (
+                          {metricasKnowledge ? (
+                            <p className="text-sm text-white/70">{metricasKnowledge}</p>
+                          ) : rolKpis.length > 0 ? (
                             <div className="space-y-2.5">
                               {rolKpis.map((k, i) => (
                                 <div key={i} className="flex items-start gap-3">
