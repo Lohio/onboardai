@@ -1,7 +1,7 @@
-# OnboardAI — Guía para Claude Code
+# Heero — Guía para Claude Code
 
 ## Qué es este proyecto
-OnboardAI es una plataforma SaaS de onboarding inteligente para PyMEs latinoamericanas.
+Heero es una plataforma SaaS de onboarding inteligente para PyMEs latinoamericanas.
 Permite que empresas carguen su conocimiento institucional y nuevos empleados lo accedan
 a través de un agente IA conversacional.
 
@@ -93,6 +93,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `/admin/conocimiento` | Gestión del conocimiento institucional de la empresa |
 | `/admin/reportes` | Vista Kanban de empleados por franja (30/60/90 días) + link a encuestas |
 | `/admin/reportes/encuestas` | Resultados de encuestas de pulso: resumen por día (7/30/60), promedios, participación |
+| `/admin/organigrama` | Editor visual del organigrama con CRUD de nodos y upload de fotos |
 | `/admin/equipo` | Gestión del equipo (managers, buddies) |
 | `/admin/configuracion` | Configuración de la empresa |
 
@@ -126,6 +127,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `src/components/shared/ErrorState.tsx` | Estado de error reutilizable con botón de retry |
 | `src/components/shared/MiniMarkdownPreview.tsx` | Preview markdown sin librerías: `#`/`##` headings, `**bold**`, `*italic*`, listas, `<br>` |
 | `src/components/shared/Portal.tsx` | `createPortal(children, document.body)` — usar para modales que necesitan superar z-index del layout |
+| `src/components/shared/OrgChart.tsx` | Organigrama visual con nodos, líneas conectoras CSS, modo lectura/edición |
 
 #### UI base
 | Componente | Descripción |
@@ -165,6 +167,7 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `utils.ts` | `cn()` para merging de classNames, funciones de formato |
 | `contacto.ts` | Resolución de contactos de equipo/IT/RRHH |
 | `conocimiento.ts` | Utilidades del módulo de conocimiento: `parseVideoUrl`, `getDomainFromUrl`, `getFilenameFromPath`, `estadoBloque`, `infoBloque`, `formatFileSize`, `getFileEmoji`, `ACCEPT_BY_TIPO`, `MAX_SIZE_BY_TIPO`, `TIPO_LABELS`, `LINK_PLATAFORMAS` |
+| `organigrama.ts` | `construirArbol()`, `generarNodosDesdeUsuarios()`, `colorPorArea()`, `contarNodos()`, `getInitials()` |
 
 ---
 
@@ -253,6 +256,7 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 - `equipo_relaciones` — relaciones manager/buddy/compañero
 - `alertas_conocimiento` — preguntas del empleado que el admin debe responder
 - `app_config` — configuración del sistema (claude_model, max_tokens, system_prompt_base)
+- `organigrama_nodos` — nodos editables del organigrama con jerarquía por `parent_id`, vinculación opcional a `usuarios`
 
 ## Supabase Storage
 
@@ -264,6 +268,18 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 - Path de archivos: `{empresa_id}/{modulo}/{uuid}.{ext}`
 - Tipos permitidos: imagen (5MB), pdf (20MB), archivo genérico (50MB)
 - API de upload: `POST /api/admin/conocimiento/upload` — requiere `SUPABASE_SERVICE_ROLE_KEY`
+
+## Obsidian Skills
+
+Las siguientes skills están instaladas globalmente en `~/.claude/skills/` y se activan automáticamente al trabajar con archivos de Obsidian:
+
+- **obsidian-markdown** — Crear/editar notas `.md` con wikilinks, callouts, propiedades y embeds
+- **obsidian-bases** — Crear/editar archivos `.base` con vistas, filtros y fórmulas
+- **json-canvas** — Crear/editar mapas visuales `.canvas` con nodos y conexiones
+- **obsidian-cli** — Interactuar con vaults de Obsidian desde la línea de comandos
+- **defuddle** — Extraer markdown limpio de páginas web (usar en vez de WebFetch para páginas web)
+
+---
 
 ## Principios de trabajo para Claude Code
 
