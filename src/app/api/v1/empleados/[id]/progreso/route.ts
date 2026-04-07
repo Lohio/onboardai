@@ -43,7 +43,8 @@ export const GET = withHandler(
       .order('modulo', { ascending: true })
 
     if (error) {
-      return ApiError.internal(error.message)
+      console.error('[GET v1/empleados/progreso] Error consultando:', error)
+      return ApiError.internal()
     }
 
     // Mapear columnas reales a la forma que define la spec:

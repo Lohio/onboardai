@@ -54,11 +54,13 @@ const actualizarEmpleado = withHandler(
       .eq('id', id)
       .select(`id, nombre, email, puesto, area, rol, fecha_ingreso,
         modalidad_trabajo, manager_id, buddy_id, sobre_mi,
-        password_corporativo, password_bitlocker,
         rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia`)
       .single()
 
-    if (error) return ApiError.internal(error.message)
+    if (error) {
+      console.error('[PATCH empleado] Error actualizando:', error)
+      return ApiError.internal()
+    }
 
     return NextResponse.json({ usuario: actualizado })
   }

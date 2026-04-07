@@ -19,7 +19,7 @@ export const GET = withHandler(
   async ({ user }) => {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!serviceKey) {
-      return ApiError.internal('SUPABASE_SERVICE_ROLE_KEY no configurada en el servidor')
+      return ApiError.internal()
     }
 
     const sa = createClient(
@@ -41,7 +41,8 @@ export const GET = withHandler(
     const { data, error } = await query
 
     if (error) {
-      return ApiError.internal(error.message)
+      console.error('[GET api-keys] Error consultando:', error)
+      return ApiError.internal()
     }
 
     return NextResponse.json({ keys: data ?? [] })
@@ -62,7 +63,7 @@ export const POST = withHandler(
   async ({ body, user }) => {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!serviceKey) {
-      return ApiError.internal('SUPABASE_SERVICE_ROLE_KEY no configurada en el servidor')
+      return ApiError.internal()
     }
 
     const sa = createClient(
@@ -101,7 +102,8 @@ export const POST = withHandler(
       .single()
 
     if (error) {
-      return ApiError.internal(error.message)
+      console.error('[POST api-keys] Error creando key:', error)
+      return ApiError.internal()
     }
 
     // La key completa se retorna UNA SOLA VEZ aquí
