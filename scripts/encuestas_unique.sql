@@ -5,19 +5,19 @@
 -- Ejecutar en: Supabase Dashboard → SQL Editor
 
 -- 1. Eliminar duplicados existentes (si los hay) antes de agregar la constraint
---    Conserva el registro más reciente por (usuario_id, dia)
+--    Conserva el registro más reciente por (usuario_id, dia_onboarding)
 DELETE FROM encuestas_pulso
 WHERE id NOT IN (
-  SELECT DISTINCT ON (usuario_id, dia) id
+  SELECT DISTINCT ON (usuario_id, dia_onboarding) id
   FROM encuestas_pulso
-  ORDER BY usuario_id, dia, created_at DESC
+  ORDER BY usuario_id, dia_onboarding, created_at DESC
 );
 
 -- 2. Agregar constraint UNIQUE
 ALTER TABLE encuestas_pulso
-  ADD CONSTRAINT encuestas_pulso_usuario_dia_unique
-  UNIQUE (usuario_id, dia);
+  ADD CONSTRAINT encuestas_pulso_usuario_dia_onboarding_unique
+  UNIQUE (usuario_id, dia_onboarding);
 
 -- 3. Índice de soporte para queries por usuario
-CREATE INDEX IF NOT EXISTS idx_encuestas_pulso_usuario_dia
-  ON encuestas_pulso (usuario_id, dia);
+CREATE INDEX IF NOT EXISTS idx_encuestas_pulso_usuario_dia_onboarding
+  ON encuestas_pulso (usuario_id, dia_onboarding);
