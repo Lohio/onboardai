@@ -15,12 +15,14 @@ import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
 import { ErrorState } from '@/components/shared/ErrorState'
 import Organigrama from '@/components/empleado/Organigrama'
+import OrgChart from '@/components/shared/OrgChart'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { cn } from '@/lib/utils'
+import { construirArbol, generarNodosDesdeUsuarios } from '@/lib/organigrama'
 import type {
   TareaOnboarding, HerramientaRol, ObjetivoRol,
-  DecisionAutonomia,
+  DecisionAutonomia, OrgNodo,
 } from '@/types'
 
 // ─────────────────────────────────────────────
@@ -587,6 +589,7 @@ export default function RolPage() {
   const [userId, setUserId] = useState<string>('')
   const [empresaId, setEmpresaId] = useState<string>('')
   const [orgDescripcion, setOrgDescripcion] = useState<string>('')
+  const [orgArbol, setOrgArbol] = useState<OrgNodo[]>([])
   const [activeTab, setActiveTab] = useState<'rol' | 'equipo' | 'herramientas' | 'tareas'>('rol')
 
   const progresoGlobal = tareas.length > 0
@@ -620,13 +623,14 @@ export default function RolPage() {
       setRolAutonomiaEmpleado((usuario.rol_autonomia as string | null) ?? '')
       setModalidadEmpleado((usuario.modalidad as string | null) ?? '')
 
-      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes, managerRes] = await Promise.all([
+      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes, managerRes, orgNodosRes] = await Promise.all([
         supabase.from('conocimiento').select('bloque, contenido').eq('empresa_id', eid).eq('modulo', 'rol'),
         supabase.from('herramientas_rol').select('*').eq('empresa_id', eid).order('orden'),
         supabase.from('tareas_onboarding').select('*').eq('empresa_id', eid).eq('usuario_id', user.id).order('semana').order('orden'),
         supabase.from('objetivos_rol').select('*').eq('empresa_id', eid).order('semana'),
         supabase.from('conocimiento').select('contenido').eq('empresa_id', eid).eq('modulo', 'organigrama').eq('bloque', 'descripcion').maybeSingle(),
         supabase.from('equipo_relaciones').select('miembro:usuarios!equipo_relaciones_miembro_id_fkey(nombre)').eq('empleado_id', user.id).eq('relacion', 'manager').maybeSingle(),
+        supabase.from('organigrama_nodos').select('*').eq('empresa_id', eid).eq('visible', true).order('orden'),
       ])
 
       if (conocimientoRes.error) console.warn('[M3] conocimiento:', conocimientoRes.error.message)
@@ -637,6 +641,20 @@ export default function RolPage() {
       setOrgDescripcion((orgRes.data?.contenido as string | null) ?? '')
       const mgr = managerRes.data?.miembro as unknown as { nombre: string } | null
       setManagerNombre(mgr?.nombre ?? '')
+
+      // Organigrama: si hay nodos personalizados usarlos, sino generar desde usuarios
+      const nodosOrg = (orgNodosRes.data ?? []) as OrgNodo[]
+      if (nodosOrg.length > 0) {
+        setOrgArbol(construirArbol(nodosOrg))
+      } else {
+        const { data: usuariosOrg } = await supabase
+          .from('usuarios')
+          .select('id, nombre, puesto, area, foto_url, manager_id')
+          .eq('empresa_id', eid)
+        if (usuariosOrg?.length) {
+          setOrgArbol(construirArbol(generarNodosDesdeUsuarios(usuariosOrg, eid)))
+        }
+      }
 
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')
@@ -951,11 +969,21 @@ export default function RolPage() {
                     {orgDescripcion && (
                       <p className="text-sm text-white/50 mb-4">{orgDescripcion}</p>
                     )}
-                    <Organigrama
-                      usuarioId={userId}
-                      empresaId={empresaId}
-                      descripcion={orgDescripcion}
-                    />
+                    {orgArbol.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.02] p-2">
+                        <OrgChart
+                          raices={orgArbol}
+                          usuarioActualId={userId}
+                          modo="lectura"
+                        />
+                      </div>
+                    ) : (
+                      <Organigrama
+                        usuarioId={userId}
+                        empresaId={empresaId}
+                        descripcion={orgDescripcion}
+                      />
+                    )}
                   </section>
                 )}
 
