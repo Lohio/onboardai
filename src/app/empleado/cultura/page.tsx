@@ -6,15 +6,17 @@ import Link from 'next/link'
 import {
   Lock, CheckCircle2, BookOpen, Target, Users,
   ClipboardList, Trophy, ChevronDown, ArrowRight,
-  Sparkles, Star,
+  Sparkles, Star, GitBranch,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { ErrorState } from '@/components/shared/ErrorState'
+import OrgChart from '@/components/shared/OrgChart'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
-import type { ContenidoBloque, ProgresoModulo } from '@/types'
+import { construirArbol } from '@/lib/organigrama'
+import type { ContenidoBloque, ProgresoModulo, OrgNodo } from '@/types'
 import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
@@ -720,6 +722,51 @@ function BloqueCard({
 }
 
 // ─────────────────────────────────────────────
+// OrgBloqueCard — bloque organigrama con auto-complete
+// ─────────────────────────────────────────────
+
+function OrgBloqueCard({
+  arbol,
+  completado,
+  onAutoComplete,
+}: {
+  arbol: OrgNodo[]
+  completado: boolean
+  onAutoComplete: () => void
+}) {
+  useEffect(() => {
+    if (completado) return
+    const timer = setTimeout(onAutoComplete, 3000)
+    return () => clearTimeout(timer)
+  }, [completado, onAutoComplete])
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-indigo-500/20 bg-[#111110]/80">
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-indigo-600/10 via-indigo-600/5 to-transparent" />
+      <div className="relative p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600/20 text-indigo-400 flex-shrink-0">
+            <GitBranch className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white/90">Organigrama de la empresa</h3>
+            {completado ? (
+              <p className="text-xs text-teal-400/70 mt-0.5">Completado ✓</p>
+            ) : (
+              <p className="text-xs text-white/35 mt-0.5">Se marcará como visto en unos segundos</p>
+            )}
+          </div>
+          {completado && <CheckCircle2 className="w-4 h-4 text-teal-400 ml-auto flex-shrink-0" />}
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-white/[0.05] bg-white/[0.02]">
+          <OrgChart raices={arbol} modo="lectura" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
 // Barra de scroll global (sticky top)
 // ─────────────────────────────────────────────
 
@@ -750,6 +797,7 @@ function ScrollProgressBar() {
 export default function CulturaPage() {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [contenidos, setContenidos] = useState<Partial<Record<BloqueKey, ContenidoBloque>>>({})
   const [progreso, setProgreso] = useState<Partial<Record<BloqueKey, ProgresoModulo>>>({})
   const [readProgress, setReadProgress] = useState<Record<BloqueKey, number>>({
@@ -766,6 +814,17 @@ export default function CulturaPage() {
   const [hasError, setHasError] = useState(false)
   const [bloqueActivo, setBloqueActivo] = useState<BloqueKey | null>(null)
   const initialSelectDoneRef = useRef(false)
+
+  // Bloque organigrama (opcional)
+  const [orgArbol, setOrgArbol] = useState<OrgNodo[]>([])
+  const [orgCompletado, setOrgCompletado] = useState(false)
+  const [orgCompletando, setOrgCompletando] = useState(false)
+  const [orgActivo, setOrgActivo] = useState(false)
+
+  // Cuando se selecciona un bloque normal, desactivar org
+  useEffect(() => {
+    if (bloqueActivo) setOrgActivo(false)
+  }, [bloqueActivo])
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
@@ -785,17 +844,26 @@ export default function CulturaPage() {
 
       if (perfilError || !perfil) throw new Error(perfilError?.message ?? 'Perfil no encontrado')
 
-      const [contenidosRes, progresoRes] = await Promise.all([
+      const eid = perfil.empresa_id
+      setEmpresaId(eid)
+
+      const [contenidosRes, progresoRes, orgNodosRes] = await Promise.all([
         supabase
           .from('conocimiento')
           .select('*')
-          .eq('empresa_id', perfil.empresa_id)
+          .eq('empresa_id', eid)
           .eq('modulo', 'cultura'),
         supabase
           .from('progreso_modulos')
           .select('*')
           .eq('usuario_id', user.id)
           .eq('modulo', 'cultura'),
+        supabase
+          .from('organigrama_nodos')
+          .select('*')
+          .eq('empresa_id', eid)
+          .eq('visible', true)
+          .order('orden'),
       ])
 
       if (contenidosRes.data) {
@@ -809,9 +877,18 @@ export default function CulturaPage() {
       if (progresoRes.data) {
         const mapa: Partial<Record<BloqueKey, ProgresoModulo>> = {}
         for (const p of progresoRes.data) {
-          mapa[p.bloque as BloqueKey] = p as ProgresoModulo
+          if (p.bloque === 'organigrama') {
+            setOrgCompletado(true)
+          } else {
+            mapa[p.bloque as BloqueKey] = p as ProgresoModulo
+          }
         }
         setProgreso(mapa)
+      }
+
+      // Organigrama: construir árbol si hay nodos
+      if (orgNodosRes.data && orgNodosRes.data.length > 0) {
+        setOrgArbol(construirArbol(orgNodosRes.data as OrgNodo[]))
       }
     } catch (err) {
       console.error('Error cargando cultura:', err)
@@ -899,9 +976,31 @@ export default function CulturaPage() {
     const idx = BLOQUES_ORDEN.indexOf(key)
     const unlocked = idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
     if (!unlocked) return
+    setOrgActivo(false)
     setBloqueActivo(key)
     setReadProgress(prev => ({ ...prev, [key]: 100 }))
   }
+
+  // ── Completar bloque organigrama (auto tras 3s de visualización) ──
+  const completarOrgBloque = useCallback(async () => {
+    if (orgCompletado || orgCompletando || !userId) return
+    setOrgCompletando(true)
+    try {
+      const supabase = createClient()
+      await supabase.from('progreso_modulos').upsert({
+        usuario_id: userId,
+        modulo: 'cultura',
+        bloque: 'organigrama',
+        completado: true,
+        completado_at: new Date().toISOString(),
+      })
+      setOrgCompletado(true)
+    } catch (err) {
+      console.warn('[Cultura] completar organigrama:', err)
+    } finally {
+      setOrgCompletando(false)
+    }
+  }, [userId, orgCompletado, orgCompletando])
 
   // ── Derivados (memoizados para no recalcular en re-renders por scroll) ──
   const { totalCompletados, porcentajeGlobal, todoCompleto } = useMemo(() => {
@@ -1018,6 +1117,30 @@ export default function CulturaPage() {
                 </button>
               )
             })}
+
+            {/* Pill organigrama — solo si la empresa tiene nodos */}
+            {orgArbol.length > 0 && (
+              <button
+                onClick={() => { setOrgActivo(v => !v); setBloqueActivo(null) }}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
+                  orgActivo && !orgCompletado
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                    : orgActivo && orgCompletado
+                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/35'
+                    : orgCompletado
+                    ? 'bg-teal-500/10 text-teal-400/70 border border-teal-500/20'
+                    : 'bg-white/[0.04] border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20',
+                )}
+              >
+                {orgCompletado ? (
+                  <CheckCircle2 className="w-3 h-3" />
+                ) : (
+                  <GitBranch className="w-3 h-3 opacity-60" />
+                )}
+                Organigrama
+              </button>
+            )}
           </div>
 
           {/* Barra de progreso */}
@@ -1057,6 +1180,25 @@ export default function CulturaPage() {
                   onReset={() => handleReset(bloqueActivo)}
                   contentRef={() => {}}
                   isActive
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bloque organigrama */}
+          <AnimatePresence mode="wait">
+            {orgActivo && orgArbol.length > 0 && (
+              <motion.div
+                key="organigrama"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              >
+                <OrgBloqueCard
+                  arbol={orgArbol}
+                  completado={orgCompletado}
+                  onAutoComplete={completarOrgBloque}
                 />
               </motion.div>
             )}

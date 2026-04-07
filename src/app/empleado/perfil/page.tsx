@@ -293,11 +293,11 @@ export default function PerfilPage() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error('No autenticado')
 
-      // 2, 3, 5 en paralelo
-      const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
+      // 2, 3, 5 en paralelo (passwords se obtienen por endpoint separado — descifrado server-side)
+      const [perfilRes, relacionesRes, accesosRes, passwordsRes] = await Promise.all([
         supabase
           .from('usuarios')
-          .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email, password_corporativo, password_bitlocker')
+          .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
           .eq('id', user.id)
           .single(),
         supabase
@@ -309,10 +309,13 @@ export default function PerfilPage() {
           .select('*')
           .eq('usuario_id', user.id)
           .order('herramienta'),
+        fetch('/api/empleado/perfil/passwords').then(r => r.ok ? r.json() : null).catch(() => null),
       ])
 
       if (perfilRes.data) {
-        setPerfil(perfilRes.data as Usuario)
+        // Mezclar passwords descifradas (server-side) con el perfil
+        const passwords = passwordsRes as { password_corporativo: string | null; password_bitlocker: string | null } | null
+        setPerfil({ ...perfilRes.data, ...passwords } as Usuario)
         setBio(perfilRes.data.bio ?? '')
 
         // Herramienta de contacto de la empresa (primera del array)

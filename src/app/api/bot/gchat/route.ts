@@ -11,13 +11,32 @@ import { procesarMensajeBot } from '@/lib/botCore'
 
 async function verificarTokenGoogle(token: string): Promise<boolean> {
   try {
+    // Obtener el email esperado desde el service account configurado
+    let expectedEmail: string | null = null
+    const credJson = process.env.GCHAT_SERVICE_ACCOUNT_JSON
+    if (credJson) {
+      try {
+        const creds = JSON.parse(credJson) as { client_email?: string }
+        expectedEmail = creds.client_email ?? null
+      } catch { /* continuar sin verificar email específico */ }
+    }
+
     const res = await fetch(
       `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${token}`
     )
     if (!res.ok) return false
-    const data = await res.json()
-    // Verificar que el token pertenece a Google Chat
-    return !!data.issued_to || !!data.email
+    const data = await res.json() as { email?: string; issued_to?: string; error?: string }
+
+    // Rechazar tokens con error explícito de Google
+    if (data.error) return false
+
+    // Si tenemos el email del service account, verificar que el token venga de ahí
+    if (expectedEmail) {
+      return data.email === expectedEmail || data.issued_to === expectedEmail
+    }
+
+    // Fallback: al menos debe ser un token Google válido con email
+    return !!data.email
   } catch {
     return false
   }

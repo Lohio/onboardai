@@ -182,6 +182,24 @@ const ES: TranslationMap = {
   'config.apikeys.title': 'API Keys',
   'config.apikeys.desc':  'Generá claves de acceso para integrar con sistemas externos via la API pública.',
   'config.apikeys.btn':   'Gestionar API Keys',
+  // Organigrama
+  'org.titulo':           'Organigrama',
+  'org.subtitulo':        'Estructura de la empresa',
+  'org.agregar':          'Agregar persona',
+  'org.editar':           'Editar organigrama',
+  'org.regenerar':        'Regenerar desde empleados',
+  'org.regenerar.confirm':'¿Regenerar? Se perderán los cambios manuales.',
+  'org.eliminar.confirm': '¿Eliminar a {nombre} del organigrama?',
+  'org.tipo.empleado':    'Empleado existente',
+  'org.tipo.externo':     'Persona externa',
+  'org.reporta':          'Reporta a',
+  'org.nadie':            'Nadie (nodo raíz)',
+  'org.vos':              'Vos',
+  'org.subirFoto':        'Subir foto',
+  'org.personas':         '{n} personas',
+  'org.generar':          'Generar organigrama',
+  'org.vacio':            'Aún no hay un organigrama configurado',
+  'org.vacio.desc':       'Generalo automáticamente desde tus empleados',
 }
 
 const EN: TranslationMap = {
@@ -332,6 +350,24 @@ const EN: TranslationMap = {
   'config.apikeys.title': 'API Keys',
   'config.apikeys.desc':  'Generate access keys to integrate with external systems via the public API.',
   'config.apikeys.btn':   'Manage API Keys',
+  // Org chart
+  'org.titulo':           'Org Chart',
+  'org.subtitulo':        'Company structure',
+  'org.agregar':          'Add person',
+  'org.editar':           'Edit org chart',
+  'org.regenerar':        'Regenerate from employees',
+  'org.regenerar.confirm':'Regenerate? Manual changes will be lost.',
+  'org.eliminar.confirm': 'Remove {nombre} from the org chart?',
+  'org.tipo.empleado':    'Existing employee',
+  'org.tipo.externo':     'External person',
+  'org.reporta':          'Reports to',
+  'org.nadie':            'Nobody (root node)',
+  'org.vos':              'You',
+  'org.subirFoto':        'Upload photo',
+  'org.personas':         '{n} people',
+  'org.generar':          'Generate org chart',
+  'org.vacio':            'No org chart configured yet',
+  'org.vacio.desc':       'Generate it automatically from your employees',
 }
 
 const FR: TranslationMap = {
@@ -482,6 +518,24 @@ const FR: TranslationMap = {
   'config.apikeys.title': 'Clés API',
   'config.apikeys.desc':  "Générez des clés d'accès pour intégrer des systèmes externes via l'API publique.",
   'config.apikeys.btn':   'Gérer les clés API',
+  // Organigramme
+  'org.titulo':           'Organigramme',
+  'org.subtitulo':        'Structure de l\'entreprise',
+  'org.agregar':          'Ajouter une personne',
+  'org.editar':           'Modifier l\'organigramme',
+  'org.regenerar':        'Régénérer depuis les employés',
+  'org.regenerar.confirm':'Régénérer ? Les modifications manuelles seront perdues.',
+  'org.eliminar.confirm': 'Retirer {nombre} de l\'organigramme ?',
+  'org.tipo.empleado':    'Employé existant',
+  'org.tipo.externo':     'Personne externe',
+  'org.reporta':          'Rapporte à',
+  'org.nadie':            'Personne (nœud racine)',
+  'org.vos':              'Vous',
+  'org.subirFoto':        'Télécharger une photo',
+  'org.personas':         '{n} personnes',
+  'org.generar':          'Générer l\'organigramme',
+  'org.vacio':            'Aucun organigramme configuré',
+  'org.vacio.desc':       'Générez-le automatiquement depuis vos employés',
 }
 
 const PT: TranslationMap = {
@@ -632,6 +686,24 @@ const PT: TranslationMap = {
   'config.apikeys.title': 'Chaves de API',
   'config.apikeys.desc':  'Gere chaves de acesso para integrar sistemas externos via a API pública.',
   'config.apikeys.btn':   'Gerenciar chaves de API',
+  // Organograma
+  'org.titulo':           'Organograma',
+  'org.subtitulo':        'Estrutura da empresa',
+  'org.agregar':          'Adicionar pessoa',
+  'org.editar':           'Editar organograma',
+  'org.regenerar':        'Regenerar dos funcionários',
+  'org.regenerar.confirm':'Regenerar? As alterações manuais serão perdidas.',
+  'org.eliminar.confirm': 'Remover {nombre} do organograma?',
+  'org.tipo.empleado':    'Funcionário existente',
+  'org.tipo.externo':     'Pessoa externa',
+  'org.reporta':          'Reporta a',
+  'org.nadie':            'Ninguém (nó raiz)',
+  'org.vos':              'Você',
+  'org.subirFoto':        'Enviar foto',
+  'org.personas':         '{n} pessoas',
+  'org.generar':          'Gerar organograma',
+  'org.vacio':            'Nenhum organograma configurado ainda',
+  'org.vacio.desc':       'Gere automaticamente a partir dos seus funcionários',
 }
 
 export const TRANSLATIONS: Record<Lang, TranslationMap> = {

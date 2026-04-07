@@ -302,17 +302,22 @@ export default function EmpleadoDetallePage() {
       setEmpresaId(adminData.empresa_id)
 
       // ── Datos del empleado ──
-      const { data: empData, error: empError } = await supabase
-        .from('usuarios')
-        .select(`id, nombre, email, puesto, area, fecha_ingreso,
-          modalidad, manager_id, buddy_id, bio, rol, foto_url,
-          contacto_it_nombre, contacto_it_email,
-          contacto_rrhh_nombre, contacto_rrhh_email,
-          preboarding_activo, fecha_acceso_preboarding,
-          password_corporativo, password_bitlocker,
-          rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia`)
-        .eq('id', id)
-        .single()
+      const [{ data: empData, error: empError }, passwordsRes] = await Promise.all([
+        supabase
+          .from('usuarios')
+          .select(`id, nombre, email, puesto, area, fecha_ingreso,
+            modalidad, manager_id, buddy_id, bio, rol, foto_url,
+            contacto_it_nombre, contacto_it_email,
+            contacto_rrhh_nombre, contacto_rrhh_email,
+            preboarding_activo, fecha_acceso_preboarding,
+            rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia`)
+          .eq('id', id)
+          .single(),
+        // Passwords se obtienen por endpoint separado — descifrado server-side
+        fetch(`/api/admin/empleados/${id}/passwords`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
+      ])
 
       if (empError || !empData) {
         toast.error('Empleado no encontrado')
@@ -329,7 +334,8 @@ export default function EmpleadoDetallePage() {
         }
       }
 
-      setEmpleado(empData as EmpleadoFull)
+      const passwords = passwordsRes as { password_corporativo: string | null; password_bitlocker: string | null } | null
+      setEmpleado({ ...empData, ...passwords } as EmpleadoFull)
       setForm({
         nombre: empData.nombre ?? '',
         puesto: empData.puesto ?? '',
@@ -344,8 +350,8 @@ export default function EmpleadoDetallePage() {
         contacto_it_email: empData.contacto_it_email ?? '',
         contacto_rrhh_nombre: empData.contacto_rrhh_nombre ?? '',
         contacto_rrhh_email: empData.contacto_rrhh_email ?? '',
-        password_corporativo: empData.password_corporativo ?? '',
-        password_bitlocker: empData.password_bitlocker ?? '',
+        password_corporativo: passwords?.password_corporativo ?? '',
+        password_bitlocker:   passwords?.password_bitlocker   ?? '',
       })
       setRolResponsabilidades((empData.rol_responsabilidades as string[] | null) ?? [])
       setRolKpis((empData.rol_kpis as string[] | null) ?? [])

@@ -77,7 +77,8 @@ export const GET = withHandler(
     const { data: encuestas, count, error } = await query
 
     if (error) {
-      return ApiError.internal(error.message)
+      console.error('[GET encuestas] Error consultando:', error)
+      return ApiError.internal()
     }
 
     // Omitir el campo `usuarios` del join (solo se usó para filtrar)

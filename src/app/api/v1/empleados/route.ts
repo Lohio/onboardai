@@ -50,7 +50,8 @@ export const GET = withHandler(
       .range(offset, offset + limit - 1)
 
     if (error) {
-      return ApiError.internal(error.message)
+      console.error('[GET v1/empleados] Error consultando:', error)
+      return ApiError.internal()
     }
 
     return NextResponse.json({

@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { ZodType, ZodError } from 'zod'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
@@ -122,10 +123,19 @@ export function withHandler<TBody = unknown>(
         empresaId = keyResult.empresaId
         apiKeyRecord = keyResult.record
       } else if (options.auth === 'cron') {
-        // Verificación por secret compartido en el header Authorization
-        const authHeader = req.headers.get('authorization')
+        // Verificación por secret compartido — comparación en tiempo constante
+        // para prevenir timing attacks
+        const authHeader = req.headers.get('authorization') ?? ''
         const expectedSecret = process.env.CRON_SECRET
-        if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+        if (!expectedSecret) {
+          status = 401
+          return ApiError.unauthorized(requestId)
+        }
+        const expected = `Bearer ${expectedSecret}`
+        const match =
+          authHeader.length === expected.length &&
+          crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
+        if (!match) {
           status = 401
           return ApiError.unauthorized(requestId)
         }
