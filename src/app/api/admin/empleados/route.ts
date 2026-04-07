@@ -44,7 +44,8 @@ export const POST = withHandler(
     // Crear cliente con service role key
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!serviceKey) {
-      return ApiError.internal('SUPABASE_SERVICE_ROLE_KEY no configurada en el servidor')
+      console.error('[POST empleados] SUPABASE_SERVICE_ROLE_KEY no configurada')
+      return ApiError.internal()
     }
 
     const supabaseAdmin = createClient(
@@ -90,9 +91,13 @@ export const POST = withHandler(
       .single()
 
     if (insertError) {
-      // Rollback: eliminar auth user si falla la inserción
-      await supabaseAdmin.auth.admin.deleteUser(userId)
-      return ApiError.internal(insertError.message)
+      // Rollback: eliminar auth user para no dejar un auth user sin perfil
+      console.error('[POST empleados] Error insertando en tabla usuarios:', insertError)
+      const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (rollbackError) {
+        console.error('[POST empleados] Rollback fallido — auth user huérfano:', userId, rollbackError)
+      }
+      return ApiError.internal()
     }
 
     return NextResponse.json({ usuario: nuevoUsuario }, { status: 201 })
