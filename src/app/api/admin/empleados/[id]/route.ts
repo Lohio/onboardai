@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { withHandler } from '@/lib/api/withHandler'
 import { actualizarEmpleadoSchema } from '@/lib/schemas/admin'
 import { ApiError } from '@/lib/errors'
+import { encrypt } from '@/lib/encryption'
 
 // ─────────────────────────────────────────────
 // PATCH /api/admin/empleados/[id]
@@ -45,7 +46,14 @@ const actualizarEmpleado = withHandler(
     ] as const
 
     for (const campo of camposSchema) {
-      if (campo in body) updateData[campo] = body[campo] ?? null
+      if (!(campo in body)) continue
+      // Cifrar campos de contraseña antes de guardar en DB
+      if (campo === 'password_corporativo' || campo === 'password_bitlocker') {
+        const val = body[campo] as string | null | undefined
+        updateData[campo] = val ? encrypt(val) : null
+      } else {
+        updateData[campo] = body[campo] ?? null
+      }
     }
 
     const { data: actualizado, error } = await supabase
