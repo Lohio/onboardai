@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Users, TrendingUp, AlertTriangle, UserPlus } from 'lucide-react'
+import { Users, TrendingUp, AlertTriangle, UserPlus, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   BarChart,
@@ -17,7 +17,6 @@ import {
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { getInitials, formatFecha, semaforoColor, diasDesde } from '@/lib/utils'
-import { Button } from '@/components/ui/Button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import type { AdminEmpleadoConProgreso } from '@/types'
 
@@ -107,7 +106,7 @@ function MetricSkeleton() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="shimmer glass-card rounded-xl h-24" />
+        <div key={i} className="shimmer bg-white border border-gray-200 rounded-xl h-24" />
       ))}
     </div>
   )
@@ -117,7 +116,7 @@ function EmpleadosSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {[1, 2, 3, 4, 5, 6].map(i => (
-        <div key={i} className="shimmer glass-card rounded-xl h-28" />
+        <div key={i} className="shimmer bg-white border border-gray-200 rounded-xl h-28" />
       ))}
     </div>
   )
@@ -145,8 +144,8 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
     <motion.div variants={cardVariants}>
       <Link
         href={`/admin/empleados/${empleado.id}`}
-        className="glass-card rounded-xl p-4 flex flex-col gap-3 block
-          hover:border-white/[0.12] transition-colors duration-150 group"
+        className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-3 block
+          hover:shadow-md hover:border-gray-300 transition-all duration-200 group"
       >
         <div className="flex items-start gap-3">
           {/* Avatar */}
@@ -161,7 +160,7 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-white/90 truncate flex-1 group-hover:text-white transition-colors duration-150">
+              <p className="text-sm font-semibold text-gray-900 truncate flex-1 transition-colors duration-150">
                 {empleado.nombre}
               </p>
               {/* Semáforo */}
@@ -185,10 +184,10 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
             </div>
 
             {empleado.puesto && (
-              <p className="text-xs text-white/40 truncate">{empleado.puesto}</p>
+              <p className="text-xs text-gray-500 truncate">{empleado.puesto}</p>
             )}
             {empleado.area && (
-              <p className="text-[11px] text-white/25 truncate">{empleado.area}</p>
+              <p className="text-[11px] text-gray-400 truncate">{empleado.area}</p>
             )}
           </div>
         </div>
@@ -198,11 +197,11 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-white/30">
+          <span className="text-[11px] text-gray-500">
             Ingresó {formatFecha(empleado.fecha_ingreso)}
           </span>
           {dias !== null && (
-            <span className="text-[11px] font-mono text-white/35">
+            <span className="text-[11px] font-mono text-gray-500">
               Día {dias}
             </span>
           )}
@@ -228,15 +227,18 @@ function MetricCard({
   sufijo?: string
 }) {
   return (
-    <motion.div variants={cardVariants} className="glass-card rounded-xl p-5">
+    <motion.div
+      variants={cardVariants}
+      className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200"
+    >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <span className="text-white/35">{icon}</span>
+        <span className="text-gray-400">{icon}</span>
       </div>
-      <p className="text-2xl font-semibold font-mono text-white tabular-nums">
+      <p className="text-4xl font-bold font-mono text-gray-900 tabular-nums">
         {valor}
-        {sufijo && <span className="text-base text-white/40 ml-0.5">{sufijo}</span>}
+        {sufijo && <span className="text-xl text-gray-500 ml-0.5">{sufijo}</span>}
       </p>
-      <p className="text-xs text-white/40 mt-1">{label}</p>
+      <p className="text-xs text-gray-500 mt-2">{label}</p>
     </motion.div>
   )
 }
@@ -469,21 +471,24 @@ export default function AdminDashboardPage() {
         variants={cardVariants}
         className="flex items-center justify-end gap-4"
       >
-        <Button
-          variant="primary"
-          size="sm"
-          className="flex-shrink-0"
+        <button
           onClick={() => router.push('/admin/empleados')}
+          className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl
+            text-sm font-semibold text-white
+            bg-gradient-to-r from-cyan-500 to-indigo-500
+            hover:from-cyan-400 hover:to-indigo-400
+            shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40
+            hover:scale-105 transition-all duration-300"
         >
-          <UserPlus className="w-4 h-4" />
-          <span className="hidden sm:inline">Nuevo empleado</span>
-        </Button>
+          <Sparkles className="w-5 h-5" />
+          <span>Sumar al equipo</span>
+        </button>
       </motion.div>
 
       {/* ── Métricas: 4 cards ── */}
       <motion.div
         variants={containerVariants}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-6"
       >
         <MetricCard
           valor={empleadosActivos}
@@ -516,7 +521,7 @@ export default function AdminDashboardPage() {
           {empleados.length === 0 ? (
             <motion.div
               variants={cardVariants}
-              className="glass-card rounded-xl p-8 flex flex-col items-center justify-center gap-4 min-h-[200px]"
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-8 flex flex-col items-center justify-center gap-4 min-h-[200px]"
             >
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
                 <defs>
@@ -530,14 +535,14 @@ export default function AdminDashboardPage() {
                 <circle cx="46" cy="22" r="6" stroke="url(#empGrad)" strokeWidth="1.5" strokeOpacity="0.5" />
                 <path d="M50 54c0-7-4-11.5-8.5-13.5" stroke="url(#empGrad)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
               </svg>
-              <p className="text-sm text-white/35 text-center">
+              <p className="text-sm text-gray-500 text-center">
                 No hay empleados registrados aún.
               </p>
             </motion.div>
           ) : (
             <motion.div
               variants={containerVariants}
-              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6"
             >
               {empleados.map(empleado => (
                 <EmpleadoCard key={empleado.id} empleado={empleado} />
@@ -547,16 +552,16 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ── Right: Alertas + Chart ── */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
 
           {/* Alertas recientes */}
-          <motion.div variants={cardVariants} className="glass-card rounded-xl p-4 flex flex-col gap-3">
+          <motion.div variants={cardVariants} className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-all duration-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
                 Alertas recientes
               </h2>
               {alertas.length > 0 && (
-                <span className="text-[10px] font-mono text-white/25">
+                <span className="text-[10px] font-mono text-gray-400">
                   {alertas.length} pendientes
                 </span>
               )}
@@ -574,7 +579,7 @@ export default function AdminDashboardPage() {
                   <circle cx="20" cy="20" r="14" stroke="url(#okGrad)" strokeWidth="1.5" />
                   <path d="M13 20l5 5 9-10" stroke="url(#okGrad)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <p className="text-xs text-white/30 text-center">Sin alertas pendientes</p>
+                <p className="text-xs text-gray-500 text-center">Sin alertas pendientes</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -585,24 +590,24 @@ export default function AdminDashboardPage() {
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
-                    className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-3 flex flex-col gap-2"
+                    className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex flex-col gap-2"
                   >
-                    <p className="text-xs text-white/75 line-clamp-2 leading-snug">
+                    <p className="text-xs text-gray-800 line-clamp-2 leading-snug">
                       {alerta.pregunta}
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-[11px] text-white/40 truncate">
+                        <p className="text-[11px] text-gray-500 truncate">
                           {alerta.usuarios?.[0]?.nombre ?? 'Empleado'}
                         </p>
-                        <p className="text-[10px] text-white/25">
+                        <p className="text-[10px] text-gray-400">
                           {tiempoRelativo(alerta.created_at)}
                         </p>
                       </div>
                       <button
                         onClick={() => resolverAlerta(alerta.id)}
-                        className="text-[10px] font-medium text-[#38BDF8]/70 hover:text-[#7DD3FC]
-                          border border-[#0EA5E9]/20 hover:border-[#0EA5E9]/40
+                        className="text-[10px] font-medium text-cyan-700 hover:text-cyan-800
+                          border border-cyan-200 hover:border-cyan-400 bg-white
                           px-3 min-h-[44px] rounded-md transition-colors duration-150 flex-shrink-0"
                       >
                         Resolver
@@ -615,14 +620,14 @@ export default function AdminDashboardPage() {
           </motion.div>
 
           {/* Progreso por módulo — Chart */}
-          <motion.div variants={cardVariants} className="glass-card rounded-xl p-4">
-            <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
+          <motion.div variants={cardVariants} className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200">
+            <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-4">
               Progreso por módulo
             </h2>
 
             {chartData.length === 0 || chartData.every(d => d.progreso === 0) ? (
               <div className="h-[180px] flex items-center justify-center">
-                <p className="text-xs text-white/25">Sin datos de progreso aún</p>
+                <p className="text-xs text-gray-400">Sin datos de progreso aún</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
@@ -632,25 +637,26 @@ export default function AdminDashboardPage() {
                 >
                   <XAxis
                     dataKey="nombre"
-                    tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }}
+                    tick={{ fontSize: 11, fill: 'rgba(17,24,39,0.7)' }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }}
+                    tick={{ fontSize: 10, fill: 'rgba(17,24,39,0.5)' }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      background: '#1a2540',
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: '#ffffff',
+                      border: '1px solid rgba(0,0,0,0.1)',
                       borderRadius: 8,
                       fontSize: 12,
+                      color: '#111827',
                     }}
                     formatter={(value) => [`${value ?? 0}%`, 'Promedio']}
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                   />
                   <Bar dataKey="progreso" radius={[4, 4, 0, 0]} maxBarSize={48}>
                     {chartData.map((entry, i) => (

@@ -16,7 +16,6 @@ import {
   X,
   LogOut,
 } from 'lucide-react'
-import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
 import { esTrial, TRIAL_LIMITS } from '@/lib/trial'
 import AdminProductTour from '@/components/AdminProductTour'
@@ -100,8 +99,8 @@ function NavItem({
           font-medium transition-all duration-150 group
           ${
             activo
-              ? 'bg-[#0EA5E9]/10 text-white border border-[#0EA5E9]/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-              : 'text-white/55 hover:text-white/85 hover:bg-white/[0.06] border border-transparent'
+              ? 'bg-white/[0.05] text-white border border-white/[0.06]'
+              : 'text-white/55 hover:text-white/85 hover:bg-white/[0.04] border border-transparent'
           }`}
       >
         {activo && (
@@ -190,12 +189,9 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Logo / marca ── */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.06]">
-        <div className="flex-1 min-w-0">
-          <HeeroLogo size="sm" />
-          <p className="text-[11px] text-white/35 mt-1.5">{t('nav.adminPanel')}</p>
-        </div>
+      {/* ── Header sidebar ── */}
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.05]">
+        <div className="flex-1 min-w-0" />
         {onClose && (
           <button
             onClick={onClose}
@@ -210,10 +206,6 @@ function SidebarContent({
 
       {/* ── Nav ── */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
-        {/* Etiqueta de sección */}
-        <p className="px-3 mb-1.5 text-[10px] font-semibold text-white/25 uppercase tracking-widest">
-          {t('nav.navigation')}
-        </p>
         <motion.div
           variants={sidebarContainerVariants}
           initial="hidden"
@@ -293,22 +285,22 @@ function AdminHeader({
   }, [menuAbierto])
 
   return (
-    <header className="h-14 border-b border-white/[0.06] flex items-center px-4 gap-3 flex-shrink-0">
+    <header className="h-14 border-b border-gray-200 bg-gray-50 flex items-center px-4 gap-3 flex-shrink-0">
       {/* Hamburger — solo mobile */}
       <button
         onClick={onMenuClick}
-        className="md:hidden text-white/40 hover:text-white/80 transition-colors duration-150 p-1 -ml-1"
+        className="md:hidden text-gray-500 hover:text-gray-900 transition-colors duration-150 p-1 -ml-1"
         aria-label="Abrir menú"
       >
         <Menu className="w-5 h-5" />
       </button>
 
       {/* Título */}
-      <h1 className="text-sm font-semibold text-white/80 flex-1">{t('nav.dashboard')}</h1>
+      <h1 className="text-sm font-semibold text-gray-900 flex-1">El pulso de tu equipo</h1>
 
       {/* Bell + badge */}
       <button
-        className="relative p-2 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/[0.04]
+        className="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100
           transition-colors duration-150"
         aria-label="Alertas pendientes"
       >
@@ -514,12 +506,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <ThemeProvider section="admin">
     <div className="min-h-dvh gradient-bg flex">
       {/* ── Sidebar desktop (fijo) ── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/[0.07] bg-white/[0.02]">
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/10 bg-black">
         <SidebarContent adminNombre={adminNombre} pathname={pathname} />
       </aside>
 
       {/* ── Contenido principal ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
         <AdminHeader
           adminNombre={adminNombre}
           alertasCount={alertasCount}
@@ -576,7 +568,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Drawer */}
             <motion.aside
               className="fixed left-0 top-0 h-full w-64 md:hidden z-50
-                border-r border-white/[0.06] bg-[#111110]/95 backdrop-blur-xl"
+                border-r border-white/10 bg-black"
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
