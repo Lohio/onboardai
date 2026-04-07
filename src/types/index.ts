@@ -185,3 +185,19 @@ export interface PlanItem {
   orden: number
   created_at: string
 }
+
+// ── Organigrama ──
+export interface OrgNodo {
+  id: string
+  empresa_id: string
+  usuario_id?: string | null
+  nombre: string
+  puesto?: string | null
+  area?: string | null
+  foto_url?: string | null
+  parent_id?: string | null
+  orden: number
+  visible: boolean
+  created_at: string
+  children?: OrgNodo[]
+}
