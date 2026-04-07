@@ -89,7 +89,7 @@ export function ProgresoPanel({
                 : progresoTotal >= 66
                 ? 'Casi terminás 💪'
                 : progresoTotal >= 33
-                ? 'Buen avance'
+                ? `${completados} de ${total} módulos completados`
                 : 'Recién empezás'}
             </p>
             <p className="text-xs text-white/40 mt-0.5">Día {diasOnboarding} de onboarding</p>
@@ -107,33 +107,47 @@ export function ProgresoPanel({
 
         {/* Lista de módulos */}
         <div className="space-y-2">
-          {modulos.map((mod) => (
-            <Link key={mod.key} href={mod.completado || mod.activo ? mod.href : '#'}
-              className={[
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150',
-                mod.activo ? 'cursor-pointer hover:opacity-90' : mod.completado ? 'cursor-pointer' : 'cursor-default opacity-50',
-              ].join(' ')}
-              style={mod.activo ? { background: mod.accentBg, border: `1px solid ${mod.accent}33` } : { border: '1px solid transparent' }}
-            >
-              <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-                {mod.completado
-                  ? <CheckCircle2 className="w-5 h-5" style={{ color: '#22c55e' }} />
-                  : mod.activo
-                  ? <Circle className="w-5 h-5" style={{ color: mod.accent }} />
-                  : <Lock className="w-4 h-4 text-white/20" />
-                }
-              </div>
-              <span className="flex-1 text-sm font-medium"
-                style={{ color: mod.completado ? 'rgba(255,255,255,0.6)' : mod.activo ? mod.accent : 'rgba(255,255,255,0.25)' }}>
-                {mod.label}
-              </span>
-              <span className="text-[10px] font-medium"
-                style={{ color: mod.completado ? '#22c55e' : mod.activo ? mod.accent : 'rgba(255,255,255,0.2)' }}>
-                {mod.completado ? 'Completado' : mod.activo ? 'En curso' : 'Bloqueado'}
-              </span>
-              {mod.activo && <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mod.accent }} />}
-            </Link>
-          ))}
+          {modulos.map((mod, idx) => {
+            const bloqueado = !mod.completado && !mod.activo
+            // Para módulos bloqueados, buscar el módulo previo no completado (el que hay que terminar para desbloquear este)
+            const requisito = bloqueado
+              ? [...modulos.slice(0, idx)].reverse().find(m => !m.completado)
+              : undefined
+            return (
+              <Link key={mod.key} href={mod.completado || mod.activo ? mod.href : '#'}
+                className={[
+                  'flex flex-col gap-0.5 rounded-xl px-3 py-2.5 transition-all duration-150',
+                  mod.activo ? 'cursor-pointer hover:opacity-90' : mod.completado ? 'cursor-pointer' : 'cursor-default opacity-50',
+                ].join(' ')}
+                style={mod.activo ? { background: mod.accentBg, border: `1px solid ${mod.accent}33` } : { border: '1px solid transparent' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                    {mod.completado
+                      ? <CheckCircle2 className="w-5 h-5" style={{ color: '#22c55e' }} />
+                      : mod.activo
+                      ? <Circle className="w-5 h-5" style={{ color: mod.accent }} />
+                      : <Lock className="w-4 h-4 text-white/20" />
+                    }
+                  </div>
+                  <span className="flex-1 text-sm font-medium"
+                    style={{ color: mod.completado ? 'rgba(255,255,255,0.6)' : mod.activo ? mod.accent : 'rgba(255,255,255,0.25)' }}>
+                    {mod.label}
+                  </span>
+                  <span className="text-[10px] font-medium"
+                    style={{ color: mod.completado ? '#22c55e' : mod.activo ? mod.accent : 'rgba(255,255,255,0.2)' }}>
+                    {mod.completado ? 'Completado' : mod.activo ? 'En curso' : 'Bloqueado'}
+                  </span>
+                  {mod.activo && <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mod.accent }} />}
+                </div>
+                {bloqueado && requisito && (
+                  <span className="text-[10px] text-white/30 pl-9">
+                    Completá {requisito.label} para desbloquear
+                  </span>
+                )}
+              </Link>
+            )
+          })}
         </div>
       </div>
 

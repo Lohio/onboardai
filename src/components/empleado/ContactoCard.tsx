@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Briefcase, Users, Shield, Code,
-  Copy, Check, User,
+  Copy, Check, User, Clock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
@@ -119,10 +119,17 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
       {/* Nombre y descripción del rol */}
       <div className="flex-1">
         <p className={cn(
-          'text-sm font-medium leading-tight truncate',
-          nombre ? 'text-white/80' : 'text-white/20 italic',
+          'text-sm font-medium leading-tight truncate flex items-center gap-1.5',
+          nombre ? 'text-white/80' : 'text-white/30 italic',
         )}>
-          {nombre || 'Por asignar'}
+          {nombre ? (
+            nombre
+          ) : (
+            <>
+              <Clock className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+              <span>Pendiente de asignación</span>
+            </>
+          )}
         </p>
         <p className="text-[10px] text-white/35 mt-0.5">
           {config.descripcion}

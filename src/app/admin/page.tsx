@@ -167,7 +167,20 @@ function EmpleadoCard({ empleado }: { empleado: AdminEmpleadoConProgreso }) {
               {/* Semáforo */}
               <span
                 className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${semaforoColor(empleado.progreso)}`}
-                title={`Progreso: ${empleado.progreso}%`}
+                title={
+                  empleado.progreso < 30
+                    ? `Requiere atención — Progreso: ${empleado.progreso}%`
+                    : empleado.progreso < 70
+                    ? `En progreso — ${empleado.progreso}%`
+                    : `Al día — ${empleado.progreso}%`
+                }
+                aria-label={
+                  empleado.progreso < 30
+                    ? 'Requiere atención'
+                    : empleado.progreso < 70
+                    ? 'En progreso'
+                    : 'Al día'
+                }
               />
             </div>
 
@@ -454,9 +467,8 @@ export default function AdminDashboardPage() {
       {/* ── Header de página ── */}
       <motion.div
         variants={cardVariants}
-        className="flex items-center justify-between gap-4"
+        className="flex items-center justify-end gap-4"
       >
-        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
         <Button
           variant="primary"
           size="sm"
@@ -491,7 +503,7 @@ export default function AdminDashboardPage() {
         />
         <MetricCard
           valor={onboardingsEsteMes}
-          label="Ingresos este mes"
+          label="Nuevos este mes"
           icon={<UserPlus className="w-4 h-4" />}
         />
       </motion.div>

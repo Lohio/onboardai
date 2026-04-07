@@ -460,7 +460,7 @@ aside {
 .theme-light .agente-portal [class*="bg-[#111110]"]  { background-color: var(--background) !important; }
 .theme-light .agente-portal [class*="bg-[#0EA5E9]"]  { background-color: rgba(14,165,233,0.12) !important; }
 /* Mensajes user: mantener azul sky en todos los temas */
-.theme-light .agente-portal .bg-\[#0EA5E9\]          { background-color: #0EA5E9 !important; }
+.theme-light .agente-portal [class~="bg-[#0EA5E9]"]  { background-color: #0EA5E9 !important; }
 
 /* ── Modal de conocimiento (Portal): adaptación al tema ── */
 .theme-light .contenido-modal                         { background-color: var(--background) !important; border-color: rgba(17,17,16,0.10) !important; }
