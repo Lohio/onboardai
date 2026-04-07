@@ -7,11 +7,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut } from 'lucide-react'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
+import { esTrial } from '@/lib/trial'
 import { calcularEstadoModulos, calcularProgresoPct } from '@/lib/progreso'
 import AgenteFlotante from '@/components/empleado/AgenteFlotante'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { SettingsDropdown } from '@/components/shared/SettingsDropdown'
 import { useLanguage } from '@/components/LanguageProvider'
+import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -19,12 +21,20 @@ import { useLanguage } from '@/components/LanguageProvider'
 
 const MODULOS = [
   { key: 'M1', href: '/empleado/perfil' },
-  { key: 'M2', href: '/empleado/cultura' },
-  { key: 'M3', href: '/empleado/rol' },
+  { key: 'M2', href: '/empleado/rol' },
+  { key: 'M3', href: '/empleado/cultura' },
+  { key: 'plan', href: '/empleado/plan' },
 ] as const
 
 type ModuloKey = (typeof MODULOS)[number]['key']
 type EstadoModulos = Record<ModuloKey, boolean>
+
+const MODULO_LABELS: Record<string, string> = {
+  M1: 'Perfil',
+  M2: 'Rol',
+  M3: 'Cultura',
+  plan: 'Plan 30-60-90',
+}
 
 // ─────────────────────────────────────────────
 // Layout
@@ -34,17 +44,20 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const router = useRouter()
   const pathname = usePathname()
 
+  const [nombreEmpresa, setNombreEmpresa] = useState('')
   const [progreso, setProgreso] = useState(0)
   const [modulos, setModulos] = useState<EstadoModulos>({
     M1: false,
     M2: false,
     M3: false,
+    plan: false,
   })
   const [empleadoNombre, setEmpleadoNombre] = useState('')
   const [empleadoPuesto, setEmpleadoPuesto] = useState('')
   const [empleadoId, setEmpleadoId] = useState('')
   const [diasOnboarding, setDiasOnboarding] = useState(1)
   const [accesosPendientes, setAccesosPendientes] = useState(0)
+  const [planEmpresa, setPlanEmpresa]             = useState<string>('trial')
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { t } = useLanguage()
@@ -98,10 +111,21 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         ))
         setDiasOnboarding(dias)
       }
+
+      // Cargar plan de la empresa
+      if (usuarioData.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('plan, nombre')
+          .eq('id', usuarioData.empresa_id)
+          .single()
+        setPlanEmpresa(empresaData?.plan ?? 'trial')
+        setNombreEmpresa(empresaData?.nombre ?? '')
+      }
     }
 
-    // Consultar progreso, cultura y accesos pendientes en paralelo
-    const [progresoRes, culturaCountRes, accesosRes] = await Promise.all([
+    // Consultar progreso, cultura, accesos y plan en paralelo
+    const [progresoRes, culturaCountRes, accesosRes, planRes] = await Promise.all([
       supabase
         .from('progreso_modulos')
         .select('modulo, bloque, completado')
@@ -118,6 +142,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         .select('*', { count: 'exact', head: true })
         .eq('usuario_id', user.id)
         .eq('estado', 'pendiente'),
+      supabase
+        .from('plan_30_60_90')
+        .select('completado')
+        .eq('usuario_id', user.id),
     ])
 
     const progresoRows = progresoRes.data ?? []
@@ -125,7 +153,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     const totalCultura = 5
 
     const estados = calcularEstadoModulos(progresoRows, totalCultura)
-    setModulos(estados)
+    const planRows = planRes.data ?? []
+    const planCompletado = planRows.length > 0 && planRows.every(r => r.completado)
+    setModulos({ ...estados, plan: planCompletado })
     setProgreso(calcularProgresoPct(estados))
 
     // Accesos pendientes para el agente
@@ -147,69 +177,137 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
   return (
     <ThemeProvider section="empleado">
-    <div className="min-h-dvh flex flex-col">
+    <div className="min-h-dvh flex">
+      {/* ── Sidebar (desktop only) ── */}
+      <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 border-r border-white/[0.06]"
+        style={{ background: '#080F1E' }}
+      >
+        {/* Logo */}
+        <div className="px-[18px] py-5 border-b border-white/[0.06] flex items-center gap-2.5">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] font-bold text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #3B4FD8, #0D9488)' }}
+          >
+            H
+          </div>
+          <span className="text-sm font-semibold text-white/90 tracking-tight">Heero</span>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 p-3">
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] px-2 py-2">
+            Módulos
+          </p>
+          {MODULOS.map((mod, idx) => {
+            const completado = modulos[mod.key]
+            const esActual   = pathname.startsWith(mod.href)
+            const bloqueado  = esTrial(planEmpresa) && idx === 2
+            if (bloqueado) {
+              return (
+                <div key={mod.key}
+                  className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg opacity-40 cursor-not-allowed mb-0.5"
+                >
+                  <div className="w-[7px] h-[7px] rounded-full bg-white/15 flex-shrink-0" />
+                  <span className="text-[13px] text-white/40 flex-1">
+                    {mod.key} — {MODULO_LABELS[mod.key]}
+                  </span>
+                  <span className="text-[9px] text-amber-500/60 font-semibold">Pro</span>
+                </div>
+              )
+            }
+            return (
+              <Link key={mod.key} href={mod.href}
+                className={cn(
+                  'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-colors duration-150 text-[13px] mb-0.5 border',
+                  esActual
+                    ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
+                    : 'text-white/50 hover:text-white/90 hover:bg-white/[0.04] border-transparent'
+                )}
+              >
+                <div className={cn(
+                  'w-[7px] h-[7px] rounded-full flex-shrink-0',
+                  completado ? 'bg-[#0D9488]' : esActual ? 'bg-[#818CF8]' : 'bg-white/20'
+                )} />
+                {mod.key === 'plan' ? MODULO_LABELS[mod.key] : `${mod.key} — ${MODULO_LABELS[mod.key]}`}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* User info */}
+        <div className="px-3.5 py-3.5 border-t border-white/[0.06] flex items-center gap-2.5">
+          <div
+            className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #3B4FD8, #0D9488)' }}
+          >
+            {empleadoNombre
+              ? empleadoNombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+              : 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-semibold text-white/90 truncate">
+              {empleadoNombre || 'Empleado'}
+            </p>
+            <p className="text-[11px] text-white/30 truncate">
+              {empleadoPuesto || ''}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Header + Main (flex-col wrapper) ── */}
+      <div className="flex-1 flex flex-col min-w-0">
       {/* ── Header de progreso (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#111110]/80 backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 h-12">
-          {/* Logo */}
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-white/[0.06] bg-[#0A1628]/90 backdrop-blur-xl h-12 relative">
+        <div className="flex items-center gap-3 px-4 h-full">
+
+          {/* Logo — IZQUIERDA */}
           <Link
             href="/empleado/perfil"
-            className="flex-shrink-0 hover:opacity-75 transition-opacity duration-150"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity flex-shrink-0"
           >
             <HeeroLogo size="sm" />
           </Link>
 
-          <div className="h-4 w-px bg-white/[0.07] hidden sm:block flex-shrink-0" />
+          {nombreEmpresa && (
+            <>
+              <div className="h-4 w-px bg-white/10 flex-shrink-0" />
+              <span className="text-xs font-medium text-white/40 truncate max-w-[160px]">
+                {nombreEmpresa}
+              </span>
+            </>
+          )}
 
-          {/* Indicadores de módulos */}
-          <div id="tour-navbar-modulos" className="flex items-center gap-0.5 flex-shrink-0">
-            {MODULOS.map((mod, idx) => {
+          {/* Módulos — centro */}
+          <div className="hidden md:flex items-center gap-1.5 flex-1 justify-center">
+            {MODULOS.map(mod => {
               const completado = modulos[mod.key]
               const esActual = pathname.startsWith(mod.href)
-
               return (
-                <Link
-                  key={mod.key}
-                  href={mod.href}
-                  className={`flex items-center gap-1.5 px-2 min-h-[36px] rounded-md
-                    transition-colors duration-150 ${
-                      esActual
-                        ? 'bg-[#0EA5E9]/10'
-                        : 'hover:bg-white/[0.04]'
-                    }`}
+                <Link key={mod.key} href={mod.href}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-150 border',
+                    esActual
+                      ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
+                      : 'text-white/30 hover:text-white/60 border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]'
+                  )}
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-                      completado
-                        ? 'bg-[#22c55e]'
-                        : esActual
-                        ? 'bg-[#0EA5E9]'
-                        : 'bg-white/15'
-                    }`}
-                  />
-                  <span
-                    className={`text-[11px] font-medium ${
-                      esActual
-                        ? 'text-[#38BDF8]'
-                        : completado
-                        ? 'text-[#22c55e]/60'
-                        : 'text-white/30'
-                    }`}
-                  >
-                    M{idx + 1}
-                  </span>
+                  <span className={cn(
+                    'w-[5px] h-[5px] rounded-full flex-shrink-0',
+                    completado ? 'bg-[#0D9488]' : esActual ? 'bg-[#818CF8]' : 'bg-white/20'
+                  )} />
+                  {mod.key === 'plan' ? '30-60-90' : mod.key}
                 </Link>
               )
             })}
           </div>
 
-          <div className="flex-1" />
-
-          {/* Barra de progreso global */}
+          {/* Barra de progreso global — DERECHA */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-20 sm:w-28 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="hidden sm:block w-28 h-1 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#38BDF8]"
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
                 initial={{ width: '0%' }}
                 animate={{ width: `${progreso}%` }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -234,7 +332,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             >
               <span className="text-[#38BDF8] text-[11px] font-semibold">
                 {empleadoNombre
-                  ? empleadoNombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+                  ? empleadoNombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
                   : 'U'}
               </span>
             </button>
@@ -250,7 +348,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                     rounded-xl border border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
                     shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
-                  {/* Info del usuario */}
                   <div className="px-3 py-3 border-b border-white/[0.06]">
                     <p className="text-xs font-medium text-white/80 truncate">
                       {empleadoNombre || 'Empleado'}
@@ -259,8 +356,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                       {empleadoPuesto || 'Empleado'}
                     </p>
                   </div>
-
-                  {/* Cerrar sesión */}
                   <div className="p-1.5">
                     <button
                       onClick={() => { setMenuAbierto(false); handleLogout() }}
@@ -276,13 +371,23 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
               )}
             </AnimatePresence>
           </div>
+
         </div>
+        {/* Línea de progreso al fondo del header */}
+        <motion.div
+          className="absolute bottom-0 left-0 h-[2px]"
+          style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${progreso}%` }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        />
       </header>
 
       {/* Contenido de la página */}
       <main className="flex-1 flex flex-col">
         {children}
       </main>
+      </div>{/* end flex-col wrapper */}
 
       {/* Agente flotante proactivo (M1–M4) */}
       {(() => {
@@ -295,8 +400,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
         const moduloKey =
           moduloActual === 'perfil' ? 'M1' as const
-          : moduloActual === 'cultura' ? 'M2' as const
-          : moduloActual === 'rol' ? 'M3' as const
+          : moduloActual === 'rol' ? 'M2' as const
+          : moduloActual === 'cultura' ? 'M3' as const
           : null
 
         return (

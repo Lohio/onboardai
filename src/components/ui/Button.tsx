@@ -16,13 +16,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // Estilos por variante — paleta Heero
 const variantStyles: Record<ButtonVariant, string> = {
   primary: [
-    'bg-[#0EA5E9] text-[#111110]',
-    'hover:bg-[#0284C7]',
-    'shadow-[0_0_20px_rgba(14,165,233,0.2)]',
-    'hover:shadow-[0_0_28px_rgba(14,165,233,0.35)]',
-    'font-medium',
+    'bg-[#3B4FD8] text-white',
+    'hover:bg-[#4B5EE8]',
+    'shadow-[0_0_20px_rgba(59,79,216,0.2)]',
+    'hover:shadow-[0_0_28px_rgba(59,79,216,0.35)]',
+    'font-semibold rounded-[9px]',
   ].join(' '),
-  secondary: 'btn-secondary',
+  secondary: [
+    'bg-white/5 text-white/80',
+    'border border-white/10',
+    'hover:bg-white/10 hover:border-white/20',
+    'rounded-[9px]',
+  ].join(' '),
   ghost: 'btn-ghost',
   danger: [
     'bg-red-600 text-white',
@@ -77,9 +82,9 @@ export function Button({
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
         'relative inline-flex items-center justify-center',
-        'font-[\'Instrument_Sans\'] transition-colors duration-150 cursor-pointer select-none',
+        'font-[\'DM_Sans\'] transition-colors duration-150 cursor-pointer select-none',
         'focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-[#0EA5E9]/50 focus-visible:ring-offset-1',
+        'focus-visible:ring-[#3B4FD8]/50 focus-visible:ring-offset-1',
         'focus-visible:ring-offset-transparent',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
         variantStyles[variant],

@@ -50,9 +50,21 @@ export interface LogMensajeParams {
 
 interface ResolvedConfig {
   systemPromptBase: string
+  systemPromptInstrucciones: string
   claudeModel: string
   maxTokens: number
 }
+
+// Fallback hardcodeado — solo se usa si app_config no es accesible.
+// En condiciones normales, las instrucciones vienen de la DB.
+const INSTRUCCIONES_FALLBACK = `Sos el asistente de onboarding de esta empresa. Tu rol es ayudar a los nuevos empleados a integrarse, respondiendo preguntas sobre cultura organizacional, procesos, herramientas y su rol.
+
+Reglas de comportamiento:
+- Responder SIEMPRE en español, con tono amigable y profesional
+- Ser conciso; evitar respuestas extensas si no son necesarias
+- Si la pregunta no está cubierta en el conocimiento disponible, decirlo honestamente: "No tengo esa información. Te recomiendo consultarlo con tu manager o buddy." — nunca inventar datos
+- No hacer suposiciones sobre información que no está en el contexto
+- Cuando sea útil, indicar el módulo o sección de donde proviene la información`
 
 // ─────────────────────────────────────────────
 // getAppConfig
@@ -65,23 +77,29 @@ async function getAppConfig(): Promise<ResolvedConfig> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('app_config')
-      .select('key, value')
-      .in('key', ['system_prompt_base', 'claude_model', 'max_tokens'])
+      .select('clave, valor')
+      .in('clave', [
+        'system_prompt_base',
+        'system_prompt_instrucciones',
+        'claude_model',
+        'max_tokens',
+      ])
 
     if (error) throw error
 
     const map: Record<string, string> = {}
-    for (const row of (data ?? [])) map[row.key] = row.value ?? ''
+    for (const row of (data ?? [])) map[row.clave] = row.valor ?? ''
 
     return {
       systemPromptBase: map['system_prompt_base'] ?? '',
+      systemPromptInstrucciones: map['system_prompt_instrucciones'] ?? INSTRUCCIONES_FALLBACK,
       claudeModel: map['claude_model'] || 'claude-sonnet-4-6',
       maxTokens: Math.max(256, parseInt(map['max_tokens'] ?? '1024', 10) || 1024),
     }
   } catch {
-    // La tabla app_config no existe o no es accesible → defaults seguros
     return {
       systemPromptBase: '',
+      systemPromptInstrucciones: INSTRUCCIONES_FALLBACK,
       claudeModel: 'claude-sonnet-4-6',
       maxTokens: 1024,
     }
@@ -105,15 +123,20 @@ export async function buildSystemPromptWithConfig(
 ): Promise<SystemPromptResult> {
   const supabase = createClient()
 
-  // Cargar conocimiento y config en paralelo (una sola query cada uno)
-  const [{ data: bloques }, config] = await Promise.all([
+  // Cargar conocimiento, config global y prompt de empresa en paralelo
+  const [{ data: bloques }, config, { data: empresa }] = await Promise.all([
     supabase
       .from('conocimiento')
       .select('modulo, bloque, titulo, contenido')
       .eq('empresa_id', empresaId)
       .order('modulo', { ascending: true })
-      .order('bloque',  { ascending: true }),
+      .order('bloque', { ascending: true }),
     getAppConfig(),
+    supabase
+      .from('empresas')
+      .select('prompt_personalizado')
+      .eq('id', empresaId)
+      .single(),
   ])
 
   // ── Organizar bloques por módulo ──────────────────────────────
@@ -135,28 +158,25 @@ export async function buildSystemPromptWithConfig(
           .join('\n\n---\n\n')
       : 'No hay contenido cargado para esta empresa. Indicá al empleado que consulte con su manager o buddy.'
 
-  // ── Instrucciones base del asistente ─────────────────────────
-  const instrucciones = `Sos el asistente de onboarding de esta empresa. Tu rol es ayudar a los nuevos empleados a integrarse, respondiendo preguntas sobre cultura organizacional, procesos, herramientas y su rol.
-
-Reglas de comportamiento:
-- Responder SIEMPRE en español, con tono amigable y profesional
-- Ser conciso; evitar respuestas extensas si no son necesarias
-- Si la pregunta no está cubierta en el conocimiento disponible, decirlo honestamente: "No tengo esa información. Te recomiendo consultarlo con tu manager o buddy." — nunca inventar datos
-- No hacer suposiciones sobre información que no está en el contexto
-- Cuando sea útil, indicar el módulo o sección de donde proviene la información`
-
   // ── Ensamblar el prompt final ─────────────────────────────────
-  // Orden: base personalizable (dev) → instrucciones fijas → conocimiento → contexto empleado
+  // Orden: base global (dev) → instrucciones (dev, editables) →
+  //        personalización empresa (admin) → conocimiento → contexto empleado
   const partes: string[] = []
 
   if (config.systemPromptBase.trim()) {
     partes.push(config.systemPromptBase.trim())
   }
 
-  partes.push(instrucciones)
+  partes.push(config.systemPromptInstrucciones.trim())
+
+  // Personalización por empresa (override del admin)
+  const promptEmpresa = empresa?.prompt_personalizado?.trim()
+  if (promptEmpresa) {
+    partes.push(`# Instrucciones específicas de esta empresa\n\n${promptEmpresa}`)
+  }
+
   partes.push(`# Conocimiento de la empresa\n\n${seccionesConocimiento}`)
 
-  // Agregar contexto del empleado si está disponible (personaliza las respuestas)
   if (contextoEmpleado?.trim()) {
     partes.push(`# Contexto del empleado\n\n${contextoEmpleado.trim()}`)
   }

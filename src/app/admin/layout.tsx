@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
+import { esTrial, TRIAL_LIMITS } from '@/lib/trial'
 import AdminProductTour from '@/components/AdminProductTour'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -388,6 +389,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [alertasCount, setAlertasCount] = useState(0)
   const [sidebarAbierto, setSidebarAbierto] = useState(false)
+  const [plan, setPlan]                     = useState<string>('trial')
+  const [empleadosCount, setEmpleadosCount] = useState(0)
 
   const handleLogout = useCallback(async () => {
     const supabase = createClient()
@@ -436,6 +439,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         setAdminNombre(usuarioData.nombre ?? '')
         setEmpresaId(usuarioData.empresa_id)
+
+        // Cargar plan y conteo de empleados para el banner trial
+        const [empresaRes, empleadosRes] = await Promise.all([
+          supabase
+            .from('empresas')
+            .select('plan')
+            .eq('id', usuarioData.empresa_id)
+            .single(),
+          supabase
+            .from('usuarios')
+            .select('*', { count: 'exact', head: true })
+            .eq('empresa_id', usuarioData.empresa_id)
+            .eq('rol', 'empleado'),
+        ])
+        setPlan(empresaRes.data?.plan ?? 'trial')
+        setEmpleadosCount(empleadosRes.count ?? 0)
 
         const { count } = await supabase
           .from('alertas_conocimiento')
@@ -507,6 +526,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onMenuClick={() => setSidebarAbierto(true)}
           onLogout={handleLogout}
         />
+        {/* ── Banner trial ── */}
+        {esTrial(plan) && (
+          <div className="flex-shrink-0 flex items-center justify-between gap-3
+            px-4 py-2 bg-amber-500/10 border-b border-amber-500/20">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-amber-400 text-xs flex-shrink-0">⚡ Trial</span>
+              <span className="text-xs text-amber-300/70 truncate">
+                {empleadosCount}/{TRIAL_LIMITS.maxEmpleados} empleados
+                · M1 y M2 habilitados
+              </span>
+            </div>
+            <a
+              href="mailto:hola@onboardai.app?subject=Quiero upgradear mi plan"
+              className="flex-shrink-0 text-[11px] font-semibold text-amber-400
+                hover:text-amber-300 underline underline-offset-2 transition-colors"
+            >
+              Upgradear →
+            </a>
+          </div>
+        )}
         {/* El overflow va en main, no en el div hijo que envuelve {children} —
             si estuviera en el div hijo, crearía un stacking context que confinaría
             los position:fixed de modales dentro del div en vez del viewport. */}

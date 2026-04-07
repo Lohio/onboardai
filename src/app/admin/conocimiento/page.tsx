@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen } from 'lucide-react'
+import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen, Wrench, Shield, GitBranch } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Portal } from '@/components/shared/Portal'
@@ -25,6 +25,36 @@ const MODULOS = [
       { key: 'como_trabajamos', label: 'Cómo trabajamos' },
       { key: 'expectativas', label: 'Expectativas' },
       { key: 'hitos', label: 'Hitos y logros' },
+    ],
+  },
+  {
+    key: 'recursos',
+    label: 'Recursos y Links Útiles',
+    icon: <Wrench className="w-4 h-4" />,
+    bloques: [
+      { key: 'herramientas_internas', label: 'Herramientas internas' },
+      { key: 'portales', label: 'Portales' },
+      { key: 'canales_comunicacion', label: 'Canales de comunicación' },
+      { key: 'documentacion', label: 'Documentación' },
+    ],
+  },
+  {
+    key: 'seguridad',
+    label: 'Seguridad y Compliance',
+    icon: <Shield className="w-4 h-4" />,
+    bloques: [
+      { key: 'politicas_contrasenas', label: 'Políticas de contraseñas' },
+      { key: 'manejo_datos', label: 'Manejo de datos' },
+      { key: 'seguridad_fisica', label: 'Seguridad física' },
+      { key: 'reportar_incidentes', label: 'Reportar incidentes' },
+    ],
+  },
+  {
+    key: 'organigrama',
+    label: 'Organigrama',
+    icon: <GitBranch className="w-4 h-4" />,
+    bloques: [
+      { key: 'descripcion_introductoria', label: 'Descripción introductoria' },
     ],
   },
 ]

@@ -8,7 +8,7 @@ import {
   Clock, Zap, AlertTriangle,
   MessageSquare, FileText, Code, Globe,
   Mail, Calendar, BarChart2,
-  ArrowRight, Sparkles, GitBranch,
+  ArrowRight, Sparkles, GitBranch, Scale,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -22,6 +22,16 @@ import type {
   TareaOnboarding, HerramientaRol, ObjetivoRol,
   DecisionAutonomia,
 } from '@/types'
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function modalidadVariant(m: string): 'info' | 'default' | 'success' {
+  if (m === 'presencial') return 'info'
+  if (m === 'remoto') return 'success'
+  return 'default'
+}
 
 // ─────────────────────────────────────────────
 // Scroll progress bar (sticky top)
@@ -565,6 +575,10 @@ export default function RolPage() {
   // Datos por empleado (M3 dinámico)
   const [rolResponsabilidades, setRolResponsabilidades] = useState<string[]>([])
   const [rolKpis, setRolKpis] = useState<string[]>([])
+  const [modalidadEmpleado, setModalidadEmpleado] = useState<string>('')
+  const [managerNombre, setManagerNombre] = useState<string>('')
+  const [responsabilidadesKnowledge, setResponsabilidadesKnowledge] = useState<string[]>([])
+  const [metricasKnowledge, setMetricasKnowledge] = useState<string | null>(null)
   const [rolHerramientasEmpleado, setRolHerramientasEmpleado] = useState<Array<{ nombre: string; uso: string }>>([])
   const [rolAutonomiaEmpleado, setRolAutonomiaEmpleado] = useState<string>('')
   const [nombreEmpleado, setNombreEmpleado] = useState<string>('')
@@ -589,7 +603,7 @@ export default function RolPage() {
 
       const { data: usuario, error: uErr } = await supabase
         .from('usuarios')
-        .select('empresa_id, nombre, puesto, area, rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia')
+        .select('empresa_id, nombre, puesto, area, modalidad, rol_responsabilidades, rol_kpis, rol_herramientas, rol_autonomia')
         .eq('id', user.id)
         .single()
       if (uErr || !usuario) throw new Error(uErr?.message ?? 'Usuario no encontrado')
@@ -604,13 +618,15 @@ export default function RolPage() {
       setRolKpis((usuario.rol_kpis as string[] | null) ?? [])
       setRolHerramientasEmpleado((usuario.rol_herramientas as Array<{ nombre: string; uso: string }> | null) ?? [])
       setRolAutonomiaEmpleado((usuario.rol_autonomia as string | null) ?? '')
+      setModalidadEmpleado((usuario.modalidad as string | null) ?? '')
 
-      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes] = await Promise.all([
+      const [conocimientoRes, herramientasRes, tareasRes, objetivosRes, orgRes, managerRes] = await Promise.all([
         supabase.from('conocimiento').select('bloque, contenido').eq('empresa_id', eid).eq('modulo', 'rol'),
         supabase.from('herramientas_rol').select('*').eq('empresa_id', eid).order('orden'),
         supabase.from('tareas_onboarding').select('*').eq('empresa_id', eid).eq('usuario_id', user.id).order('semana').order('orden'),
         supabase.from('objetivos_rol').select('*').eq('empresa_id', eid).order('semana'),
         supabase.from('conocimiento').select('contenido').eq('empresa_id', eid).eq('modulo', 'organigrama').eq('bloque', 'descripcion').maybeSingle(),
+        supabase.from('equipo_relaciones').select('miembro:usuarios!equipo_relaciones_miembro_id_fkey(nombre)').eq('empleado_id', user.id).eq('relacion', 'manager').maybeSingle(),
       ])
 
       if (conocimientoRes.error) console.warn('[M3] conocimiento:', conocimientoRes.error.message)
@@ -619,10 +635,14 @@ export default function RolPage() {
       if (objetivosRes.error)    console.warn('[M3] objetivos_rol:', objetivosRes.error.message)
       if (orgRes.error)          console.warn('[M3] organigrama:', orgRes.error.message)
       setOrgDescripcion((orgRes.data?.contenido as string | null) ?? '')
+      const mgr = managerRes.data?.miembro as unknown as { nombre: string } | null
+      setManagerNombre(mgr?.nombre ?? '')
 
       const bloques = conocimientoRes.data ?? []
       const puestoBloque = bloques.find(b => b.bloque === 'puesto')
       const autonomiaBloque = bloques.find(b => b.bloque === 'autonomia')
+      const responsabilidadesBloque = bloques.find(b => b.bloque === 'responsabilidades')
+      const metricasBloque = bloques.find(b => b.bloque === 'metricas')
 
       setPuesto(puestoBloque?.contenido ?? '')
       try {
@@ -630,6 +650,14 @@ export default function RolPage() {
       } catch {
         setAutonomia([])
       }
+      try {
+        setResponsabilidadesKnowledge(
+          responsabilidadesBloque?.contenido ? JSON.parse(responsabilidadesBloque.contenido) : []
+        )
+      } catch {
+        setResponsabilidadesKnowledge([])
+      }
+      setMetricasKnowledge(metricasBloque?.contenido ?? null)
 
       setHerramientas(herramientasRes.data ?? [])
       setTareas(tareasRes.data ?? [])
@@ -701,59 +729,42 @@ export default function RolPage() {
         <div className="max-w-3xl mx-auto">
           <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
 
-            {/* ── Header Banner ── */}
-            <motion.div
-              variants={sectionVariants}
-              className="relative rounded-2xl overflow-hidden p-6"
+            {/* ── Page header M2 ── */}
+            <div
+              className="rounded-2xl mb-6 p-5 flex items-center justify-between gap-6"
               style={{
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.08) 50%, rgba(10,22,40,0.6) 100%)',
-                border: '1px solid rgba(245,158,11,0.2)',
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.05) 100%)',
+                border: '1px solid rgba(245,158,11,0.22)',
               }}
             >
-              {/* Glows */}
-              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)' }} />
-              <div className="absolute -bottom-4 left-12 w-24 h-24 rounded-full opacity-15 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #ef4444 0%, transparent 70%)' }} />
-
-              <div className="relative flex items-start justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                      <Briefcase className="w-4 h-4 text-amber-400" />
-                    </div>
-                    <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-widest">Módulo 3</span>
-                  </div>
-                  <h1 className="text-2xl font-bold text-white">Mi rol y herramientas</h1>
-                  <p className="text-sm text-white/45 mt-1">
-                    Conocé tu puesto, las herramientas y tus objetivos del mes
-                  </p>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/20 flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-5 h-5" style={{ color: '#FCD34D' }} />
                 </div>
-                {/* Círculo de progreso */}
-                <div className="flex-shrink-0 relative w-16 h-16">
-                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                    <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                    <motion.circle
-                      cx="32" cy="32" r="26" fill="none"
-                      stroke="url(#rol-gradient)"
-                      strokeWidth="4" strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 26}`}
-                      animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - progresoGlobal / 100) }}
-                      transition={{ duration: 0.6, ease: 'easeOut' }}
-                    />
-                    <defs>
-                      <linearGradient id="rol-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#f59e0b" />
-                        <stop offset="100%" stopColor="#ef4444" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-sm font-bold text-white">{progresoGlobal}%</span>
-                  </div>
+                <div>
+                  <p className="tag-m2 mb-1" style={{ color: '#FCD34D' }}>MÓDULO 2</p>
+                  <h1 className="text-xl font-bold text-white">Mi rol y herramientas</h1>
+                  <p className="text-sm text-white/45 mt-0.5">Conocé tu puesto, las herramientas y tus objetivos del mes</p>
                 </div>
               </div>
-            </motion.div>
+              {/* Círculo de progreso */}
+              <div className="flex-shrink-0 relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                  <motion.circle
+                    cx="32" cy="32" r="26" fill="none"
+                    stroke="#F59E0B"
+                    strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 26}`}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - progresoGlobal / 100) }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-sm font-bold text-white">{progresoGlobal}%</span>
+                </div>
+              </div>
+            </div>
 
             {/* ══ Tab bar ══ */}
             <motion.div variants={sectionVariants}>
@@ -768,11 +779,10 @@ export default function RolPage() {
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-medium transition-all',
-                      activeTab === tab.key
-                        ? 'bg-white/[0.09] text-white shadow-sm'
-                        : 'text-white/35 hover:text-white/60'
+                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-medium transition-all rounded-lg',
+                      activeTab !== tab.key && 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]',
                     )}
+                    style={activeTab === tab.key ? { background: 'rgba(245,158,11,0.12)', color: '#FCD34D', border: '1px solid rgba(245,158,11,0.22)' } : undefined}
                   >
                     {tab.icon}
                     <span className="hidden sm:inline">{tab.label}</span>
@@ -795,146 +805,136 @@ export default function RolPage() {
                 {/* ── Tab: Mi rol ── */}
                 {activeTab === 'rol' && (
                   <>
-                    {/* Descripción del empleado */}
-                    {(() => {
-                      const tieneRol = rolResponsabilidades.length > 0 || rolKpis.length > 0 || rolHerramientasEmpleado.length > 0 || rolAutonomiaEmpleado
-                      return (
-                        <section>
-                          <SectionHeader
-                            icon={<Briefcase className="w-4 h-4" />}
-                            title="Descripción de mi rol"
-                            subtitle={`${puestoEmpleado || 'Sin definir'} · ${areaEmpleado || 'Sin área'}`}
-                            iconBg="bg-amber-500/15"
-                            iconText="text-amber-400"
-                          />
-                          {!tieneRol ? (
-                            <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 flex items-start gap-3">
-                              <AlertTriangle className="w-5 h-5 text-amber-400/60 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-sm text-white/60">Tu administrador aún no completó la descripción de tu rol.</p>
-                                <p className="text-xs text-white/35 mt-0.5">Consultá con tu manager o RRHH para más información.</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="rounded-2xl border border-white/[0.07] overflow-hidden divide-y divide-white/[0.05]"
-                              style={{ background: 'rgba(255,255,255,0.02)' }}>
-                              {rolAutonomiaEmpleado && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2">Nivel de autonomía</p>
-                                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{rolAutonomiaEmpleado}</p>
-                                </div>
-                              )}
-                              {rolResponsabilidades.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Responsabilidades</p>
-                                  <ul className="space-y-2">
-                                    {rolResponsabilidades.map((r, i) => (
-                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-400/50 flex-shrink-0" />
-                                        {r}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {rolKpis.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">KPIs / Métricas de éxito</p>
-                                  <ul className="space-y-2">
-                                    {rolKpis.map((k, i) => (
-                                      <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-teal-400/50 flex-shrink-0" />
-                                        {k}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {rolHerramientasEmpleado.length > 0 && (
-                                <div className="p-5">
-                                  <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">Herramientas del rol</p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {rolHerramientasEmpleado.map((h, i) => (
-                                      <div key={i} className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                        <div className="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center flex-shrink-0">
-                                          <Wrench className="w-3.5 h-3.5 text-sky-400" />
-                                        </div>
-                                        <div>
-                                          <p className="text-sm font-medium text-white/85">{h.nombre}</p>
-                                          {h.uso && <p className="text-xs text-white/40 mt-0.5">{h.uso}</p>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </section>
-                      )
-                    })()}
+                    {/* Descripción del rol — 2 columnas */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Columna izquierda: datos del puesto */}
+                      <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                        <SectionHeader
+                          icon={<Briefcase className="w-4 h-4" />}
+                          title="Descripción de mi rol"
+                          iconBg="bg-amber-500/15"
+                          iconText="text-amber-400"
+                        />
 
-                    {/* Mi puesto (conocimiento empresa) */}
-                    <section>
-                      <SectionHeader
-                        icon={<Briefcase className="w-4 h-4" />}
-                        title={t('rol.puesto.title')}
-                        subtitle={t('rol.puesto.subtitle')}
-                        iconBg="bg-amber-500/15"
-                        iconText="text-amber-400"
-                      />
-                      <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
-                        style={{ background: 'rgba(255,255,255,0.02)' }}>
-                        <div className="p-5">
-                          {puesto ? (
-                            <MarkdownContent text={puesto} />
-                          ) : (
-                            <div className="py-6 text-center">
-                              <Briefcase className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                              <p className="text-sm text-white/30 italic">
-                                Tu empresa aún no ha cargado la descripción del puesto.
-                              </p>
+                        {!puesto && (
+                          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 mb-4">
+                            <p className="text-xs text-amber-300/80 flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                              Tu admin aún no completó la descripción del rol.
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="space-y-3 mt-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Puesto</span>
+                            <span className="text-sm text-white font-medium">{puestoEmpleado || '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Área</span>
+                            <span className="text-sm text-white font-medium">{areaEmpleado || '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 w-20">Reporta a</span>
+                            <span className="text-sm text-white font-medium">{managerNombre || '—'}</span>
+                          </div>
+                          {modalidadEmpleado && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-white/40 w-20">Modalidad</span>
+                              <Badge variant={modalidadVariant(modalidadEmpleado)}>{modalidadEmpleado}</Badge>
                             </div>
                           )}
                         </div>
-                        {autonomia.length > 0 && (
-                          <div className="border-t border-white/[0.06]">
-                            <div className="px-5 py-3">
-                              <span className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">
-                                Tabla de autonomía
-                              </span>
-                            </div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="border-b border-white/[0.05]">
-                                    <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {autonomia.map((dec, i) => (
-                                    <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
-                                      <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
-                                      <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {autonomia.length === 0 && puesto && (
-                          <div className="border-t border-white/[0.05] px-5 py-3">
-                            <p className="text-xs text-white/25 italic">Tabla de autonomía no configurada aún.</p>
-                          </div>
-                        )}
                       </div>
-                    </section>
+
+                      {/* Columna derecha: responsabilidades + métricas */}
+                      <div className="space-y-4">
+                        {/* Responsabilidades */}
+                        <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                          <h3 className="text-[11px] font-medium text-amber-400/60 uppercase tracking-widest mb-3">
+                            Responsabilidades
+                          </h3>
+                          {(() => {
+                            const items = responsabilidadesKnowledge.length > 0 ? responsabilidadesKnowledge : rolResponsabilidades
+                            return items.length > 0 ? (
+                              <div className="space-y-2.5">
+                                {items.map((r, i) => (
+                                  <div key={i} className="flex items-start gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      {i + 1}
+                                    </span>
+                                    <span className="text-sm text-white/70">{r}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-white/25 italic">Próximamente configuradas por tu admin</p>
+                            )
+                          })()}
+                        </div>
+
+                        {/* Métricas de éxito */}
+                        <div className="glass-card rounded-2xl p-5 border border-white/[0.06]">
+                          <h3 className="text-[11px] font-medium text-blue-400/60 uppercase tracking-widest mb-3">
+                            Métricas de éxito
+                          </h3>
+                          {metricasKnowledge ? (
+                            <p className="text-sm text-white/70">{metricasKnowledge}</p>
+                          ) : rolKpis.length > 0 ? (
+                            <div className="space-y-2.5">
+                              {rolKpis.map((k, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                  <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    {i + 1}
+                                  </span>
+                                  <span className="text-sm text-white/70">{k}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-white/25 italic">Próximamente configuradas por tu manager</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Autonomía de decisiones */}
+                    {autonomia.length > 0 && (
+                      <section>
+                        <SectionHeader
+                          icon={<Scale className="w-4 h-4" />}
+                          title="Autonomía de decisiones"
+                          subtitle="Qué podés decidir solo, qué consultar y qué escalar"
+                          iconBg="bg-teal-500/15"
+                          iconText="text-teal-400"
+                        />
+                        <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
+                          style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-white/[0.05]">
+                                  <th className="text-left px-5 py-3 text-xs font-semibold text-white/35 uppercase tracking-wide">Decisión</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-teal-400/60 uppercase tracking-wide">Solo ✓</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-amber-400/60 uppercase tracking-wide">Consultar</th>
+                                  <th className="text-center px-4 py-3 text-xs font-semibold text-red-400/60 uppercase tracking-wide">Escalar ▲</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {autonomia.map((dec, i) => (
+                                  <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-5 py-3 text-sm text-white/70">{dec.decision}</td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="solo" active={dec.nivel === 'solo'} /></div></td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="consultar" active={dec.nivel === 'consultar'} /></div></td>
+                                    <td className="text-center px-4 py-3"><div className="flex justify-center"><SemaforoNivel nivel="escalar" active={dec.nivel === 'escalar'} /></div></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
 

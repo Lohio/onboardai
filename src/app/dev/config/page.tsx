@@ -73,6 +73,19 @@ const CONFIGS: ConfigDef[] = [
     tipo: 'textarea',
   },
   {
+    clave: 'system_prompt_instrucciones',
+    valorDefault: `Sos el asistente de onboarding de esta empresa. Tu rol es ayudar a los nuevos empleados a integrarse, respondiendo preguntas sobre cultura organizacional, procesos, herramientas y su rol.
+
+Reglas de comportamiento:
+- Responder SIEMPRE en español, con tono amigable y profesional
+- Ser conciso; evitar respuestas extensas si no son necesarias
+- Si la pregunta no está cubierta en el conocimiento disponible, decirlo honestamente: "No tengo esa información. Te recomiendo consultarlo con tu manager o buddy." — nunca inventar datos
+- No hacer suposiciones sobre información que no está en el contexto
+- Cuando sea útil, indicar el módulo o sección de donde proviene la información`,
+    descripcion: 'Reglas de comportamiento del asistente IA. Aplicadas globalmente a todas las empresas. Cambia sin deploy.',
+    tipo: 'textarea' as const,
+  },
+  {
     clave: 'onboarding_secuencial',
     valorDefault: 'true',
     descripcion: 'Si está activo, los módulos se desbloquean uno a uno en orden',

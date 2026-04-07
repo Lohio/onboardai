@@ -151,7 +151,7 @@ const BLOQUES_CONFIG: Record<BloqueKey, {
     accent: 'border-sky-500/30',
   },
   expectativas: {
-    label: 'Qué se espera de mí',
+    label: 'Cultura en el día a día',
     icon: <ClipboardList className="w-5 h-5" />,
     gradient: 'from-amber-600/20 via-amber-600/5 to-transparent',
     iconBg: 'bg-amber-600/20',
@@ -355,87 +355,6 @@ function ReadBar({ value, color }: { value: number; color: string }) {
           boxShadow: value > 0 ? `0 0 8px ${color.includes('0EA5E9') ? 'rgba(14,165,233,0.6)' : 'rgba(14,165,233,0.4)'}` : 'none',
         }}
       />
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Stepper lateral
-// ─────────────────────────────────────────────
-
-function StepperSidebar({
-  progreso,
-  bloqueActivo,
-  onClickBloque,
-}: {
-  progreso: Partial<Record<BloqueKey, ProgresoModulo>>
-  bloqueActivo: BloqueKey | null
-  onClickBloque: (key: BloqueKey) => void
-}) {
-  const completados = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
-
-  return (
-    <div className="hidden lg:flex flex-col gap-1 sticky top-8 self-start w-48 flex-shrink-0">
-      {/* Mini progreso */}
-      <div className="mb-4 px-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] text-white/30 uppercase tracking-widest font-medium">Progreso</span>
-          <span className="text-xs font-mono text-white/50">{completados}/{BLOQUES_ORDEN.length}</span>
-        </div>
-        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-teal-400"
-            animate={{ width: `${(completados / BLOQUES_ORDEN.length) * 100}%` }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          />
-        </div>
-      </div>
-
-      {BLOQUES_ORDEN.map((key, idx) => {
-        const cfg = BLOQUES_CONFIG[key]
-        const completado = progreso[key]?.completado === true
-        const activo = bloqueActivo === key
-        const desbloqueado = idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
-
-        return (
-          <button
-            key={key}
-            onClick={() => desbloqueado && onClickBloque(key)}
-            disabled={!desbloqueado}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200',
-              activo && desbloqueado
-                ? 'bg-white/[0.07] border border-white/[0.1]'
-                : 'hover:bg-white/[0.04]',
-              !desbloqueado && 'opacity-35 cursor-not-allowed',
-            )}
-          >
-            {/* Indicador */}
-            <div className={cn(
-              'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300',
-              completado
-                ? 'bg-teal-500/20 text-teal-400'
-                : activo
-                ? cn(cfg.iconBg, cfg.iconText)
-                : 'bg-white/[0.05] text-white/20',
-            )}>
-              {completado ? (
-                <CheckCircle2 className="w-3.5 h-3.5" />
-              ) : (
-                <span className="text-[10px] font-mono font-bold">{idx + 1}</span>
-              )}
-            </div>
-
-            {/* Label */}
-            <span className={cn(
-              'text-xs font-medium leading-tight',
-              completado ? 'text-teal-300/70 line-through' : activo ? 'text-white/90' : 'text-white/40',
-            )}>
-              {cfg.label}
-            </span>
-          </button>
-        )
-      })}
     </div>
   )
 }
@@ -846,17 +765,7 @@ export default function CulturaPage() {
   const [completando, setCompletando] = useState<BloqueKey | null>(null)
   const [hasError, setHasError] = useState(false)
   const [bloqueActivo, setBloqueActivo] = useState<BloqueKey | null>(null)
-
-  const contentRefsObj = useRef<Partial<Record<BloqueKey, HTMLDivElement | null>>>({})
-  const contentRefCallbacks = useRef<Partial<Record<BloqueKey, (el: HTMLDivElement | null) => void>>>({})
-
-  for (const key of BLOQUES_ORDEN) {
-    if (!contentRefCallbacks.current[key]) {
-      contentRefCallbacks.current[key] = (el: HTMLDivElement | null) => {
-        contentRefsObj.current[key] = el
-      }
-    }
-  }
+  const initialSelectDoneRef = useRef(false)
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
@@ -914,49 +823,14 @@ export default function CulturaPage() {
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
-  // ── Scroll tracking ──
-  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleScroll = useCallback(() => {
-    const vh = window.innerHeight
-    const updates: Partial<Record<BloqueKey, number>> = {}
-    let closestBloque: BloqueKey | null = null
-    let closestDist = Infinity
-
-    for (const bloque of BLOQUES_ORDEN) {
-      const el = contentRefsObj.current[bloque]
-      if (!el) continue
-      const { top, height } = el.getBoundingClientRect()
-      const scrolled = (vh - top) / height
-      updates[bloque] = Math.min(100, Math.max(0, Math.round(scrolled * 100)))
-
-      // Determinar bloque más visible
-      const dist = Math.abs(top - vh / 3)
-      if (dist < closestDist) {
-        closestDist = dist
-        closestBloque = bloque
-      }
-    }
-
-    setReadProgress(prev => ({ ...prev, ...updates }))
-    if (closestBloque) setBloqueActivo(closestBloque)
-  }, [])
-
+  // ── Seleccionar primer bloque no completado al cargar ──
   useEffect(() => {
-    const onScroll = () => {
-      if (scrollThrottleRef.current) return
-      scrollThrottleRef.current = setTimeout(() => {
-        scrollThrottleRef.current = null
-        handleScroll()
-      }, 80)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    handleScroll()
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
-    }
-  }, [handleScroll])
+    if (loading || initialSelectDoneRef.current) return
+    initialSelectDoneRef.current = true
+    const first = BLOQUES_ORDEN.find(b => !progreso[b]?.completado) ?? BLOQUES_ORDEN[0]
+    setBloqueActivo(first)
+    setReadProgress(prev => ({ ...prev, [first]: 100 }))
+  }, [loading, progreso])
 
   // ── Handlers quiz ──
   const handleRespuesta = (bloqueKey: BloqueKey, qIdx: number, opIdx: number) => {
@@ -1020,12 +894,13 @@ export default function CulturaPage() {
     }
   }
 
-  // ── Scroll a bloque desde stepper ──
-  const scrollToBloque = (key: BloqueKey) => {
-    const el = document.getElementById(`bloque-${key}`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+  // ── Selección de bloque activo ──
+  const handleSelectBloque = (key: BloqueKey) => {
+    const idx = BLOQUES_ORDEN.indexOf(key)
+    const unlocked = idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
+    if (!unlocked) return
+    setBloqueActivo(key)
+    setReadProgress(prev => ({ ...prev, [key]: 100 }))
   }
 
   // ── Derivados (memoizados para no recalcular en re-renders por scroll) ──
@@ -1076,185 +951,157 @@ export default function CulturaPage() {
       <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8 pt-6">
         <div className="max-w-5xl mx-auto">
 
-          {/* ── Header con banner decorativo ── */}
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="relative rounded-2xl overflow-hidden mb-8 p-6"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(20,184,166,0.08) 50%, rgba(10,22,40,0.6) 100%)',
-              border: '1px solid rgba(99,102,241,0.2)',
-            }}
-          >
-            {/* Glow decorativo */}
-            <div
-              className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
-            />
-            <div
-              className="absolute -bottom-4 left-8 w-24 h-24 rounded-full opacity-15 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #14b8a6 0%, transparent 70%)' }}
-            />
-
-            <div className="relative flex items-start justify-between gap-6">
+          {/* ── Page header M3 ── */}
+          <div className="mod-m3-header flex items-center justify-between gap-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-[#0D9488]/20 flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 text-[#2DD4BF]" />
+              </div>
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/25 flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-[#0EA5E9]" />
-                  </div>
-                  <span className="text-[11px] font-medium text-[#0EA5E9]/70 uppercase tracking-widest">
-                    Módulo 2
-                  </span>
-                </div>
-                <h1 className="text-2xl font-bold text-white">Cultura e identidad</h1>
-                <p className="text-sm text-white/45 mt-1">
-                  {todoCompleto
-                    ? '¡Módulo completado! Conocés la empresa y sus valores.'
-                    : 'Conocé la historia, misión y forma de trabajar de la empresa.'}
-                </p>
-              </div>
-
-              {/* Círculo de progreso */}
-              <div className="flex-shrink-0 relative w-16 h-16">
-                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                  <motion.circle
-                    cx="32" cy="32" r="26"
-                    fill="none"
-                    stroke="url(#prog-gradient)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 26}`}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                  />
-                  <defs>
-                    <linearGradient id="prog-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#14b8a6" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
-                </div>
+                <p className="tag-m3 mb-1">Módulo 3</p>
+                <h1 className="text-xl font-bold text-white leading-tight">Cultura e identidad</h1>
+                <p className="text-sm text-white/45 mt-0.5">Historia, misión, valores y reglas de trabajo</p>
               </div>
             </div>
-
-            {/* Chips de progreso */}
-            <div className="relative flex items-center gap-2 mt-4 flex-wrap">
-              {BLOQUES_ORDEN.map((bKey, idx) => {
-                const completado = progreso[bKey]?.completado
-                const cfg = BLOQUES_CONFIG[bKey]
-                return (
-                  <button
-                    key={bKey}
-                    onClick={() => scrollToBloque(bKey)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200',
-                      completado
-                        ? 'bg-teal-500/15 text-teal-300 border border-teal-500/25'
-                        : idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado
-                        ? cn('border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20', 'bg-white/[0.04]')
-                        : 'bg-white/[0.02] text-white/20 border border-white/[0.05] cursor-not-allowed',
-                    )}
-                  >
-                    {completado ? (
-                      <CheckCircle2 className="w-3 h-3" />
-                    ) : (
-                      <span className="w-3 h-3 rounded-full border border-current opacity-60" />
-                    )}
-                    {cfg.label.split(' ')[0]}
-                  </button>
-                )
-              })}
-              <span className="ml-auto text-xs text-white/30 font-mono">
-                {totalCompletados}/{BLOQUES_ORDEN.length} bloques
-              </span>
-            </div>
-          </motion.div>
-
-          {/* ── Layout: stepper + bloques ── */}
-          <div className="flex gap-6 items-start">
-
-            {/* Stepper lateral (solo desktop) */}
-            <StepperSidebar
-              progreso={progreso}
-              bloqueActivo={bloqueActivo}
-              onClickBloque={scrollToBloque}
-            />
-
-            {/* Bloques de contenido */}
-            <div className="flex-1 min-w-0">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="space-y-4"
-              >
-                {BLOQUES_ORDEN.map((bloqueKey, idx) => (
-                  <BloqueCard
-                    key={bloqueKey}
-                    bloqueKey={bloqueKey}
-                    numero={idx + 1}
-                    contenido={contenidos[bloqueKey] ?? null}
-                    unlocked={isUnlocked(bloqueKey)}
-                    completado={progreso[bloqueKey]?.completado === true}
-                    readProgress={readProgress[bloqueKey]}
-                    respuestas={respuestas[bloqueKey]}
-                    completando={completando === bloqueKey}
-                    onRespuesta={(qIdx, opIdx) => handleRespuesta(bloqueKey, qIdx, opIdx)}
-                    onComplete={() => handleComplete(bloqueKey)}
-                    onReset={() => handleReset(bloqueKey)}
-                    contentRef={contentRefCallbacks.current[bloqueKey]!}
-                    isActive={bloqueActivo === bloqueKey}
-                  />
-                ))}
-              </motion.div>
-
-              {/* Banner de módulo completado */}
-              <AnimatePresence>
-                {todoCompleto && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.2 }}
-                    className="mt-6 rounded-2xl overflow-hidden"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(20,184,166,0.18) 0%, rgba(13,148,136,0.08) 100%)',
-                      border: '1px solid rgba(20,184,166,0.25)',
-                    }}
-                  >
-                    <div className="p-5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(20,184,166,0.3)]">
-                          <Star className="w-5 h-5 text-teal-400 fill-teal-400/30" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-teal-200">
-                            ¡Completaste Cultura e identidad!
-                          </p>
-                          <p className="text-xs text-teal-300/60 mt-0.5">
-                            Conocés la empresa y sus valores. Ahora es el momento de conocer tu rol.
-                          </p>
-                        </div>
-                      </div>
-                      <Link
-                        href="/empleado/rol"
-                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold
-                          bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 hover:text-teal-200
-                          border border-teal-500/25 transition-all duration-150"
-                      >
-                        Ir a mi Rol
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* Círculo de progreso */}
+            <div className="flex-shrink-0 relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                <motion.circle
+                  cx="32" cy="32" r="26"
+                  fill="none"
+                  stroke="#0D9488"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
+              </div>
             </div>
           </div>
+
+          {/* Pills navegación */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {BLOQUES_ORDEN.map((bKey, idx) => {
+              const completado = progreso[bKey]?.completado
+              const activo = bloqueActivo === bKey
+              const desbloqueado = idx === 0 || progreso[BLOQUES_ORDEN[idx - 1]]?.completado === true
+              const cfg = BLOQUES_CONFIG[bKey]
+              return (
+                <button
+                  key={bKey}
+                  onClick={() => handleSelectBloque(bKey)}
+                  disabled={!desbloqueado}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
+                    activo && !completado
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                      : activo && completado
+                      ? 'bg-teal-500/20 text-teal-300 border border-teal-500/35'
+                      : completado
+                      ? 'bg-teal-500/10 text-teal-400/70 border border-teal-500/20'
+                      : desbloqueado
+                      ? 'bg-white/[0.04] border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20'
+                      : 'bg-white/[0.02] text-white/20 border border-white/[0.05] cursor-not-allowed opacity-50',
+                  )}
+                >
+                  {completado ? (
+                    <CheckCircle2 className="w-3 h-3" />
+                  ) : (
+                    <span className="w-3 h-3 rounded-full border border-current opacity-60" />
+                  )}
+                  {cfg.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-[11px] text-white/30 uppercase tracking-widest font-medium flex-shrink-0">Progreso</span>
+            <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-teal-400"
+                animate={{ width: `${porcentajeGlobal}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            </div>
+            <span className="text-xs font-mono text-white/40 flex-shrink-0">{totalCompletados}/{BLOQUES_ORDEN.length}</span>
+          </div>
+
+          {/* Bloque activo */}
+          <AnimatePresence mode="wait">
+            {bloqueActivo && (
+              <motion.div
+                key={bloqueActivo}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              >
+                <BloqueCard
+                  bloqueKey={bloqueActivo}
+                  numero={BLOQUES_ORDEN.indexOf(bloqueActivo) + 1}
+                  contenido={contenidos[bloqueActivo] ?? null}
+                  unlocked={isUnlocked(bloqueActivo)}
+                  completado={progreso[bloqueActivo]?.completado === true}
+                  readProgress={readProgress[bloqueActivo]}
+                  respuestas={respuestas[bloqueActivo]}
+                  completando={completando === bloqueActivo}
+                  onRespuesta={(qIdx, opIdx) => handleRespuesta(bloqueActivo, qIdx, opIdx)}
+                  onComplete={() => handleComplete(bloqueActivo)}
+                  onReset={() => handleReset(bloqueActivo)}
+                  contentRef={() => {}}
+                  isActive
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Banner de módulo completado */}
+          <AnimatePresence>
+            {todoCompleto && (
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.2 }}
+                className="mt-6 rounded-2xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(20,184,166,0.18) 0%, rgba(13,148,136,0.08) 100%)',
+                  border: '1px solid rgba(20,184,166,0.25)',
+                }}
+              >
+                <div className="p-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(20,184,166,0.3)]">
+                      <Star className="w-5 h-5 text-teal-400 fill-teal-400/30" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-teal-200">
+                        ¡Completaste Cultura e identidad!
+                      </p>
+                      <p className="text-xs text-teal-300/60 mt-0.5">
+                        Conocés la empresa y sus valores. Ahora es el momento de conocer tu rol.
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/empleado/rol"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold
+                      bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 hover:text-teal-200
+                      border border-teal-500/25 transition-all duration-150"
+                  >
+                    Ir a mi Rol
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </>

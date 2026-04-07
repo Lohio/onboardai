@@ -7,14 +7,17 @@ import {
   User, BookOpen, Briefcase, MessageSquare,
   CheckCircle2, Circle, ArrowRight, Mail,
   CheckSquare, Bot, Sparkles, Lock,
-  Calendar, MapPin,
+  Calendar, MapPin, ChevronRight,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
+import { Card } from '@/components/ui/Card'
 import { EncuestaPulsoModal, type EncuestaPendiente } from '@/components/empleado/EncuestaPulsoModal'
-import { calcularEstadoModulos, calcularProgresoPct, isModuloDesbloqueado } from '@/lib/progreso'
+import { calcularEstadoModulos, calcularProgresoPct, isModuloDesbloqueado, calcularFaseActual, calcularProgresoPlanGlobal, calcularProgresoPlanFase } from '@/lib/progreso'
+import { FASES_CONFIG, COLOR_EXTRAS } from '@/lib/plan'
+import type { PlanItem } from '@/types'
 import { getInitials, formatFecha } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -432,6 +435,9 @@ export default function EmpleadoHome() {
   const [progresoPct, setProgresoPct] = useState(0)
   const [encuestaPendiente, setEncuestaPendiente] = useState<EncuestaPendiente | null>(null)
 
+  // ── Plan 30-60-90 ────────────────────────────
+  const [planItems, setPlanItems] = useState<PlanItem[]>([])
+
   // ── Tab activo y dirección de animación ──────
   const [tabActivo, setTabActivo] = useState<TabId>('M1')
   const [tabPrev, setTabPrev] = useState<TabId>('M1')
@@ -477,8 +483,8 @@ export default function EmpleadoHome() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Datos del usuario y progreso en paralelo
-      const [usuarioRes, progresoRes] = await Promise.all([
+      // Datos del usuario, progreso y plan en paralelo
+      const [usuarioRes, progresoRes, planRes] = await Promise.all([
         supabase
           .from('usuarios')
           .select('id, nombre, puesto, area, empresa_id, fecha_ingreso, foto_url, modalidad, email')
@@ -488,11 +494,17 @@ export default function EmpleadoHome() {
           .from('progreso_modulos')
           .select('modulo, bloque, completado')
           .eq('usuario_id', user.id),
+        supabase
+          .from('plan_30_60_90')
+          .select('*')
+          .eq('usuario_id', user.id)
+          .order('orden', { ascending: true }),
       ])
 
       const usuario = usuarioRes.data
       if (!usuario) return
       setDatosBase(usuario as DatosBase)
+      setPlanItems((planRes.data ?? []) as PlanItem[])
 
       // Ahora que tenemos empresa_id, consultamos el total de bloques de cultura
       const culturaCountRes = await supabase
@@ -712,6 +724,11 @@ export default function EmpleadoHome() {
   const estadoArray = [estadoModulos.M1, estadoModulos.M2, estadoModulos.M3, estadoModulos.M4]
   const dias = diasDesdeIngreso(datosBase.fecha_ingreso)
 
+  // Plan 30-60-90
+  const faseActual = datosBase.fecha_ingreso ? calcularFaseActual(datosBase.fecha_ingreso) : '30' as const
+  const diaOnboarding = dias ?? 1
+  const progresoGlobal = calcularProgresoPlanGlobal(planItems)
+
   return (
     <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto">
@@ -865,6 +882,70 @@ export default function EmpleadoHome() {
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+        </motion.div>
+
+        {/* ── Bloque B: Mi Plan 30-60-90 ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.1 }}
+          className="mt-4"
+        >
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+                Mi Plan 30-60-90
+              </h2>
+              <Badge variant={faseActual === '30' ? 'teal' : faseActual === '60' ? 'amber' : 'indigo'}>
+                Día {diaOnboarding} · {FASES_CONFIG[faseActual].titulo}
+              </Badge>
+            </div>
+
+            <ProgressBar value={progresoGlobal} showPercentage animated />
+
+            {/* 3 mini-cards de fases */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {(['30', '60', '90'] as const).map(fase => {
+                const config = FASES_CONFIG[fase]
+                const extras = COLOR_EXTRAS[config.color]
+                const pct = calcularProgresoPlanFase(planItems, fase)
+                const esActual = faseActual === fase
+
+                return (
+                  <div
+                    key={fase}
+                    className={cn(
+                      'rounded-xl p-3 border transition-all',
+                      esActual
+                        ? cn(config.iconBg, extras.border)
+                        : 'border-white/[0.06] bg-white/[0.02]',
+                    )}
+                  >
+                    <p className={cn(
+                      'text-[10px] font-medium uppercase tracking-wider mb-1',
+                      esActual ? config.iconText : 'text-white/30',
+                    )}>
+                      {config.label}
+                    </p>
+                    <p className="text-lg font-semibold text-white tabular-nums">{pct}%</p>
+                    <p className={cn(
+                      'text-[10px] opacity-70',
+                      esActual ? config.iconText : 'text-white/20',
+                    )}>
+                      {config.titulo}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+
+            <Link
+              href="/empleado/plan"
+              className="mt-3 text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+            >
+              Ver plan completo <ChevronRight className="w-3 h-3" />
+            </Link>
+          </Card>
         </motion.div>
 
       </div>

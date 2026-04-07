@@ -83,7 +83,7 @@ export function getMensajeProactivo(params: AgenteParams, t: (key: string) => st
   if (modulo === 'perfil' && accesosPendientes > 0) {
     return {
       mensaje: `Tenés ${accesosPendientes} acceso${accesosPendientes > 1 ? 's' : ''} pendiente${accesosPendientes > 1 ? 's' : ''}. Mientras esperás la activación, podés avanzar con el módulo de Cultura.`,
-      ctaPrimario: 'Ver Cultura',
+      ctaPrimario: 'Ver Rol',
       ctaSecundario: 'Entendido',
     }
   }
