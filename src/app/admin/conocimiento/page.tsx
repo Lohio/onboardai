@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen, Wrench, Shield, GitBranch } from 'lucide-react'
+import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, FileDown, Link2, FolderOpen, Wrench, Shield, GitBranch, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Portal } from '@/components/shared/Portal'
@@ -405,6 +406,20 @@ export default function ConocimientoPage() {
                   )
                 })}
               </div>
+
+              {/* Acceso directo al editor de organigrama */}
+              {modulo.key === 'organigrama' && (
+                <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                  <Link
+                    href="/admin/organigrama"
+                    className="flex items-center justify-between w-full text-sm text-indigo-400/80
+                      hover:text-indigo-300 transition-colors group"
+                  >
+                    <span className="font-medium">Editar organigrama visual</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
