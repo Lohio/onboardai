@@ -117,7 +117,7 @@ function SmallAvatar({ src, nombre }: { src?: string; nombre: string }) {
       {src ? (
         <img src={src} alt={nombre} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-[#7DD3FC] text-xs font-semibold">{getInitials(nombre)}</span>
+        <span className="text-sky-600 text-xs font-semibold">{getInitials(nombre)}</span>
       )}
     </div>
   )
@@ -165,19 +165,19 @@ function TabPerfil({
           {datos.foto_url ? (
             <img src={datos.foto_url} alt={datos.nombre} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-[#7DD3FC] text-xl font-semibold">{getInitials(datos.nombre)}</span>
+            <span className="text-sky-600 text-xl font-semibold">{getInitials(datos.nombre)}</span>
           )}
         </div>
         <div>
-          <p className="text-base font-semibold text-white/90">{datos.nombre}</p>
+          <p className="text-base font-semibold text-gray-900">{datos.nombre}</p>
           {(datos.puesto || datos.area) && (
-            <p className="text-sm text-white/45">
+            <p className="text-sm text-gray-500">
               {[datos.puesto, datos.area].filter(Boolean).join(' · ')}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2 mt-1">
             {datos.fecha_ingreso && (
-              <span className="flex items-center gap-1 text-xs text-white/35">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Calendar className="w-3 h-3" />
                 {formatFecha(datos.fecha_ingreso)}
               </span>
@@ -194,22 +194,22 @@ function TabPerfil({
         <TabContentSkeleton />
       ) : equipo && equipo.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-[11px] font-medium text-white/30 uppercase tracking-widest">Mi equipo</p>
+          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest">Mi equipo</p>
           {[manager, buddy].filter(Boolean).map((m) => m && (
-            <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+            <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 border border-gray-200">
               <SmallAvatar src={m.foto_url} nombre={m.nombre} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-white/85 truncate">{m.nombre}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{m.nombre}</p>
                   <Badge variant={m.relacion === 'manager' ? 'default' : 'success'}>
                     {m.relacion === 'manager' ? 'Manager' : 'Buddy'}
                   </Badge>
                 </div>
-                {m.puesto && <p className="text-xs text-white/35 truncate">{m.puesto}</p>}
+                {m.puesto && <p className="text-xs text-gray-500 truncate">{m.puesto}</p>}
               </div>
               <a
                 href={`mailto:${m.email}`}
-                className="text-white/20 hover:text-[#0EA5E9] transition-colors p-1"
+                className="text-gray-300 hover:text-sky-600 transition-colors p-1"
               >
                 <Mail className="w-3.5 h-3.5" />
               </a>
@@ -217,7 +217,7 @@ function TabPerfil({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-white/30 italic">No hay miembros del equipo asignados aún.</p>
+        <p className="text-sm text-gray-400 italic">No hay miembros del equipo asignados aún.</p>
       )}
     </div>
   )
@@ -247,8 +247,8 @@ function TabCultura({
       {/* Progreso resumen */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs text-white/40">Bloques de cultura completados</p>
-          <span className="text-xs font-mono text-white/50">{completados}/{total}</span>
+          <p className="text-xs text-gray-500">Bloques de cultura completados</p>
+          <span className="text-xs font-mono text-gray-500">{completados}/{total}</span>
         </div>
         <ProgressBar value={pct} showPercentage={false} animated />
       </div>
@@ -258,21 +258,21 @@ function TabCultura({
         {(bloques ?? []).slice(0, 5).map(b => (
           <div
             key={b.bloque}
-            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]"
+            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 border border-gray-200"
           >
             {b.completado ? (
-              <CheckCircle2 className="w-4 h-4 text-teal-400 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
             ) : (
-              <Circle className="w-4 h-4 text-white/20 flex-shrink-0" />
+              <Circle className="w-4 h-4 text-gray-300 flex-shrink-0" />
             )}
-            <span className={cn('text-sm truncate', b.completado ? 'text-white/60 line-through' : 'text-white/80')}>
+            <span className={cn('text-sm truncate', b.completado ? 'text-gray-600 line-through' : 'text-gray-900')}>
               {b.label}
             </span>
             {b.completado && <Badge variant="success" className="ml-auto flex-shrink-0">✓</Badge>}
           </div>
         ))}
         {!bloques || bloques.length === 0 ? (
-          <p className="text-sm text-white/30 italic">No hay bloques de cultura disponibles aún.</p>
+          <p className="text-sm text-gray-400 italic">No hay bloques de cultura disponibles aún.</p>
         ) : null}
       </div>
     </div>
@@ -303,8 +303,8 @@ function TabRol({
       {total > 0 && (
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-xs text-white/40">Tareas completadas</p>
-            <span className="text-xs font-mono text-white/50">{completadas}/{total}</span>
+            <p className="text-xs text-gray-500">Tareas completadas</p>
+            <span className="text-xs font-mono text-gray-500">{completadas}/{total}</span>
           </div>
           <ProgressBar value={pct} showPercentage={false} animated />
         </div>
@@ -312,26 +312,26 @@ function TabRol({
 
       {/* Próximas tareas pendientes */}
       <div className="space-y-2">
-        <p className="text-[11px] font-medium text-white/30 uppercase tracking-widest">Próximas tareas</p>
+        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest">Próximas tareas</p>
         {pendientes.length > 0 ? pendientes.slice(0, 5).map(t => (
           <div
             key={t.id}
-            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]"
+            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 border border-gray-200"
           >
-            <CheckSquare className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
-            <span className="text-sm text-white/75 truncate">{t.titulo}</span>
-            <span className="ml-auto text-[10px] text-white/25 flex-shrink-0">Sem. {t.semana}</span>
+            <CheckSquare className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm text-gray-700 truncate">{t.titulo}</span>
+            <span className="ml-auto text-[10px] text-gray-300 flex-shrink-0">Sem. {t.semana}</span>
           </div>
         )) : (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-teal-600/10 border border-teal-500/20">
-            <CheckCircle2 className="w-4 h-4 text-teal-400 flex-shrink-0" />
-            <p className="text-sm text-teal-300">
+            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            <p className="text-sm text-teal-700">
               {total > 0 ? '¡Completaste todas tus tareas!' : 'No hay tareas asignadas aún.'}
             </p>
           </div>
         )}
         {pendientes.length > 5 && (
-          <p className="text-xs text-white/30 text-center">+{pendientes.length - 5} tareas más</p>
+          <p className="text-xs text-gray-400 text-center">+{pendientes.length - 5} tareas más</p>
         )}
       </div>
     </div>
@@ -358,11 +358,11 @@ function TabAsistente({
       {/* Hero */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-teal-600/10 border border-teal-500/20">
         <div className="w-10 h-10 rounded-xl bg-teal-600/20 flex items-center justify-center flex-shrink-0">
-          <Bot className="w-5 h-5 text-teal-400" />
+          <Bot className="w-5 h-5 text-teal-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white/85">Asistente de onboarding</p>
-          <p className="text-xs text-white/45 mt-0.5 leading-relaxed">
+          <p className="text-sm font-medium text-gray-900">Asistente de onboarding</p>
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
             Tenés dudas sobre la empresa, tu rol o los procesos? El asistente IA está disponible para ayudarte.
           </p>
         </div>
@@ -370,9 +370,9 @@ function TabAsistente({
 
       {/* Stats */}
       {conversaciones !== null && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03]">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50">
           <Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" />
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-gray-500">
             {conversaciones === 0
               ? 'Todavía no iniciaste ninguna conversación'
               : `Iniciaste ${conversaciones} conversación${conversaciones === 1 ? '' : 'es'} con el asistente`}
@@ -382,7 +382,7 @@ function TabAsistente({
 
       {/* Prompts sugeridos */}
       <div className="space-y-2">
-        <p className="text-[11px] font-medium text-white/30 uppercase tracking-widest">Preguntas frecuentes</p>
+        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest">Preguntas frecuentes</p>
         {[
           '¿Cómo son los procesos de feedback en la empresa?',
           '¿Cuáles son los valores y la cultura del equipo?',
@@ -391,13 +391,13 @@ function TabAsistente({
           <Link
             key={i}
             href={`/empleado/asistente?q=${encodeURIComponent(prompt)}`}
-            className="flex items-center gap-2.5 w-full p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-teal-500/30 hover:bg-teal-500/5 transition-all duration-150 group text-left"
+            className="flex items-center gap-2.5 w-full p-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:border-teal-300 hover:bg-teal-50 hover:shadow-md transition-all duration-150 group text-left"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-teal-400/60 flex-shrink-0" />
-            <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors line-clamp-1">
+            <MessageSquare className="w-3.5 h-3.5 text-teal-600/60 flex-shrink-0" />
+            <span className="text-xs text-gray-600 group-hover:text-gray-900 transition-colors line-clamp-1">
               {prompt}
             </span>
-            <ArrowRight className="w-3 h-3 text-white/20 group-hover:text-teal-400 ml-auto flex-shrink-0 transition-colors" />
+            <ArrowRight className="w-3 h-3 text-gray-300 group-hover:text-teal-600 ml-auto flex-shrink-0 transition-colors" />
           </Link>
         ))}
       </div>
@@ -697,13 +697,13 @@ export default function EmpleadoHome() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
+      <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="space-y-2">
             <Skeleton className="h-7 w-48" />
             <Skeleton className="h-4 w-32" />
           </div>
-          <div className="glass-card rounded-2xl p-5 space-y-4">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 space-y-4">
             <Skeleton className="h-1.5 w-full rounded-full" />
             <div className="flex gap-2">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 flex-1 rounded-xl" />)}
@@ -730,7 +730,7 @@ export default function EmpleadoHome() {
   const progresoGlobal = calcularProgresoPlanGlobal(planItems)
 
   return (
-    <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
+    <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto">
 
         {/* ── Saludo y métricas ── */}
@@ -740,19 +740,19 @@ export default function EmpleadoHome() {
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
           className="mb-6"
         >
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="text-2xl font-semibold text-gray-900">
             {new Date().getHours() < 12 ? t('home.greeting.morning') : new Date().getHours() < 18 ? t('home.greeting.afternoon') : t('home.greeting.evening')},{' '}
-            <span className="text-[#7DD3FC]">{datosBase.nombre.split(' ')[0]}</span> 👋
+            <span className="text-sky-600">{datosBase.nombre.split(' ')[0]}</span> 👋
           </h1>
           <div className="flex items-center gap-3 mt-1">
             {dias !== null && (
-              <span className="flex items-center gap-1.5 text-xs text-white/40">
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
                 <Calendar className="w-3.5 h-3.5" />
                 {t('home.day').replace('{n}', String(dias))}
               </span>
             )}
             {datosBase.puesto && (
-              <span className="flex items-center gap-1.5 text-xs text-white/35">
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
                 <MapPin className="w-3.5 h-3.5" />
                 {datosBase.puesto}
               </span>
@@ -765,14 +765,14 @@ export default function EmpleadoHome() {
           initial={{ opacity: 0, scaleX: 0.95 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.05 }}
-          className="glass-card rounded-2xl p-5"
+          className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5"
         >
           {/* Barra + porcentaje */}
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
               {t('home.progress')}
             </p>
-            <span className="text-xs font-mono text-white/50 tabular-nums">{progresoPct}%</span>
+            <span className="text-xs font-mono text-gray-500 tabular-nums">{progresoPct}%</span>
           </div>
           <ProgressBar value={progresoPct} showPercentage={false} animated />
 
@@ -792,24 +792,24 @@ export default function EmpleadoHome() {
                     'relative flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl transition-all duration-200',
                     'text-[11px] font-medium',
                     activo
-                      ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/30'
+                      ? 'bg-sky-50 text-sky-700 border border-sky-200'
                       : desbloqueado
-                      ? 'bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70'
-                      : 'bg-white/[0.02] text-white/20 border border-white/[0.04] cursor-not-allowed',
+                      ? 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700'
+                      : 'bg-gray-50 text-gray-300 border border-gray-100 cursor-not-allowed',
                   )}
                 >
                   {/* Badge completado */}
                   {completado && (
-                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-teal-500 border-2 border-[#111110] flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-teal-500 border-2 border-white flex items-center justify-center">
                       <span className="text-[8px] text-white font-bold">✓</span>
                     </span>
                   )}
                   {!desbloqueado && (
-                    <Lock className="absolute -top-1.5 -right-1.5 w-3 h-3 text-white/20" />
+                    <Lock className="absolute -top-1.5 -right-1.5 w-3 h-3 text-gray-300" />
                   )}
                   <span className={cn(
                     'transition-colors',
-                    activo ? 'text-[#0EA5E9]' : completado ? 'text-teal-400' : 'text-current',
+                    activo ? 'text-[#0EA5E9]' : completado ? 'text-teal-600' : 'text-current',
                   )}>
                     {tab.icon}
                   </span>
@@ -863,7 +863,7 @@ export default function EmpleadoHome() {
           </div>
 
           {/* ── CTA hacia el módulo completo ── */}
-          <div className="mt-5 pt-4 border-t border-white/[0.06]">
+          <div className="mt-5 pt-4 border-t border-gray-200">
             <Link
               href={TABS.find(t => t.id === tabActivo)?.href ?? '/empleado'}
               className={cn(
@@ -874,8 +874,8 @@ export default function EmpleadoHome() {
                   estadoArray,
                   false,
                 )
-                  ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] hover:bg-[#0EA5E9]/30 hover:text-[#38BDF8] border border-[#0EA5E9]/25'
-                  : 'bg-white/[0.03] text-white/25 cursor-not-allowed border border-white/[0.05] pointer-events-none',
+                  ? 'bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200'
+                  : 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-200 pointer-events-none',
               )}
             >
               Ver {TABS.find(t => t.id === tabActivo)?.label} completo
@@ -893,7 +893,7 @@ export default function EmpleadoHome() {
         >
           <Card>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
+              <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
                 Mi Plan 30-60-90
               </h2>
               <Badge variant={faseActual === '30' ? 'teal' : faseActual === '60' ? 'amber' : 'indigo'}>
@@ -918,19 +918,19 @@ export default function EmpleadoHome() {
                       'rounded-xl p-3 border transition-all',
                       esActual
                         ? cn(config.iconBg, extras.border)
-                        : 'border-white/[0.06] bg-white/[0.02]',
+                        : 'border-gray-200 bg-gray-50',
                     )}
                   >
                     <p className={cn(
                       'text-[10px] font-medium uppercase tracking-wider mb-1',
-                      esActual ? config.iconText : 'text-white/30',
+                      esActual ? config.iconText : 'text-gray-400',
                     )}>
                       {config.label}
                     </p>
-                    <p className="text-lg font-semibold text-white tabular-nums">{pct}%</p>
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">{pct}%</p>
                     <p className={cn(
                       'text-[10px] opacity-70',
-                      esActual ? config.iconText : 'text-white/20',
+                      esActual ? config.iconText : 'text-gray-300',
                     )}>
                       {config.titulo}
                     </p>
@@ -941,7 +941,7 @@ export default function EmpleadoHome() {
 
             <Link
               href="/empleado/plan"
-              className="mt-3 text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+              className="mt-3 text-xs text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
             >
               Ver plan completo <ChevronRight className="w-3 h-3" />
             </Link>

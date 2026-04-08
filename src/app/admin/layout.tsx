@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -28,6 +28,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 
 interface NavItemDef {
   labelKey: string
+  label?: string
   href: string
   icon: React.ReactNode
   disabled: boolean
@@ -78,7 +79,7 @@ function NavItem({
           <span className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/15">
             {item.icon}
           </span>
-          <span className="flex-1 font-medium">{t(item.labelKey)}</span>
+          <span className="flex-1 font-medium">{item.label ?? t(item.labelKey)}</span>
           <span
             className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
               bg-white/[0.06] text-white/25 border border-white/[0.06]"
@@ -114,7 +115,7 @@ function NavItem({
         >
           {item.icon}
         </span>
-        <span className="flex-1">{t(item.labelKey)}</span>
+        <span className="flex-1">{item.label ?? t(item.labelKey)}</span>
       </Link>
     </motion.div>
   )
@@ -127,6 +128,7 @@ function NavItem({
 const navItems: NavItemDef[] = [
   {
     labelKey: 'nav.dashboard',
+    label: 'Inicio',
     href: '/admin',
     icon: <LayoutDashboard className="w-[18px] h-[18px]" />,
     disabled: false,
@@ -134,6 +136,7 @@ const navItems: NavItemDef[] = [
   },
   {
     labelKey: 'nav.employees',
+    label: 'Colaboradores',
     href: '/admin/empleados',
     icon: <Users className="w-[18px] h-[18px]" />,
     disabled: false,
@@ -172,20 +175,14 @@ function SidebarContent({
   adminNombre,
   pathname,
   onClose,
+  onLogout,
 }: {
   adminNombre: string
   pathname: string
   onClose?: () => void
+  onLogout: () => void
 }) {
   const { t } = useLanguage()
-  const initials = adminNombre
-    ? adminNombre
-        .split(' ')
-        .map(n => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'A'
 
   return (
     <div className="flex flex-col h-full">
@@ -227,18 +224,25 @@ function SidebarContent({
         </motion.div>
       </nav>
 
-      {/* ── Footer: avatar del admin ── */}
+      {/* ── Footer: bienvenida + logout ── */}
       <div className="px-3 py-3 border-t border-white/[0.06]">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl
-          hover:bg-white/[0.04] transition-colors duration-150 cursor-default">
-          <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/25
-            flex items-center justify-center flex-shrink-0">
-            <span className="text-[#38BDF8] text-xs font-bold">{initials}</span>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
+          hover:bg-white/[0.04] transition-colors duration-150">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white/80 truncate">{adminNombre || 'Admin'}</p>
+            <p className="text-xs font-semibold text-white/80 truncate">
+              {adminNombre ? `Bienvenido, ${adminNombre}` : 'Bienvenido'}
+            </p>
             <p className="text-[11px] text-white/35 mt-0.5">{t('common.admin')}</p>
           </div>
+          <button
+            onClick={onLogout}
+            aria-label={t('common.logout')}
+            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
+              text-white/40 hover:text-red-400 hover:bg-red-500/10
+              transition-colors duration-150 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
@@ -250,40 +254,12 @@ function SidebarContent({
 // ─────────────────────────────────────────────
 
 function AdminHeader({
-  adminNombre,
   alertasCount,
   onMenuClick,
-  onLogout,
 }: {
-  adminNombre: string
   alertasCount: number
   onMenuClick: () => void
-  onLogout: () => void
 }) {
-  const { t } = useLanguage()
-  const [menuAbierto, setMenuAbierto] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  const initials = adminNombre
-    ? adminNombre
-        .split(' ')
-        .map(n => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'A'
-
-  // Cerrar al hacer click fuera
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuAbierto(false)
-      }
-    }
-    if (menuAbierto) document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuAbierto])
-
   return (
     <header className="h-14 border-b border-gray-200 bg-gray-50 flex items-center px-4 gap-3 flex-shrink-0">
       {/* Hamburger — solo mobile */}
@@ -295,8 +271,7 @@ function AdminHeader({
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Título */}
-      <h1 className="text-sm font-semibold text-gray-900 flex-1">El pulso de tu equipo</h1>
+      <div className="flex-1" />
 
       {/* Bell + badge */}
       <button
@@ -317,52 +292,6 @@ function AdminHeader({
           </motion.span>
         )}
       </button>
-
-      {/* Avatar + dropdown */}
-      <div ref={menuRef} className="relative">
-        <button
-          onClick={() => setMenuAbierto(prev => !prev)}
-          className="w-7 h-7 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/25
-            flex items-center justify-center hover:bg-[#0EA5E9]/25 hover:border-[#0EA5E9]/40
-            transition-colors duration-150 cursor-pointer"
-          aria-label="Menú de usuario"
-        >
-          <span className="text-[#38BDF8] text-[11px] font-semibold">{initials}</span>
-        </button>
-
-        <AnimatePresence>
-          {menuAbierto && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -4 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="absolute right-0 top-full mt-2 w-48 z-50
-                rounded-xl border border-white/[0.08] bg-[#111110]/95 backdrop-blur-xl
-                shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
-            >
-              {/* Info del usuario */}
-              <div className="px-3 py-3 border-b border-white/[0.06]">
-                <p className="text-xs font-medium text-white/80 truncate">{adminNombre || 'Admin'}</p>
-                <p className="text-[11px] text-white/35 mt-0.5">{t('common.admin')}</p>
-              </div>
-
-              {/* Cerrar sesión */}
-              <div className="p-1.5">
-                <button
-                  onClick={() => { setMenuAbierto(false); onLogout() }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                    text-red-400/80 hover:text-red-400 hover:bg-red-500/10
-                    transition-colors duration-150 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-                  {t('common.logout')}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
     </header>
   )
 }
@@ -504,19 +433,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ThemeProvider section="admin">
-    <div className="min-h-dvh gradient-bg flex">
+    <div className="min-h-dvh bg-black flex">
       {/* ── Sidebar desktop (fijo) ── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/10 bg-black">
-        <SidebarContent adminNombre={adminNombre} pathname={pathname} />
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/10 bg-[#000000]">
+        <SidebarContent adminNombre={adminNombre} pathname={pathname} onLogout={handleLogout} />
       </aside>
 
       {/* ── Contenido principal ── */}
       <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
         <AdminHeader
-          adminNombre={adminNombre}
           alertasCount={alertasCount}
           onMenuClick={() => setSidebarAbierto(true)}
-          onLogout={handleLogout}
         />
         {/* ── Banner trial ── */}
         {esTrial(plan) && (
@@ -568,7 +495,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Drawer */}
             <motion.aside
               className="fixed left-0 top-0 h-full w-64 md:hidden z-50
-                border-r border-white/10 bg-black"
+                border-r border-white/10 bg-[#000000]"
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
@@ -578,6 +505,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 adminNombre={adminNombre}
                 pathname={pathname}
                 onClose={() => setSidebarAbierto(false)}
+                onLogout={handleLogout}
               />
             </motion.aside>
           </>
