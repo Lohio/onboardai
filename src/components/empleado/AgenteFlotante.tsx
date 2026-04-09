@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, X, Send, Loader2, ExternalLink } from 'lucide-react'
+import { X, Send, Loader2, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
@@ -61,29 +61,29 @@ const CTA_NAVEGACION: Record<string, string> = {
 
 const mdComponents: Components = {
   p:      ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="text-white/90 font-medium">{children}</strong>,
+  strong: ({ children }) => <strong className="text-gray-900 font-medium">{children}</strong>,
   ul:     ({ children }) => <ul className="list-disc pl-4 my-1.5 space-y-0.5">{children}</ul>,
-  li:     ({ children }) => <li className="text-[12px] text-white/65">{children}</li>,
+  li:     ({ children }) => <li className="text-[12px] text-gray-600">{children}</li>,
   h2:     ({ children }) => (
-    <h2 className="text-sm font-semibold text-white/85 mt-3 mb-1 first:mt-0">{children}</h2>
+    <h2 className="text-sm font-semibold text-gray-800 mt-3 mb-1 first:mt-0">{children}</h2>
   ),
   h3:     ({ children }) => (
-    <h3 className="text-xs font-medium text-white/75 mt-2 mb-0.5">{children}</h3>
+    <h3 className="text-xs font-medium text-gray-700 mt-2 mb-0.5">{children}</h3>
   ),
   table:  ({ children }) => (
-    <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.08] text-xs">
+    <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 text-xs">
       <table className="w-full border-collapse">{children}</table>
     </div>
   ),
   thead:  ({ children }) => <thead>{children}</thead>,
   tbody:  ({ children }) => <tbody>{children}</tbody>,
   tr:     ({ children }) => (
-    <tr className="border-b border-white/[0.04] last:border-0">{children}</tr>
+    <tr className="border-b border-gray-100 last:border-0">{children}</tr>
   ),
   th:     ({ children }) => (
-    <th className="bg-white/[0.04] text-white/45 px-3 py-1.5 text-left font-medium">{children}</th>
+    <th className="bg-gray-50 text-gray-500 px-3 py-1.5 text-left font-medium">{children}</th>
   ),
-  td:     ({ children }) => <td className="px-3 py-1.5 text-white/65">{children}</td>,
+  td:     ({ children }) => <td className="px-3 py-1.5 text-gray-600">{children}</td>,
 }
 
 // ─────────────────────────────────────────────
@@ -95,17 +95,17 @@ function BurbujaMensaje({ mensaje }: { mensaje: MensajeChat }) {
   return (
     <div className={cn('flex gap-2', esUser ? 'justify-end' : 'justify-start')}>
       {!esUser && (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#0EA5E9] to-teal-600
+        <div className="w-6 h-6 rounded-full bg-white border border-sky-500
           flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Bot className="w-3 h-3 text-white" />
+          <Image src="/heero-icons3.svg" alt="CopilBot" width={16} height={16} />
         </div>
       )}
       <div
         className={cn(
           'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed',
           esUser
-            ? 'bg-[#0EA5E9] text-white rounded-tr-sm'
-            : 'bg-white/[0.07] text-white/85 rounded-tl-sm border border-white/[0.06]'
+            ? 'bg-sky-500 text-white rounded-tr-sm'
+            : 'bg-gray-100 text-gray-900 rounded-tl-sm'
         )}
       >
         {esUser ? (
@@ -120,9 +120,9 @@ function BurbujaMensaje({ mensaje }: { mensaje: MensajeChat }) {
           <ReactMarkdown components={mdComponents}>{mensaje.contenido}</ReactMarkdown>
         ) : (
           <span className="flex gap-1 items-center py-0.5">
-            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0ms]" />
-            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:150ms]" />
-            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:300ms]" />
+            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
           </span>
         )}
       </div>
@@ -414,8 +414,8 @@ export default function AgenteFlotante({
               <div className="flex items-start gap-3 pr-6">
                 {/* Ícono del bot */}
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white text-base font-bold"
-                  style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)' }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                    bg-white border-2 border-sky-500"
                 >
                   <Image src="/heero-icons3.svg" alt="CopilBot" width={24} height={24} />
                 </div>
@@ -462,46 +462,43 @@ export default function AgenteFlotante({
             exit={{    opacity: 0, scale: 0.9, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
             className="fixed bottom-[160px] right-4 z-50 flex flex-col
-              w-[calc(100vw-32px)] sm:w-80 max-h-[500px]"
+              w-[calc(100vw-32px)] sm:w-80 max-h-[500px]
+              bg-white rounded-2xl border border-gray-200 shadow-2xl"
             style={{
               transformOrigin: 'bottom right',
-              background: 'var(--surface)',
-              border: '0.5px solid var(--glass-border)',
-              borderRadius: '16px',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
             }}
           >
             {/* ── Header ── */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 flex-shrink-0">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0EA5E9] to-teal-600
+                <div className="w-8 h-8 rounded-full bg-white border-2 border-sky-500
                   flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-white" />
+                  <Image src="/heero-icons3.svg" alt="CopilBot" width={20} height={20} />
                 </div>
                 {/* Dot verde animado "En línea" */}
                 <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-teal-400 rounded-full
-                  border-2 border-[#111e38] animate-pulse" />
+                  border-2 border-white animate-pulse" />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-white/90 leading-none">{t('agente.title')}</p>
+                  <p className="text-sm font-medium text-gray-900 leading-none">{t('agente.title')}</p>
                   {/* Badge del módulo actual */}
                   {moduloBadge && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md
-                      bg-[#0EA5E9]/15 text-[#38BDF8]/80 border border-[#0EA5E9]/20 leading-none">
+                      bg-sky-50 text-sky-600 border border-sky-200 leading-none">
                       {moduloBadge}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-teal-400/70 mt-0.5">{t('agente.online')}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{t('agente.online')}</p>
               </div>
 
               {/* Ir al historial completo */}
               <button
                 onClick={() => { setPanelAbierto(false); router.push('/empleado/asistente') }}
                 className="w-7 h-7 rounded-lg flex items-center justify-center
-                  text-white/30 hover:text-white/60 hover:bg-white/[0.07]
+                  text-gray-400 hover:text-gray-600 hover:bg-gray-100
                   transition-colors duration-150 cursor-pointer flex-shrink-0"
                 aria-label="Ver historial completo"
                 title="Ver historial completo"
@@ -513,7 +510,7 @@ export default function AgenteFlotante({
               <button
                 onClick={() => setPanelAbierto(false)}
                 className="w-7 h-7 rounded-lg flex items-center justify-center
-                  text-white/35 hover:text-white/70 hover:bg-white/[0.07]
+                  text-gray-400 hover:text-gray-600 hover:bg-gray-100
                   transition-colors duration-150 cursor-pointer flex-shrink-0"
                 aria-label="Cerrar chat"
               >
@@ -529,11 +526,11 @@ export default function AgenteFlotante({
               {mensajes.length === 0 ? (
                 /* Estado vacío con sugerencias contextuales */
                 <div className="flex flex-col items-center justify-center h-full py-6 gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0EA5E9]/30 to-teal-600/30
-                    flex items-center justify-center border border-[#0EA5E9]/20">
-                    <Bot className="w-5 h-5 text-[#38BDF8]" />
+                  <div className="w-10 h-10 rounded-full bg-white border-2 border-sky-500
+                    flex items-center justify-center">
+                    <Image src="/heero-icons3.svg" alt="CopilBot" width={24} height={24} />
                   </div>
-                  <p className="text-xs text-white/35 text-center leading-relaxed max-w-[200px]">
+                  <p className="text-xs text-gray-500 text-center leading-relaxed max-w-[200px]">
                     {t('agente.greeting')}
                   </p>
 
@@ -544,10 +541,10 @@ export default function AgenteFlotante({
                         <button
                           key={s}
                           onClick={() => enviarMensaje(s)}
-                          className="w-full text-left text-xs text-teal-400/75
+                          className="w-full text-left text-xs text-gray-700
                             px-3 py-2 rounded-lg cursor-pointer
-                            bg-teal-500/[0.07] border border-teal-500/20
-                            hover:bg-teal-500/15 transition-colors duration-150
+                            bg-white border border-gray-200
+                            hover:bg-gray-50 transition-colors duration-150
                             leading-snug"
                         >
                           {s}
@@ -562,7 +559,7 @@ export default function AgenteFlotante({
             </div>
 
             {/* ── Input ── */}
-            <div className="flex-shrink-0 border-t border-white/[0.07] p-3">
+            <div className="flex-shrink-0 border-t border-gray-200 p-3">
               <div className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
@@ -572,9 +569,9 @@ export default function AgenteFlotante({
                   placeholder={t('agente.placeholder')}
                   rows={1}
                   disabled={enviando}
-                  className="flex-1 resize-none bg-white/[0.06] border border-white/[0.08]
-                    rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25
-                    focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/40 focus:border-[#0EA5E9]/40
+                  className="flex-1 resize-none bg-white border border-gray-200
+                    rounded-xl px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400
+                    focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400
                     transition-all duration-150 max-h-24 leading-relaxed disabled:opacity-50"
                   style={{ scrollbarWidth: 'none' }}
                 />
@@ -598,8 +595,8 @@ export default function AgenteFlotante({
             {/* ── Link al historial completo ── */}
             <button
               onClick={() => { setPanelAbierto(false); router.push('/empleado/asistente') }}
-              className="flex-shrink-0 border-t border-white/[0.05] py-2 text-center
-                text-[10px] text-white/25 hover:text-white/45
+              className="flex-shrink-0 border-t border-gray-100 py-2 text-center
+                text-[10px] text-sky-600 hover:text-sky-700
                 transition-colors duration-150 cursor-pointer w-full"
             >
               {t('agente.history')}
@@ -638,7 +635,7 @@ export default function AgenteFlotante({
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
                 className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-teal-400 rounded-full
-                  border-2 border-[#111110] animate-pulse"
+                  border-2 border-white animate-pulse"
               />
             )}
           </AnimatePresence>
