@@ -391,59 +391,57 @@ export default function AgenteFlotante({
         {hintVisible && hintActivo && !panelAbierto && (
           <motion.div
             key="hint"
-            initial={{ opacity: 0, y: 12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0,  scale: 1    }}
-            exit={{    opacity: 0, y: 8,  scale: 0.95 }}
+            initial={{ opacity: 0, y: -24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0,   scale: 1    }}
+            exit={{    opacity: 0, y: -16, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="fixed bottom-[88px] right-4 z-50 w-72"
-            style={{ transformOrigin: 'bottom right' }}
+            className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-md"
+            style={{ transformOrigin: 'top center' }}
           >
-            <div
-              className="relative rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
-              style={{
-                background: 'var(--surface)',
-                border: '0.5px solid var(--glass-border)',
-              }}
-            >
-              {/* Flecha decorativa hacia el botón flotante */}
-              <div
-                className="absolute bottom-[-6px] right-5 w-3 h-3 rotate-45"
-                style={{
-                  background: 'var(--surface)',
-                  border: '0.5px solid var(--glass-border)',
-                  borderTop: 'none',
-                  borderLeft: 'none',
-                }}
-              />
-
-              {/* Botón X para cerrar sin silenciar */}
+            <div className="relative rounded-xl p-4 bg-white border border-gray-200 shadow-2xl">
+              {/* Botón X para cerrar */}
               <button
                 onClick={() => { setHintVisible(false); setHintActivo(null) }}
-                className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center
-                  text-white/30 hover:text-white/60 hover:bg-white/[0.06]
+                className="absolute top-2.5 right-2.5 w-6 h-6 rounded-md flex items-center justify-center
+                  text-gray-400 hover:text-gray-700 hover:bg-gray-100
                   transition-colors duration-150 cursor-pointer"
                 aria-label="Cerrar sugerencia"
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </button>
 
-              <p className="text-sm text-white/80 leading-relaxed mb-3 pr-5">
-                {hintActivo.mensaje}
-              </p>
-              <div className="flex gap-2">
+              <div className="flex items-start gap-3 pr-6">
+                {/* Ícono del bot */}
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white text-base font-bold"
+                  style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)' }}
+                >
+                  🤖
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">
+                    CopilBot
+                  </p>
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    {hintActivo.mensaje}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => handleCtaPrimario(hintActivo.ctaPrimario)}
-                  className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium
-                    bg-[#0EA5E9] hover:bg-[#38BDF8] text-white
+                  className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold
+                    bg-sky-600 hover:bg-sky-700 text-white
                     transition-colors duration-150 cursor-pointer"
                 >
                   {hintActivo.ctaPrimario}
                 </button>
                 <button
                   onClick={() => handleCtaSecundario(hintActivo.ctaSecundario)}
-                  className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium
-                    bg-white/[0.07] hover:bg-white/[0.12] text-white/60
-                    border border-white/[0.08] transition-colors duration-150 cursor-pointer"
+                  className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold
+                    bg-gray-100 hover:bg-gray-200 text-gray-700
+                    border border-gray-200 transition-colors duration-150 cursor-pointer"
                 >
                   {hintActivo.ctaSecundario}
                 </button>
@@ -462,7 +460,7 @@ export default function AgenteFlotante({
             animate={{ opacity: 1, scale: 1,   y: 0  }}
             exit={{    opacity: 0, scale: 0.9, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className="fixed bottom-[80px] right-4 z-50 flex flex-col
+            className="fixed bottom-[160px] right-4 z-50 flex flex-col
               w-[calc(100vw-32px)] sm:w-80 max-h-[500px]"
             style={{
               transformOrigin: 'bottom right',
@@ -619,7 +617,7 @@ export default function AgenteFlotante({
         }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.93 }}
-        className="fixed bottom-4 right-4 z-50 w-12 h-12 rounded-full
+        className="fixed bottom-24 right-4 z-50 w-12 h-12 rounded-full
           flex items-center justify-center cursor-pointer border-2 border-white/20"
         style={{
           background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)',

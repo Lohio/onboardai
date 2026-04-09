@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-import { buildContactUrl, getHerramientaLabel, type HerramientaContacto } from '@/lib/contacto'
+import { buildContactUrl, getHerramientaLabel } from '@/lib/contacto'
 import { HerramientaIcon } from '@/components/icons/HerramientaIcon'
 
 // ─────────────────────────────────────────────
@@ -20,29 +20,29 @@ const TIPO_CONFIG = {
     label:       'Manager',
     descripcion: 'Tu manager directo',
     Icon:        Briefcase,
-    avatarBg:    'bg-[#0EA5E9]/20',
-    avatarText:  'text-[#38BDF8]',
+    avatarBg:    'bg-sky-100',
+    avatarText:  'text-sky-700',
   },
   buddy: {
     label:       'Buddy',
     descripcion: 'Tu buddy',
     Icon:        Users,
-    avatarBg:    'bg-teal-600/15',
-    avatarText:  'text-teal-400',
+    avatarBg:    'bg-teal-100',
+    avatarText:  'text-teal-700',
   },
   it: {
     label:       'IT',
     descripcion: 'Soporte técnico',
     Icon:        Code,
-    avatarBg:    'bg-sky-600/15',
-    avatarText:  'text-sky-300',
+    avatarBg:    'bg-indigo-100',
+    avatarText:  'text-indigo-700',
   },
   rrhh: {
     label:       'RRHH',
     descripcion: 'Recursos Humanos',
     Icon:        Shield,
-    avatarBg:    'bg-amber-600/15',
-    avatarText:  'text-amber-300',
+    avatarBg:    'bg-amber-100',
+    avatarText:  'text-amber-700',
   },
 } as const
 
@@ -88,7 +88,6 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
     }
   }
 
-  // El manager tiene borde izquierdo destacado
   const esManager = tipo === 'manager'
 
   return (
@@ -97,10 +96,8 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
         'flex flex-col gap-2 min-h-[110px] p-3',
-        'bg-white/[0.02] border border-white/[0.05]',
-        esManager
-          ? 'border-l-2 border-l-[#0EA5E9]/50 rounded-r-xl'
-          : 'rounded-xl',
+        'rounded-lg bg-gray-50 border border-gray-200',
+        esManager && 'border-l-2 border-l-sky-500',
       )}
     >
       {/* Avatar con iniciales o ícono muted si no hay nombre */}
@@ -112,15 +109,15 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
         {nombre ? (
           <span className="text-xs font-semibold">{getInitials(nombre)}</span>
         ) : (
-          <User className="w-4 h-4 opacity-40" />
+          <User className="w-4 h-4 opacity-50" />
         )}
       </div>
 
       {/* Nombre y descripción del rol */}
       <div className="flex-1">
         <p className={cn(
-          'text-sm font-medium leading-tight truncate flex items-center gap-1.5',
-          nombre ? 'text-white/80' : 'text-white/30 italic',
+          'text-sm leading-tight truncate flex items-center gap-1.5',
+          nombre ? 'font-semibold text-gray-900' : 'text-xs text-gray-400 italic',
         )}>
           {nombre ? (
             nombre
@@ -131,20 +128,20 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
             </>
           )}
         </p>
-        <p className="text-[10px] text-white/35 mt-0.5">
+        <p className="text-xs text-gray-500 mt-0.5">
           {config.descripcion}
         </p>
       </div>
 
       {/* Botón de acción — separado por borde, solo si hay contacto */}
       {nombre && email ? (
-        <div className="border-t border-white/[0.05] pt-2">
+        <div className="border-t border-gray-200 pt-2">
           {url ? (
             <a
               href={url}
               target={!url.startsWith('mailto:') ? '_blank' : undefined}
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-white/30 hover:text-[#38BDF8] transition-colors duration-150"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-sky-600 transition-colors duration-150"
             >
               <HerramientaIcon herramienta={herramienta} className="w-3.5 h-3.5" />
               <span>{getHerramientaLabel(herramienta)}</span>
@@ -152,13 +149,13 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
           ) : (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-xs text-white/30 hover:text-[#38BDF8] transition-colors duration-150"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-sky-600 transition-colors duration-150"
               title="Copiar email"
             >
               {copied ? (
                 <>
-                  <Check className="w-3 h-3 text-teal-400" />
-                  <span className="text-teal-400">Copiado</span>
+                  <Check className="w-3 h-3 text-teal-600" />
+                  <span className="text-teal-600">Copiado</span>
                 </>
               ) : (
                 <>

@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { LogOut } from 'lucide-react'
+import { LogOut, Bell, Settings } from 'lucide-react'
 import Image from 'next/image'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
@@ -172,147 +171,98 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
   return (
     <ThemeProvider section="empleado">
-    <div className="min-h-dvh flex">
-      {/* ── Sidebar (desktop only) ── */}
-      <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 border-r border-white/[0.06] bg-[#000000]">
-        {/* Logo */}
-        <div className="px-[18px] py-5 border-b border-white/[0.06] flex items-center">
-          <HeeroLogo size="sm" />
-        </div>
+    <div className="min-h-dvh flex flex-col bg-gray-50">
 
-        {/* Nav */}
-        <nav className="flex-1 p-3">
+      {/* ── Header simplificado (sticky) ── */}
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-gray-200 bg-white h-12">
+        <div className="flex items-center justify-end px-4 md:px-6 h-full">
+          <button
+            type="button"
+            aria-label="Notificaciones"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* Contenido de la página */}
+      <main className="flex-1 flex flex-col pb-24">
+        {children}
+      </main>
+
+      {/* ── Bottom Navigation Bar (pill flotante) ── */}
+      <nav
+        className="fixed left-1/2 -translate-x-1/2 z-50 bg-white rounded-2xl shadow-xl border border-gray-200"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+      >
+        <div className="flex items-stretch px-4 py-3 gap-1">
           {MODULOS.map((mod, idx) => {
             const completado = modulos[mod.key]
             const esActual   = pathname.startsWith(mod.href)
             const bloqueado  = esTrial(planEmpresa) && idx === 2
-            if (bloqueado) {
-              return (
-                <div key={mod.key}
-                  className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg opacity-40 cursor-not-allowed mb-0.5"
-                >
-                  <Image src={MODULO_ICONS[mod.key]} alt="" width={20} height={20} className="w-5 h-5 flex-shrink-0 opacity-60" />
-                  <span className="text-[13px] text-white/40 flex-1">
-                    {MODULO_LABELS[mod.key]}
-                  </span>
-                  <span className="text-[9px] text-amber-500/60 font-semibold">Pro</span>
+
+            const labelClass = bloqueado
+              ? 'text-gray-400'
+              : esActual
+              ? 'text-sky-600 font-semibold'
+              : completado
+              ? 'text-green-700'
+              : 'text-gray-500'
+
+            const iconWrapClass = cn(
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg transition-colors',
+              bloqueado && 'opacity-50 cursor-not-allowed',
+              esActual && !bloqueado && 'bg-sky-50',
+            )
+
+            const inner = (
+              <div className={iconWrapClass}>
+                <div className="relative">
+                  <Image
+                    src={MODULO_ICONS[mod.key]}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className={cn(
+                      'w-6 h-6',
+                      bloqueado || (!esActual && !completado) ? 'opacity-60' : '',
+                    )}
+                  />
+                  {completado && !esActual && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 border border-white" />
+                  )}
                 </div>
-              )
-            }
-            return (
-              <Link key={mod.key} href={mod.href}
-                className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-colors duration-150 text-[13px] mb-0.5 border',
-                  esActual
-                    ? 'bg-[#3B4FD8]/15 text-[#818CF8] border-[#3B4FD8]/25'
-                    : 'text-white/55 hover:text-white/90 hover:bg-white/[0.04] border-transparent'
-                )}
-              >
-                <Image src={MODULO_ICONS[mod.key]} alt="" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
-                <span className="flex-1">{MODULO_LABELS[mod.key]}</span>
-                {completado && (
-                  <span className="w-[7px] h-[7px] rounded-full bg-[#0D9488] flex-shrink-0" />
-                )}
+                <span className={cn('text-[10px] leading-none mt-0.5', labelClass)}>
+                  {MODULO_LABELS[mod.key]}
+                </span>
+              </div>
+            )
+
+            return bloqueado ? (
+              <div key={mod.key} className="w-16" title={`${MODULO_LABELS[mod.key]} (Pro)`}>
+                {inner}
+              </div>
+            ) : (
+              <Link key={mod.key} href={mod.href} className="w-16" title={MODULO_LABELS[mod.key]}>
+                {inner}
               </Link>
             )
           })}
-        </nav>
 
-        {/* User info + logout */}
-        <div className="px-3 py-3 border-t border-white/[0.06]">
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors duration-150">
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-white/80 truncate">
-                {empleadoNombre ? `Bienvenido, ${empleadoNombre}` : 'Bienvenido'}
-              </p>
-              <p className="text-[11px] text-white/35 mt-0.5 truncate">
-                {empleadoPuesto || 'Empleado'}
-              </p>
-            </div>
+          {/* Botón configuración secundario */}
+          <div className="w-12 flex items-center justify-center border-l border-gray-200 ml-2 pl-2">
             <button
-              onClick={handleLogout}
-              aria-label={t('common.logout')}
-              className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
-                text-white/40 hover:text-red-400 hover:bg-red-500/10
-                transition-colors duration-150 cursor-pointer"
+              type="button"
+              onClick={() => router.push('/empleado/configuracion')}
+              aria-label="Configuración"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <Settings className="w-5 h-5" />
             </button>
           </div>
         </div>
-      </aside>
-
-      {/* ── Header + Main (flex-col wrapper) ── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
-      {/* ── Header de progreso (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur-xl h-14 relative">
-        <div className="flex items-center gap-3 px-4 h-full">
-
-          {nombreEmpresa && (
-            <span className="text-xs font-medium text-gray-500 truncate max-w-[160px]">
-              {nombreEmpresa}
-            </span>
-          )}
-
-          {/* Módulos — centro */}
-          <div className="hidden md:flex items-center gap-1.5 flex-1 justify-center">
-            {MODULOS.map(mod => {
-              const completado = modulos[mod.key]
-              const esActual = pathname.startsWith(mod.href)
-              return (
-                <Link key={mod.key} href={mod.href}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all duration-150 border',
-                    esActual
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                      : 'text-gray-500 hover:text-gray-900 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  )}
-                >
-                  <Image src={MODULO_ICONS[mod.key]} alt="" width={20} height={20} className="w-5 h-5 flex-shrink-0" />
-                  <span>{MODULO_LABELS[mod.key]}</span>
-                  {completado && (
-                    <span className="w-[5px] h-[5px] rounded-full bg-teal-500 flex-shrink-0" />
-                  )}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Barra de progreso global — DERECHA */}
-          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-            <div className="hidden sm:block w-28 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
-                initial={{ width: '0%' }}
-                animate={{ width: `${progreso}%` }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </div>
-            <span className="text-[11px] font-mono text-gray-500 tabular-nums w-7 text-right">
-              {progreso}%
-            </span>
-          </div>
-
-          {/* Settings */}
-          <SettingsDropdown />
-
-        </div>
-        {/* Línea de progreso al fondo del header */}
-        <motion.div
-          className="absolute bottom-0 left-0 h-[2px]"
-          style={{ background: 'linear-gradient(90deg, #3B4FD8, #0D9488)' }}
-          initial={{ width: '0%' }}
-          animate={{ width: `${progreso}%` }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </header>
-
-      {/* Contenido de la página */}
-      <main className="flex-1 flex flex-col">
-        {children}
-      </main>
-      </div>{/* end flex-col wrapper */}
+      </nav>
 
       {/* Agente flotante proactivo (M1–M4) */}
       {(() => {

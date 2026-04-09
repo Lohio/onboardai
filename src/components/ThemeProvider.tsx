@@ -21,7 +21,8 @@ export function useThemeSection() {
 export function getStoredTheme(section: string): Theme {
   if (typeof window === 'undefined') return DEFAULT
   const stored = localStorage.getItem(storageKey(section))
-  return THEMES.includes(stored as Theme) ? (stored as Theme) : DEFAULT
+  if (THEMES.includes(stored as Theme)) return stored as Theme
+  return section === 'empleado' ? 'theme-light' : DEFAULT
 }
 
 export function applyTheme(theme: Theme, section: string) {

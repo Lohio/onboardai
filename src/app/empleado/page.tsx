@@ -13,7 +13,6 @@ import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
-import { Card } from '@/components/ui/Card'
 import { EncuestaPulsoModal, type EncuestaPendiente } from '@/components/empleado/EncuestaPulsoModal'
 import { calcularEstadoModulos, calcularProgresoPct, isModuloDesbloqueado, calcularFaseActual, calcularProgresoPlanGlobal, calcularProgresoPlanFase } from '@/lib/progreso'
 import { FASES_CONFIG, COLOR_EXTRAS } from '@/lib/plan'
@@ -891,7 +890,7 @@ export default function EmpleadoHome() {
           transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.1 }}
           className="mt-4"
         >
-          <Card>
+          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
                 Mi Plan 30-60-90
@@ -945,7 +944,7 @@ export default function EmpleadoHome() {
             >
               Ver plan completo <ChevronRight className="w-3 h-3" />
             </Link>
-          </Card>
+          </div>
         </motion.div>
 
       </div>
