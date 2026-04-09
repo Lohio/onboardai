@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { LogOut, Bell, Settings } from 'lucide-react'
@@ -65,6 +65,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const [diasOnboarding, setDiasOnboarding] = useState(1)
   const [accesosPendientes, setAccesosPendientes] = useState(0)
   const [planEmpresa, setPlanEmpresa]             = useState<string>('trial')
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const { t } = useLanguage()
 
   const handleLogout = useCallback(async () => {
@@ -157,6 +158,26 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     setAccesosPendientes(pendientes)
   }, [router])
 
+  // Click fuera cierra el menú de usuario
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Iniciales del usuario
+  const iniciales = empleadoNombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0].toUpperCase())
+    .join('')
+
   // Re-evalúa al cambiar de ruta
   useEffect(() => {
     void cargarProgreso()
@@ -174,8 +195,33 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     <div className="min-h-dvh flex flex-col bg-gray-50">
 
       {/* ── Header simplificado (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-gray-200 bg-white h-12">
-        <div className="flex items-center justify-end px-4 md:px-6 h-full">
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-gray-200 bg-white h-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto h-full flex items-center justify-between">
+          {/* Avatar con dropdown */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setShowUserMenu(v => !v)}
+              className="w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-semibold text-sm flex items-center justify-center hover:bg-sky-200 transition-colors"
+              aria-label="Menú de usuario"
+            >
+              {iniciales || '?'}
+            </button>
+            {showUserMenu && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[160px]">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Campanita */}
           <button
             type="button"
             aria-label="Notificaciones"

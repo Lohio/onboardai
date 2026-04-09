@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, X, Send, Loader2, ExternalLink } from 'lucide-react'
+import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { Portal } from '@/components/shared/Portal'
@@ -416,7 +417,7 @@ export default function AgenteFlotante({
                   className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white text-base font-bold"
                   style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)' }}
                 >
-                  🤖
+                  <Image src="/heero-icons3.svg" alt="CopilBot" width={24} height={24} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">
@@ -608,39 +609,41 @@ export default function AgenteFlotante({
       </AnimatePresence>
 
       {/* ── Botón flotante ─────────────────────────────────────── */}
-      <motion.button
-        id="tour-agente-btn"
-        onClick={() => {
-          setPanelAbierto(prev => !prev)
-          setHintVisible(false)
-          setHintActivo(null)
-        }}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.93 }}
-        className="fixed bottom-24 right-4 z-50 w-12 h-12 rounded-full
-          flex items-center justify-center cursor-pointer border-2 border-white/20"
-        style={{
-          background: 'linear-gradient(135deg, #0EA5E9 0%, #0D9488 100%)',
-          boxShadow: '0 4px 20px rgba(14,165,233,0.4)',
-        }}
-        aria-label={panelAbierto ? 'Cerrar asistente' : 'Abrir asistente'}
-      >
-        <Bot className="w-5 h-5 text-white" />
+      <div className="fixed bottom-24 right-4 z-50">
+        {/* Ring pulse */}
+        <span className="absolute inset-0 rounded-full bg-sky-400 opacity-20 animate-[slow-ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
 
-        {/* Dot verde: hay hint o hay mensajes nuevos */}
-        <AnimatePresence>
-          {(hayMensajeNuevo || hintVisible) && !panelAbierto && (
-            <motion.span
-              key="dot"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-teal-400 rounded-full
-                border-2 border-[#111110] animate-pulse"
-            />
-          )}
-        </AnimatePresence>
-      </motion.button>
+        <motion.button
+          id="tour-agente-btn"
+          onClick={() => {
+            setPanelAbierto(prev => !prev)
+            setHintVisible(false)
+            setHintActivo(null)
+          }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.93 }}
+          className="relative z-10 w-14 h-14 rounded-full
+            flex items-center justify-center cursor-pointer
+            bg-white border-2 border-sky-500 shadow-lg shadow-sky-500/30"
+          aria-label={panelAbierto ? 'Cerrar asistente' : 'Abrir asistente'}
+        >
+          <Image src="/heero-icons3.svg" alt="CopilBot" width={36} height={36} />
+
+          {/* Dot verde: hay hint o hay mensajes nuevos */}
+          <AnimatePresence>
+            {(hayMensajeNuevo || hintVisible) && !panelAbierto && (
+              <motion.span
+                key="dot"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-teal-400 rounded-full
+                  border-2 border-[#111110] animate-pulse"
+              />
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
 
     </div>
     </Portal>

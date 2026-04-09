@@ -558,10 +558,10 @@ export default function PerfilPage() {
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* ── Page header M1 ── */}
-        <div className="mb-6">
+        <div className="mb-3">
           <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 1</p>
           <h1 className="text-xl font-bold text-gray-900 leading-tight flex items-center gap-2">
-            <User className="w-5 h-5 text-indigo-600" />
+            <Image src="/heero-icons2.svg" alt="" width={45} height={45} />
             Mi perfil
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
