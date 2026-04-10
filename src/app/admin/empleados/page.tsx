@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   UserPlus, Search, Filter, Pencil, RotateCcw, Trash2,
   Calendar, Briefcase, MapPin, Users, AlertTriangle,
-  ArrowLeft, Mail, Monitor,
+  ArrowLeft, Mail, Monitor, Sparkles,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -147,7 +147,7 @@ function EmptyDetalle() {
         <Users className="w-6 h-6 text-white/15" />
       </div>
       <div>
-        <p className="text-sm font-medium text-white/35">Seleccioná un empleado</p>
+        <p className="text-sm font-medium text-white/35">Seleccioná un colaborador</p>
         <p className="text-xs text-white/20 mt-1">para ver su detalle aquí</p>
       </div>
     </div>
@@ -262,7 +262,7 @@ function DetalleEmpleado({
               transition-colors duration-150"
           >
             <Pencil className="w-3.5 h-3.5" />
-            Editar empleado
+            Editar colaborador
           </Link>
 
           <button
@@ -318,7 +318,7 @@ function DetalleEmpleado({
                   transition-colors duration-150 w-full cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Eliminar empleado
+                Eliminar colaborador
               </motion.button>
             )}
           </AnimatePresence>
@@ -510,17 +510,22 @@ export default function EmpleadosPage() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-white">Empleados</h1>
-          <p className="text-sm text-white/40">{empleados.length} empleados</p>
+          <h1 className="text-xl font-semibold text-white">Colaboradores</h1>
+          <p className="text-sm text-white/40">{empleados.length} colaboradores</p>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
+        <button
           onClick={() => setModalAbierto(true)}
+          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+            text-sm font-semibold
+            bg-gradient-to-r from-cyan-500 to-indigo-500
+            hover:from-cyan-400 hover:to-indigo-400
+            shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40
+            hover:scale-105 transition-all duration-300"
+          style={{ color: 'white' }}
         >
-          <UserPlus className="w-4 h-4" />
-          <span className="hidden sm:inline">Nuevo empleado</span>
-        </Button>
+          <Sparkles className="w-4 h-4" />
+          <span className="hidden sm:inline">Sumar al equipo</span>
+        </button>
       </div>
 
       {/* ── Layout dos paneles ── */}
@@ -589,7 +594,7 @@ export default function EmpleadosPage() {
                 <p className="text-xs text-white/25 text-center px-4">
                   {busqueda
                     ? `Sin resultados para "${busqueda}"`
-                    : 'No hay empleados en esta empresa'}
+                    : 'No hay colaboradores en esta empresa'}
                 </p>
               </div>
             ) : (

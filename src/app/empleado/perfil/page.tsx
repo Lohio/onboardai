@@ -642,6 +642,51 @@ export default function PerfilPage() {
 
               </motion.section>
 
+              {/* Credenciales */}
+              {(perfil.password_corporativo || perfil.password_bitlocker) && (
+                <motion.section variants={blockVariants}>
+                  <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+                    <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-4">
+                      Credenciales
+                    </h2>
+                    <div className="space-y-3">
+                      {perfil.password_corporativo && (
+                        <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-md bg-sky-100 border border-sky-200 flex items-center justify-center flex-shrink-0">
+                            <KeyRound className="w-3.5 h-3.5 text-sky-700" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-gray-500 mb-0.5">Contraseña corporativa</p>
+                            <p className="text-sm font-mono text-gray-900 truncate">
+                              {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
+                            </p>
+                          </div>
+                          <button onClick={() => setShowPassCorp(v => !v)} className="text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0">
+                            {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      )}
+                      {perfil.password_bitlocker && (
+                        <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-md bg-amber-100 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-gray-500 mb-0.5">Clave BitLocker</p>
+                            <p className="text-sm font-mono text-gray-900 truncate">
+                              {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
+                            </p>
+                          </div>
+                          <button onClick={() => setShowPassBitlocker(v => !v)} className="text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0">
+                            {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.section>
+              )}
+
               {/* Mis accesos */}
               <motion.section variants={blockVariants}>
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
@@ -732,51 +777,6 @@ export default function PerfilPage() {
                   )}
                 </div>
               </motion.section>
-
-              {/* Bloque F: Credenciales */}
-              {(perfil.password_corporativo || perfil.password_bitlocker) && (
-                <motion.section variants={blockVariants}>
-                  <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-                    <h2 className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-4">
-                      Credenciales
-                    </h2>
-                    <div className="space-y-3">
-                      {perfil.password_corporativo && (
-                        <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-md bg-sky-100 border border-sky-200 flex items-center justify-center flex-shrink-0">
-                            <KeyRound className="w-3.5 h-3.5 text-sky-700" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] text-gray-500 mb-0.5">Contraseña corporativa</p>
-                            <p className="text-sm font-mono text-gray-900 truncate">
-                              {showPassCorp ? perfil.password_corporativo : '••••••••••••'}
-                            </p>
-                          </div>
-                          <button onClick={() => setShowPassCorp(v => !v)} className="text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0">
-                            {showPassCorp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      )}
-                      {perfil.password_bitlocker && (
-                        <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-md bg-amber-100 border border-amber-200 flex items-center justify-center flex-shrink-0">
-                            <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] text-gray-500 mb-0.5">Clave BitLocker</p>
-                            <p className="text-sm font-mono text-gray-900 truncate">
-                              {showPassBitlocker ? perfil.password_bitlocker : '••••••••••••'}
-                            </p>
-                          </div>
-                          <button onClick={() => setShowPassBitlocker(v => !v)} className="text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0">
-                            {showPassBitlocker ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.section>
-              )}
 
               {/* Sobre mí — editable inline (último en columna izquierda) */}
               <motion.section variants={blockVariants}>

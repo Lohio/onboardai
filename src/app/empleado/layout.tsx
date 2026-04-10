@@ -296,16 +296,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             )
           })}
 
-          {/* Botón configuración secundario */}
+          {/* Botón configuración con dropdown */}
           <div className="w-12 flex items-center justify-center border-l border-gray-200 ml-2 pl-2">
-            <button
-              type="button"
-              onClick={() => router.push('/empleado/configuracion')}
-              aria-label="Configuración"
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            <SettingsDropdown />
           </div>
         </div>
       </nav>

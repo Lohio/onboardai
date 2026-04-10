@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, BookOpen, Wrench, MessageSquare,
@@ -187,9 +188,9 @@ function renderLinea(line: string, key: number): React.ReactNode {
 }
 
 const MODULOS_CONFIG = [
-  { key: 'cultura' as const, label: 'M2 — Cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-[#38BDF8]' },
-  { key: 'rol' as const, label: 'M3 — Rol y herramientas', icon: <Wrench className="w-3.5 h-3.5" />, color: 'text-teal-400' },
-  { key: 'asistente' as const, label: 'M4 — Asistente IA', icon: <MessageSquare className="w-3.5 h-3.5" />, color: 'text-amber-400' },
+  { key: 'cultura' as const, label: 'Cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-gray-900' },
+  { key: 'rol' as const, label: 'Rol y herramientas', icon: <Wrench className="w-3.5 h-3.5" />, color: 'text-gray-900' },
+  { key: 'asistente' as const, label: 'CopilBot', icon: <MessageSquare className="w-3.5 h-3.5" />, color: 'text-gray-900' },
 ]
 
 // ─────────────────────────────────────────────
@@ -812,10 +813,9 @@ export default function EmpleadoDetallePage() {
       <div className="flex items-center gap-3 flex-wrap">
         <Link
           href="/admin/empleados"
-          className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors duration-150 flex-shrink-0"
+          className="flex items-center justify-center w-8 h-8 rounded-full text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-150 flex-shrink-0"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Empleados
+          <ArrowLeft className="w-5 h-5" />
         </Link>
 
         {/* Avatar + nombre */}
@@ -836,10 +836,15 @@ export default function EmpleadoDetallePage() {
 
         {/* Acción según tab */}
         {(tab === 'edicion' || tab === 'rol') && (
-          <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>
-            <Save className="w-3.5 h-3.5" />
-            Guardar cambios
-          </Button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 hover:bg-black transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ color: 'white' }}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Guardar
+          </button>
         )}
         {tab === 'progreso' && (
           <button
@@ -860,10 +865,10 @@ export default function EmpleadoDetallePage() {
       {/* ── Tabs ── */}
       <div className="flex items-center gap-1 border-b border-white/[0.07] pb-0">
         {([
-          { key: 'edicion' as TabKey, label: 'Edición', icon: <Pencil className="w-3.5 h-3.5" /> },
-          { key: 'rol' as TabKey, label: 'Rol y herramientas', icon: <Briefcase className="w-3.5 h-3.5" /> },
-          { key: 'progreso' as TabKey, label: 'Progreso y reporte', icon: <BarChart2 className="w-3.5 h-3.5" /> },
-          { key: 'plan' as TabKey, label: 'Plan 30-60-90', icon: <Map className="w-3.5 h-3.5" /> },
+          { key: 'edicion' as TabKey, label: 'Perfil', icon: <Image src="/heero-icons2.svg" alt="" width={20} height={20} /> },
+          { key: 'rol' as TabKey, label: 'Rol y herramientas', icon: <Image src="/heero-icons4.svg" alt="" width={20} height={20} /> },
+          { key: 'plan' as TabKey, label: 'CopilBot', icon: <Image src="/heero-icons3.svg" alt="" width={20} height={20} /> },
+          { key: 'progreso' as TabKey, label: 'Progreso y reporte', icon: <Image src="/heero-icons6.svg" alt="" width={20} height={20} /> },
         ]).map(t => (
           <button
             key={t.key}
@@ -1470,7 +1475,7 @@ export default function EmpleadoDetallePage() {
                   <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-teal-500" />
-                      <span className="text-xs text-white/60">M1 — Perfil</span>
+                      <span className="text-xs text-gray-900">Perfil</span>
                     </div>
                     <Badge variant="success">Completado</Badge>
                   </div>
@@ -1510,11 +1515,16 @@ export default function EmpleadoDetallePage() {
                     )
                   })}
 
-                  <Button variant="ghost" size="sm" onClick={() => setResetModal('todos')}
-                    className="w-full text-amber-400/60 hover:text-amber-400 hover:bg-amber-500/[0.08] mt-1">
-                    <RotateCcw className="w-3 h-3" />
-                    Resetear todo el progreso
-                  </Button>
+                  <div className="flex justify-center mt-1">
+                    <button
+                      onClick={() => setResetModal('todos')}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 hover:bg-black text-sm font-medium transition-colors duration-150"
+                      style={{ color: 'white' }}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Resetear todo el progreso
+                    </button>
+                  </div>
 
                   {/* Mini resumen de accesos */}
                   {accesos.length > 0 && (

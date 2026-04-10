@@ -149,7 +149,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-            <h2 className="text-sm font-semibold text-white">Nuevo empleado</h2>
+            <h2 className="text-sm font-semibold text-white">Nuevo colaborador</h2>
             <button
               onClick={onClose}
               className="text-white/30 hover:text-white/70 transition-colors duration-150 p-1 -mr-1"
@@ -284,7 +284,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
                 Cancelar
               </Button>
               <Button variant="primary" size="sm" loading={loading} type="submit">
-                Crear empleado
+                Agregar
               </Button>
             </div>
           </form>

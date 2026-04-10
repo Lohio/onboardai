@@ -24,13 +24,6 @@ const OPCIONES: { value: Theme; label: string; bg: string; surface: string; text
     surface: '#ffffff',
     text: '#111110',
   },
-  {
-    value: 'theme-gray',
-    label: 'Gris neutro',
-    bg: '#1c1c1e',
-    surface: '#2c2c2e',
-    text: '#f5f5f5',
-  },
 ]
 
 export function ThemeSelector() {
