@@ -491,6 +491,89 @@ aside {
 .theme-light .contenido-modal select { background-color: rgba(17,17,16,0.04) !important; color: rgba(17,17,16,0.85) !important; border-color: rgba(17,17,16,0.12) !important; }
 
 /* ==========================================
+   TEMA OSCURO / GRIS: convertir colores light hardcodeados → dark
+   Necesario para páginas que usan bg-white/text-gray-* sin CSS vars
+   ========================================== */
+
+/* ── Fondos blancos y grises claros → surface oscura ── */
+.theme-dark main [class~="bg-white"],
+.theme-gray main [class~="bg-white"] {
+  background-color: var(--surface) !important;
+}
+.theme-dark main [class*="bg-gray-50"],
+.theme-dark main [class*="bg-gray-100"],
+.theme-gray main [class*="bg-gray-50"],
+.theme-gray main [class*="bg-gray-100"] {
+  background-color: var(--background) !important;
+}
+.theme-dark main [class*="animate-pulse"][class*="bg-gray-"],
+.theme-gray main [class*="animate-pulse"][class*="bg-gray-"] {
+  background-color: var(--surface) !important;
+}
+
+/* ── Bordes grises → border var ── */
+.theme-dark main [class*="border-gray-"],
+.theme-gray main [class*="border-gray-"] {
+  border-color: var(--border) !important;
+}
+.theme-dark main [class*="hover:border-gray-"]:hover,
+.theme-gray main [class*="hover:border-gray-"]:hover {
+  border-color: rgba(255,255,255,0.14) !important;
+}
+
+/* ── Sombras: ocultar en dark (shadow-sm, shadow-md no aportan en dark) ── */
+.theme-dark main [class*="shadow-sm"],
+.theme-dark main [class*="shadow-md"],
+.theme-gray main [class*="shadow-sm"],
+.theme-gray main [class*="shadow-md"] {
+  box-shadow: none !important;
+}
+
+/* ── Texto gris oscuro → blanco/casi blanco ── */
+.theme-dark main [class*="text-gray-900"],
+.theme-dark main [class*="text-gray-800"],
+.theme-gray main [class*="text-gray-900"],
+.theme-gray main [class*="text-gray-800"] {
+  color: rgba(255,255,255,0.92) !important;
+}
+.theme-dark main [class*="text-gray-700"],
+.theme-dark main [class*="text-gray-600"],
+.theme-gray main [class*="text-gray-700"],
+.theme-gray main [class*="text-gray-600"] {
+  color: rgba(255,255,255,0.65) !important;
+}
+.theme-dark main [class*="text-gray-500"],
+.theme-gray main [class*="text-gray-500"] {
+  color: rgba(255,255,255,0.45) !important;
+}
+.theme-dark main [class*="text-gray-400"],
+.theme-gray main [class*="text-gray-400"] {
+  color: rgba(255,255,255,0.32) !important;
+}
+
+/* ── Mismo para aside (sidebar admin/dev) ── */
+.theme-dark aside [class~="bg-white"],
+.theme-gray aside [class~="bg-white"] {
+  background-color: var(--sidebar-bg) !important;
+}
+.theme-dark aside [class*="border-gray-"],
+.theme-gray aside [class*="border-gray-"] {
+  border-color: var(--border) !important;
+}
+
+/* ── Shimmer skeletons en dark ── */
+.theme-dark main .shimmer,
+.theme-gray main .shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    rgba(255,255,255,0.06) 50%,
+    var(--surface) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+/* ==========================================
    UTILIDADES POR MÓDULO
    ========================================== */
 .mod-m1-header {
