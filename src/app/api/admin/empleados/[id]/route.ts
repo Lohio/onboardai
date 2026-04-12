@@ -132,6 +132,14 @@ export const DELETE = withHandler(
 
     // 2. Auth eliminado — limpiar datos asociados
     await sa.from('progreso_modulos').delete().eq('usuario_id', id)
+    await sa.from('tareas_onboarding').delete().eq('usuario_id', id)
+    await sa.from('encuestas_pulso').delete().eq('usuario_id', id)
+    await sa.from('accesos').delete().eq('usuario_id', id)
+    await sa.from('alertas_conocimiento').delete().eq('usuario_id', id)
+    // Relaciones de equipo donde el usuario es manager, buddy o compañero
+    await sa.from('equipo_relaciones').delete().eq('empleado_id', id)
+    await sa.from('equipo_relaciones').delete().eq('manager_id', id)
+    await sa.from('equipo_relaciones').delete().eq('buddy_id', id)
 
     const { data: convs } = await sa
       .from('conversaciones_ia')

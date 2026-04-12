@@ -21,7 +21,7 @@ export const POST = withHandler(
   const [empleadoRes, progresoRes, tareasRes, culturaCntRes] = await Promise.all([
     supabase
       .from('usuarios')
-      .select('nombre, puesto, area, fecha_ingreso')
+      .select('nombre, puesto, area, fecha_ingreso, empresa_id')
       .eq('id', empleadoId)
       .single(),
     supabase
@@ -41,6 +41,8 @@ export const POST = withHandler(
 
   const empleado = empleadoRes.data
   if (!empleado) return ApiError.notFound('Empleado')
+  // Verificación explícita de empresa (defensa en profundidad sobre RLS)
+  if (empleado.empresa_id !== user!.empresaId) return ApiError.forbidden()
 
   // Obtener últimas preguntas al asistente IA (tabla puede no existir aún)
   let ultimasPreguntas: string[] = []
@@ -82,7 +84,10 @@ export const POST = withHandler(
             100
         )
       : 0
-  const pctRol = progresoRows.some(p => p.modulo === 'rol' && p.completado) ? 100 : 0
+  const bloqueRolTotal = progresoRows.filter(p => p.modulo === 'rol').length
+  const pctRol = bloqueRolTotal > 0
+    ? Math.round(progresoRows.filter(p => p.modulo === 'rol' && p.completado).length / bloqueRolTotal * 100)
+    : 0
 
   const tareas = tareasRes.data ?? []
   const tareasCompletadas = tareas.filter(t => t.completada).length

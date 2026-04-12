@@ -17,6 +17,7 @@ import { ContactoCard } from '@/components/empleado/ContactoCard'
 import { HERRAMIENTA_LABELS } from '@/lib/contacto'
 import { HerramientaIcon } from '@/components/icons/HerramientaIcon'
 import { cn } from '@/lib/utils'
+import { ErrorState } from '@/components/shared/ErrorState'
 import { useLanguage } from '@/components/LanguageProvider'
 import { LANGS, LANG_FLAGS, LANG_LABELS } from '@/lib/i18n'
 
@@ -40,6 +41,7 @@ export default function ConfiguracionPage() {
   const router = useRouter()
   const { t, lang, setLang } = useLanguage()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedOk, setSavedOk] = useState(false)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
@@ -158,6 +160,7 @@ export default function ConfiguracionPage() {
     } catch (err) {
       console.error('Error cargando configuración:', err)
       toast.error('Error al cargar la configuración')
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -238,6 +241,8 @@ export default function ConfiguracionPage() {
   }, [empresaId, promptPersonalizado])
 
   const herramientaPreview = arrayFinal[0] ?? 'email'
+
+  if (error) return <ErrorState onRetry={() => { setError(false); setLoading(true) }} />
 
   if (loading) {
     return (

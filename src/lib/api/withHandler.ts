@@ -213,11 +213,15 @@ export function withHandler<TBody = unknown>(
           status = 400
           console.log('[withHandler] Datos inválidos:', {
             path: new URL(req.url).pathname,
-            rawBody,
+            // rawBody omitido — puede contener datos sensibles (passwords, tokens)
             issues: parsed.error.issues,
           })
           return NextResponse.json(
-            { error: 'Datos inválidos', details: parsed.error.issues, requestId },
+            {
+              error: 'Datos inválidos',
+              ...(process.env.NODE_ENV !== 'production' && { details: parsed.error.issues }),
+              requestId,
+            },
             { status: 400 }
           )
         }

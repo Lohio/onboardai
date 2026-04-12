@@ -34,8 +34,8 @@ export function SettingsDropdown() {
         onClick={() => setOpen(prev => !prev)}
         className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150
           ${open
-            ? 'text-gray-700 bg-gray-100'
-            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+            ? 'text-white/75 bg-white/[0.08]'
+            : 'text-white/40 hover:text-white/65 hover:bg-white/[0.06]'
           }`}
         aria-label={t('settings.title')}
       >

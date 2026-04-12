@@ -720,6 +720,8 @@ export default function ContenidoPage() {
   const bloquesFiltradosEmpresa = bloques.filter(b => !b.area && !b.puesto)
   const proximoOrden = bloquesFiltradosEmpresa.length + 1
 
+  if (!loading && error) return <ErrorState onRetry={() => { setError(false); setLoading(true) }} />
+
   // ─────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────

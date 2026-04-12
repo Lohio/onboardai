@@ -10,6 +10,7 @@ import { Portal } from '@/components/shared/Portal'
 import { ContenidoModal } from '@/components/admin/ContenidoModal'
 import { estadoBloque, infoBloque } from '@/lib/conocimiento'
 import type { ContenidoBloque, TipoContenido } from '@/types'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 // ─────────────────────────────────────────────
 // Constantes: módulos y bloques del producto
@@ -140,6 +141,7 @@ function TipoIcon({ tipo }: { tipo: TipoContenido }) {
 
 export default function ConocimientoPage() {
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [alertas, setAlertas] = useState<AlertaRow[]>([])
   const [conocimientoMap, setConocimientoMap] = useState<Record<string, ContenidoBloque>>({})
@@ -206,6 +208,7 @@ export default function ConocimientoPage() {
         await cargarDatos(adminData.empresa_id)
       } catch (err) {
         console.error('Error cargando conocimiento:', err)
+        setError(true)
       } finally {
         setLoading(false)
       }
@@ -278,6 +281,8 @@ export default function ConocimientoPage() {
       setGuardando(false)
     }
   }
+
+  if (error) return <ErrorState onRetry={() => { setError(false); setLoading(true) }} />
 
   // ─────────────────────────────────────────────
   // Loading skeleton

@@ -14,6 +14,7 @@ import { logStreamError } from '@/lib/api-error'
 export const POST = withHandler(
   {
     auth: 'session',
+    rol: 'empleado',
     schema: chatSchema,
     streaming: true,
     rateLimit: RATE_LIMITS.chat,
@@ -39,13 +40,22 @@ export const POST = withHandler(
     let convId = conversacionId ?? null
 
     if (convId) {
+      // Verificar ownership antes de cargar historial
+      const { data: conv } = await supabase!
+        .from('conversaciones_ia')
+        .select('id')
+        .eq('id', convId)
+        .eq('usuario_id', user!.id)
+        .single()
+      if (!conv) convId = null
+
       // Cargar historial existente (últimas 20 interacciones)
-      const { data: mensajesHistorial } = await supabase!
+      const { data: mensajesHistorial } = convId ? await supabase!
         .from('mensajes_ia')
         .select('rol, contenido')
         .eq('conversacion_id', convId)
         .order('created_at', { ascending: true })
-        .limit(20)
+        .limit(20) : { data: null }
 
       historial = (mensajesHistorial ?? []).map(m => ({
         role: m.rol as 'user' | 'assistant',
@@ -144,14 +154,13 @@ export const POST = withHandler(
               contenido: respuestaCompleta,
             })
 
-            // Registro de uso de tokens (visible en logs de Vercel/servidor)
-            console.log('[chat:tokens]', JSON.stringify({
-              usuario_id: userId,
-              empresa_id: empresaId,
-              input_tokens: tokenUsage.inputTokens,
-              output_tokens: tokenUsage.outputTokens,
-              total_tokens: tokenUsage.inputTokens + tokenUsage.outputTokens,
-            }))
+            // Registro de uso de tokens (solo en desarrollo)
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[chat:tokens]', {
+                input: tokenUsage.inputTokens,
+                output: tokenUsage.outputTokens,
+              })
+            }
           }
 
 

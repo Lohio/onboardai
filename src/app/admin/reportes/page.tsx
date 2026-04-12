@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import type { BadgeVariant } from '@/components/ui/Badge'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 // ─────────────────────────────────────────────
 // Tipos locales
@@ -338,10 +339,12 @@ export default function ReportesPage() {
   const router = useRouter()
 
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [empleados, setEmpleados] = useState<EmpleadoReporte[]>([])
 
   // ── Carga de datos ──
   const cargarDatos = useCallback(async () => {
+    setError(false)
     try {
       const supabase = createClient()
 
@@ -427,7 +430,8 @@ export default function ReportesPage() {
 
       setEmpleados(lista)
     } catch (err) {
-      console.error('Error al cargar reportes:', err)
+      console.error('[Reportes] Error al cargar datos:', err)
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -469,6 +473,10 @@ export default function ReportesPage() {
         </div>
       </div>
     )
+  }
+
+  if (error) {
+    return <ErrorState onRetry={cargarDatos} />
   }
 
   // ─────────────────────────────────────────────

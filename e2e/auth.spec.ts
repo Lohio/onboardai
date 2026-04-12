@@ -16,27 +16,27 @@ test.describe("Auth — Login y Logout", () => {
   })
 
   test("login con credenciales inválidas muestra error", async ({ page }) => {
-    await page.getByPlaceholder(/email/i).fill("invalido@ejemplo.com")
-    await page.getByPlaceholder(/contraseña/i).fill("passwordmalo")
-    await page.getByRole("button", { name: /ingresar|entrar|login/i }).click()
+    await page.getByPlaceholder("tu@empresa.com").fill("invalido@ejemplo.com")
+    await page.getByPlaceholder("Contraseña").fill("passwordmalo")
+    await page.getByRole("button", { name: /comenzar/i }).click()
 
     // Debe mostrar mensaje de error visible
     await expect(page.locator("[data-testid='auth-error'], .text-red-400, .text-red-500")).toBeVisible({ timeout: 8000 })
   })
 
   test("login como empleado redirige a /empleado", async ({ page }) => {
-    await page.getByPlaceholder(/email/i).fill(EMPLEADO_EMAIL)
-    await page.getByPlaceholder(/contraseña/i).fill(EMPLEADO_PASSWORD)
-    await page.getByRole("button", { name: /ingresar|entrar|login/i }).click()
+    await page.getByPlaceholder("tu@empresa.com").fill(EMPLEADO_EMAIL)
+    await page.getByPlaceholder("Contraseña").fill(EMPLEADO_PASSWORD)
+    await page.getByRole("button", { name: /comenzar/i }).click()
 
     // Esperar redirección a la sección de empleado
     await expect(page).toHaveURL(/\/empleado/, { timeout: 15000 })
   })
 
   test("login como admin redirige a /admin", async ({ page }) => {
-    await page.getByPlaceholder(/email/i).fill(ADMIN_EMAIL)
-    await page.getByPlaceholder(/contraseña/i).fill(ADMIN_PASSWORD)
-    await page.getByRole("button", { name: /ingresar|entrar|login/i }).click()
+    await page.getByPlaceholder("tu@empresa.com").fill(ADMIN_EMAIL)
+    await page.getByPlaceholder("Contraseña").fill(ADMIN_PASSWORD)
+    await page.getByRole("button", { name: /comenzar/i }).click()
 
     // Esperar redirección a la sección de admin
     await expect(page).toHaveURL(/\/admin/, { timeout: 15000 })
@@ -44,9 +44,9 @@ test.describe("Auth — Login y Logout", () => {
 
   test("logout redirige a /auth/login", async ({ page }) => {
     // Primero hacer login como empleado
-    await page.getByPlaceholder(/email/i).fill(EMPLEADO_EMAIL)
-    await page.getByPlaceholder(/contraseña/i).fill(EMPLEADO_PASSWORD)
-    await page.getByRole("button", { name: /ingresar|entrar|login/i }).click()
+    await page.getByPlaceholder("tu@empresa.com").fill(EMPLEADO_EMAIL)
+    await page.getByPlaceholder("Contraseña").fill(EMPLEADO_PASSWORD)
+    await page.getByRole("button", { name: /comenzar/i }).click()
     await expect(page).toHaveURL(/\/empleado/, { timeout: 15000 })
 
     // Buscar y hacer click en logout

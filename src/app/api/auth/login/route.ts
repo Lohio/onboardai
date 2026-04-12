@@ -81,7 +81,8 @@ export const POST = withHandler(
     })
 
     if (signInError) {
-      return NextResponse.json({ error: signInError.message }, { status: 401 })
+      // Mensaje genérico para evitar enumeración de emails
+      return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
     if (!data.user || !data.session) {

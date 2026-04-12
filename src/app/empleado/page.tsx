@@ -19,6 +19,7 @@ import { FASES_CONFIG, COLOR_EXTRAS } from '@/lib/plan'
 import type { PlanItem } from '@/types'
 import { getInitials, formatFecha } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -429,6 +430,7 @@ export default function EmpleadoHome() {
 
   // ── Estado base (carga inicial) ──────────────
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [datosBase, setDatosBase] = useState<DatosBase | null>(null)
   const [estadoModulos, setEstadoModulos] = useState({ M1: true, M2: false, M3: false, M4: false })
   const [progresoPct, setProgresoPct] = useState(0)
@@ -477,6 +479,7 @@ export default function EmpleadoHome() {
   // ── Carga inicial de datos base ────────────────────────────────
   const cargarDatosBase = useCallback(async () => {
     setLoading(true)
+    setError(false)
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -528,6 +531,7 @@ export default function EmpleadoHome() {
       cargarTabM1(user.id, usuario as DatosBase)
     } catch (err) {
       console.error('[EmpleadoHome] Error cargando datos base:', err)
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -689,6 +693,8 @@ export default function EmpleadoHome() {
       setTabActivo(tabInicial as TabId)
     }
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (error) return <ErrorState onRetry={cargarDatosBase} />
 
   // ─────────────────────────────────────────────
   // Render: loading
