@@ -49,19 +49,20 @@ export function SettingsDropdown() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 4 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="absolute right-0 bottom-full mb-2 w-64 z-50
-              glass-card rounded-xl overflow-hidden"
+            className="absolute right-0 bottom-full mb-2 w-64 z-50 rounded-xl overflow-hidden
+              shadow-xl shadow-black/40"
+            style={{ background: '#0F1F3D', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             {/* Título */}
-            <div className="px-3 py-2.5 border-b border-white/[0.06]">
-              <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest">
+            <div className="px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.40)' }}>
                 {t('settings.title')}
               </p>
             </div>
 
             {/* Apariencia */}
-            <div className="px-3 pt-2.5 pb-2.5 border-b border-white/[0.06]">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest mb-2">
+            <div className="px-3 pt-2.5 pb-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.30)' }}>
                 {t('settings.appearance')}
               </p>
               <div className="flex gap-1.5">
@@ -71,25 +72,25 @@ export function SettingsDropdown() {
                     <button
                       key={op.value}
                       onClick={() => setTheme(op.value)}
-                      className={`flex-1 rounded-lg border p-1.5 transition-all duration-150 text-center
-                        ${active
-                          ? 'border-indigo-500/50 bg-indigo-500/10'
-                          : 'border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]'
-                        }`}
+                      className="flex-1 rounded-lg p-1.5 transition-all duration-150 text-center"
+                      style={{
+                        border: active ? '1px solid rgba(99,102,241,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                        background: active ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
+                      }}
                       aria-label={`Tema ${op.labelKey}`}
                     >
                       {/* Preview */}
                       <div
-                        className="h-5 rounded mb-1 border border-white/10 overflow-hidden"
-                        style={{ background: op.bg }}
+                        className="h-5 rounded mb-1 overflow-hidden"
+                        style={{ background: op.bg, border: '1px solid rgba(255,255,255,0.10)' }}
                       >
                         <div className="h-2 w-full" style={{ background: op.surface }} />
                       </div>
                       <div className="flex items-center justify-center gap-1">
-                        <span className={`text-[10px] font-medium ${active ? 'text-indigo-400' : 'text-white/40'}`}>
+                        <span className="text-[10px] font-medium" style={{ color: active ? '#818cf8' : 'rgba(255,255,255,0.45)' }}>
                           {t(op.labelKey)}
                         </span>
-                        {active && <Check className="w-2.5 h-2.5 text-indigo-400" />}
+                        {active && <Check className="w-2.5 h-2.5" style={{ color: '#818cf8' }} />}
                       </div>
                     </button>
                   )
@@ -99,7 +100,7 @@ export function SettingsDropdown() {
 
             {/* Idioma */}
             <div className="px-3 pt-2.5 pb-3">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.30)' }}>
                 {t('settings.language')}
               </p>
               <div className="grid grid-cols-2 gap-1">
@@ -107,12 +108,12 @@ export function SettingsDropdown() {
                   <button
                     key={l}
                     onClick={() => setLang(l)}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium
-                      transition-all duration-150
-                      ${lang === l
-                        ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
-                        : 'text-white/45 hover:text-white/70 hover:bg-white/[0.05] border border-transparent'
-                      }`}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150"
+                    style={{
+                      color: lang === l ? '#818cf8' : 'rgba(255,255,255,0.50)',
+                      background: lang === l ? 'rgba(99,102,241,0.12)' : 'transparent',
+                      border: lang === l ? '1px solid rgba(99,102,241,0.30)' : '1px solid transparent',
+                    }}
                   >
                     <span>{LANG_FLAGS[l]}</span>
                     <span>{LANG_LABELS[l]}</span>
