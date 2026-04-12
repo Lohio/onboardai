@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,6 +15,9 @@ import {
   Menu,
   X,
   LogOut,
+  Pencil,
+  ImagePlus,
+  ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { esTrial, TRIAL_LIMITS } from '@/lib/trial'
@@ -122,7 +125,7 @@ function NavItem({
 }
 
 // ─────────────────────────────────────────────
-// SidebarContent
+// Nav items
 // ─────────────────────────────────────────────
 
 const navItems: NavItemDef[] = [
@@ -136,7 +139,7 @@ const navItems: NavItemDef[] = [
   },
   {
     labelKey: 'nav.employees',
-    label: 'Colaboradores',
+    label: 'Equipo',
     href: '/admin/empleados',
     icon: <Users className="w-[18px] h-[18px]" />,
     disabled: false,
@@ -171,24 +174,119 @@ const navItems: NavItemDef[] = [
   },
 ]
 
+// ─────────────────────────────────────────────
+// SidebarContent
+// ─────────────────────────────────────────────
+
 function SidebarContent({
   adminNombre,
+  empresaNombre,
+  logoUrl,
   pathname,
   onClose,
   onLogout,
+  onLogoUpload,
 }: {
   adminNombre: string
+  empresaNombre: string
+  logoUrl: string
   pathname: string
   onClose?: () => void
   onLogout: () => void
+  onLogoUpload: (url: string) => void
 }) {
   const { t } = useLanguage()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showLogoMenu, setShowLogoMenu] = useState(false)
+  const logoDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (logoDropdownRef.current && !logoDropdownRef.current.contains(e.target as Node)) {
+        setShowLogoMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const iniciales = adminNombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0].toUpperCase())
+    .join('') || 'A'
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const url = ev.target?.result as string
+      onLogoUpload(url)
+      setShowLogoMenu(false)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Header sidebar ── */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.05]">
-        <div className="flex-1 min-w-0" />
+      {/* ── Logo empresa (arriba izquierda) — dropdown ── */}
+      <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+        <div className="relative" ref={logoDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setShowLogoMenu(v => !v)}
+            className="flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1
+              hover:bg-white/[0.05] transition-colors duration-150"
+          >
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo empresa" className="h-7 w-auto object-contain max-w-[100px]" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#38BDF8] text-xs font-bold">
+                    {(empresaNombre || 'E')[0].toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold text-white/70 truncate max-w-[90px]">
+                  {empresaNombre || 'Mi empresa'}
+                </span>
+              </div>
+            )}
+            <ChevronDown className={`w-3 h-3 text-white/25 flex-shrink-0 transition-transform duration-150 ${showLogoMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showLogoMenu && (
+            <div className="absolute top-full left-0 mt-1.5 w-44 rounded-xl
+              border border-white/[0.08] bg-[#0A1628] shadow-2xl z-50 overflow-hidden py-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs
+                  text-white/55 hover:text-white/90 hover:bg-white/[0.05]
+                  transition-colors duration-150"
+              >
+                <ImagePlus className="w-3.5 h-3.5 flex-shrink-0" />
+                {logoUrl ? 'Cambiar logo' : 'Subir logo'}
+              </button>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => { onLogoUpload(''); setShowLogoMenu(false) }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-xs
+                    text-red-400/60 hover:text-red-400 hover:bg-red-500/[0.06]
+                    transition-colors duration-150"
+                >
+                  <X className="w-3.5 h-3.5 flex-shrink-0" />
+                  Quitar logo
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {onClose && (
           <button
             onClick={onClose}
@@ -224,26 +322,50 @@ function SidebarContent({
         </motion.div>
       </nav>
 
-      {/* ── Footer: bienvenida + logout ── */}
-      <div className="px-3 py-3 border-t border-white/[0.06]">
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
-          hover:bg-white/[0.04] transition-colors duration-150">
+      {/* ── Footer: perfil admin + logout ── */}
+      <div className="px-3 py-3 border-t border-white/[0.06] space-y-1">
+        {/* Perfil editable */}
+        <div className="flex items-center gap-2.5 px-2 py-2.5 rounded-xl">
+          {/* Avatar */}
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
+            flex items-center justify-center">
+            <span className="text-[#7DD3FC] text-xs font-bold">{iniciales}</span>
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white/80 truncate">
-              {adminNombre ? `Bienvenido, ${adminNombre}` : 'Bienvenido'}
+              {adminNombre || 'Admin'}
             </p>
-            <p className="text-[11px] text-white/35 mt-0.5">{t('common.admin')}</p>
+            <p className="text-[11px] text-white/35">{t('common.admin')}</p>
           </div>
+          {/* Editar perfil */}
+          <Link
+            href="/admin/perfil"
+            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+              text-white/30 hover:text-white/65 hover:bg-white/[0.06]
+              transition-colors duration-150"
+            title="Editar perfil"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </Link>
+          {/* Logout */}
           <button
             onClick={onLogout}
             aria-label={t('common.logout')}
-            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
-              text-white/40 hover:text-red-400 hover:bg-red-500/10
+            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+              text-white/30 hover:text-red-400 hover:bg-red-500/10
               transition-colors duration-150 cursor-pointer"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFile}
+        />
       </div>
     </div>
   )
@@ -255,11 +377,20 @@ function SidebarContent({
 
 function AdminHeader({
   alertasCount,
+  adminNombre,
   onMenuClick,
 }: {
   alertasCount: number
+  adminNombre: string
   onMenuClick: () => void
 }) {
+  const iniciales = adminNombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0].toUpperCase())
+    .join('') || 'A'
+
   return (
     <header className="h-14 flex items-center px-4 gap-3 flex-shrink-0"
       style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
@@ -273,9 +404,21 @@ function AdminHeader({
         <Menu className="w-5 h-5" />
       </button>
 
+      {/* Avatar admin — izquierda */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
+          flex items-center justify-center flex-shrink-0">
+          <span className="text-[#7DD3FC] text-[10px] font-bold">{iniciales}</span>
+        </div>
+        <span className="text-sm font-medium hidden sm:block"
+          style={{ color: 'var(--foreground)' }}>
+          {adminNombre || 'Admin'}
+        </span>
+      </div>
+
       <div className="flex-1" />
 
-      {/* Bell + badge */}
+      {/* Bell + badge — derecha */}
       <button
         className="relative p-2 rounded-lg transition-colors duration-150
           text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--glass-bg)]"
@@ -302,6 +445,8 @@ function AdminHeader({
 // Layout principal
 // ─────────────────────────────────────────────
 
+const LOGO_STORAGE_KEY = 'heero_empresa_logo'
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -309,11 +454,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [adminNombre, setAdminNombre] = useState('')
+  const [empresaNombre, setEmpresaNombre] = useState('')
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [alertasCount, setAlertasCount] = useState(0)
   const [sidebarAbierto, setSidebarAbierto] = useState(false)
-  const [plan, setPlan]                     = useState<string>('trial')
+  const [plan, setPlan] = useState<string>('trial')
   const [empleadosCount, setEmpleadosCount] = useState(0)
+  const [logoUrl, setLogoUrl] = useState('')
+
+  // Cargar logo guardado en localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(LOGO_STORAGE_KEY)
+    if (saved) setLogoUrl(saved)
+  }, [])
+
+  const handleLogoUpload = (url: string) => {
+    setLogoUrl(url)
+    if (url) {
+      localStorage.setItem(LOGO_STORAGE_KEY, url)
+    } else {
+      localStorage.removeItem(LOGO_STORAGE_KEY)
+    }
+  }
 
   const handleLogout = useCallback(async () => {
     const supabase = createClient()
@@ -363,11 +525,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setAdminNombre(usuarioData.nombre ?? '')
         setEmpresaId(usuarioData.empresa_id)
 
-        // Cargar plan y conteo de empleados para el banner trial
+        // Cargar plan, nombre empresa y conteo de empleados
         const [empresaRes, empleadosRes] = await Promise.all([
           supabase
             .from('empresas')
-            .select('plan')
+            .select('plan, nombre')
             .eq('id', usuarioData.empresa_id)
             .single(),
           supabase
@@ -377,6 +539,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             .eq('rol', 'empleado'),
         ])
         setPlan(empresaRes.data?.plan ?? 'trial')
+        setEmpresaNombre(empresaRes.data?.nombre ?? '')
         setEmpleadosCount(empleadosRes.count ?? 0)
 
         const { count } = await supabase
@@ -439,13 +602,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ── Sidebar desktop (fijo) ── */}
       <aside className="hidden md:flex flex-col w-64 flex-shrink-0"
         style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}>
-        <SidebarContent adminNombre={adminNombre} pathname={pathname} onLogout={handleLogout} />
+        <SidebarContent
+          adminNombre={adminNombre}
+          empresaNombre={empresaNombre}
+          logoUrl={logoUrl}
+          pathname={pathname}
+          onLogout={handleLogout}
+          onLogoUpload={handleLogoUpload}
+        />
       </aside>
 
       {/* ── Contenido principal ── */}
       <div className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--background)' }}>
         <AdminHeader
           alertasCount={alertasCount}
+          adminNombre={adminNombre}
           onMenuClick={() => setSidebarAbierto(true)}
         />
         {/* ── Banner trial ── */}
@@ -468,9 +639,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </a>
           </div>
         )}
-        {/* El overflow va en main, no en el div hijo que envuelve {children} —
-            si estuviera en el div hijo, crearía un stacking context que confinaría
-            los position:fixed de modales dentro del div en vez del viewport. */}
         <main className="flex-1 overflow-y-auto min-h-0">
           <div className="p-4 sm:p-6">
             {children}
@@ -485,7 +653,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AnimatePresence>
         {sidebarAbierto && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 bg-black/60 md:hidden z-40"
               initial={{ opacity: 0 }}
@@ -494,8 +661,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               transition={{ duration: 0.2 }}
               onClick={() => setSidebarAbierto(false)}
             />
-
-            {/* Drawer */}
             <motion.aside
               className="fixed left-0 top-0 h-full w-64 md:hidden z-50"
               style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}
@@ -506,9 +671,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <SidebarContent
                 adminNombre={adminNombre}
+                empresaNombre={empresaNombre}
+                logoUrl={logoUrl}
                 pathname={pathname}
                 onClose={() => setSidebarAbierto(false)}
                 onLogout={handleLogout}
+                onLogoUpload={handleLogoUpload}
               />
             </motion.aside>
           </>

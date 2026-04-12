@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import { Send, Bot, Loader2, AlertTriangle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
@@ -34,35 +35,35 @@ const msgVariants = {
 }
 
 // ─────────────────────────────────────────────
-// Componentes markdown del asistente
+// Componentes markdown — tema claro
 // ─────────────────────────────────────────────
 
 const mdComponents: Components = {
   p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="text-white/90 font-medium">{children}</strong>,
+  strong: ({ children }) => <strong className="text-gray-900 font-semibold">{children}</strong>,
   ul: ({ children }) => <ul className="list-disc pl-4 my-1.5 space-y-0.5">{children}</ul>,
-  li: ({ children }) => <li className="text-[12px] text-white/65">{children}</li>,
+  li: ({ children }) => <li className="text-[12px] text-gray-600">{children}</li>,
   h2: ({ children }) => (
-    <h2 className="text-sm font-semibold text-white/85 mt-3 mb-1 first:mt-0">{children}</h2>
+    <h2 className="text-sm font-semibold text-gray-800 mt-3 mb-1 first:mt-0">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-xs font-medium text-white/75 mt-2 mb-0.5">{children}</h3>
+    <h3 className="text-xs font-medium text-gray-700 mt-2 mb-0.5">{children}</h3>
   ),
   table: ({ children }) => (
-    <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.08] text-xs">
+    <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 text-xs">
       <table className="w-full border-collapse">{children}</table>
     </div>
   ),
   thead: ({ children }) => <thead>{children}</thead>,
   tbody: ({ children }) => <tbody>{children}</tbody>,
-  tr: ({ children }) => <tr className="border-b border-white/[0.04] last:border-0">{children}</tr>,
+  tr: ({ children }) => <tr className="border-b border-gray-100 last:border-0">{children}</tr>,
   th: ({ children }) => (
-    <th className="bg-white/[0.04] text-white/45 px-3 py-1.5 text-left font-medium">
+    <th className="bg-gray-50 text-gray-500 px-3 py-1.5 text-left font-medium">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-3 py-1.5 text-white/65">
+    <td className="px-3 py-1.5 text-gray-600">
       {children}
     </td>
   ),
@@ -86,13 +87,13 @@ function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
       <div
         className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center self-end mb-5
           ${esUsuario
-            ? 'bg-[#0EA5E9]/20 border border-[#0EA5E9]/30'
-            : 'bg-teal-500/15 border border-teal-500/20'
+            ? 'bg-indigo-100 border border-indigo-200'
+            : 'bg-teal-100 border border-teal-200'
           }`}
       >
         {esUsuario
-          ? <span className="text-[10px] font-semibold text-[#7DD3FC]">{initials}</span>
-          : <Bot className="w-3.5 h-3.5 text-teal-400" />
+          ? <span className="text-[10px] font-semibold text-indigo-600">{initials}</span>
+          : <Bot className="w-3.5 h-3.5 text-teal-600" />
         }
       </div>
 
@@ -102,26 +103,24 @@ function BurbujaMensaje({ msg, initials }: { msg: Mensaje; initials: string }) {
         <div
           className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed
             ${esUsuario
-              ? 'bg-[#0c2a3d] border border-[#0EA5E9]/40 text-white/88 rounded-tr-sm'
-              : 'bg-white/[0.04] border border-white/[0.08] text-white/78 rounded-tl-sm'
+              ? 'bg-indigo-50 border border-indigo-200 text-gray-800 rounded-tr-sm'
+              : 'bg-white border border-gray-200 text-gray-700 rounded-tl-sm shadow-sm'
             }`}
         >
           {esUsuario ? (
-            // Mensajes del usuario: texto plano
             <span>{msg.contenido}</span>
           ) : (
-            // Respuestas del asistente: markdown con componentes tipados
             <ReactMarkdown components={mdComponents}>
               {msg.contenido}
             </ReactMarkdown>
           )}
           {msg.streaming && (
-            <span className="inline-block w-1.5 h-4 ml-0.5 bg-teal-400/70 rounded-sm animate-pulse align-middle" />
+            <span className="inline-block w-1.5 h-4 ml-0.5 bg-teal-500/70 rounded-sm animate-pulse align-middle" />
           )}
         </div>
 
         {/* Timestamp */}
-        <p className={`text-[10px] text-white/20 mt-1 px-1 ${esUsuario ? 'text-right' : 'text-left'}`}>
+        <p className={`text-[10px] text-gray-400 mt-1 px-1 ${esUsuario ? 'text-right' : 'text-left'}`}>
           {msg.timestamp}
         </p>
       </div>
@@ -137,17 +136,17 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
   const { t } = useLanguage()
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
-      <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
-        <Bot className="w-7 h-7 text-teal-400/70" />
+      <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center">
+        <Bot className="w-7 h-7 text-teal-500" />
       </div>
       <div className="text-center space-y-1.5 max-w-sm">
-        <p className="text-sm font-medium text-white/60">
+        <p className="text-sm font-medium text-gray-700">
           {nombre ? `${t('asistente.greeting').replace('¡Hola!', `¡Hola, ${nombre.split(' ')[0]}!`)}` : t('asistente.greeting')}
         </p>
-        <p className="text-xs text-white/30">
+        <p className="text-xs text-gray-400">
           {t('asistente.greetingBody')}
         </p>
-        <p className="text-[11px] text-[#0EA5E9]/50 mt-1">
+        <p className="text-[11px] text-indigo-400 mt-1">
           También podés chatear desde el ícono flotante en cualquier módulo.
         </p>
       </div>
@@ -161,9 +160,9 @@ function EstadoVacio({ nombre, onSugerencia }: { nombre: string; onSugerencia: (
           <button
             key={sugerencia}
             onClick={() => onSugerencia(sugerencia)}
-            className="text-[11px] text-white/40 border border-white/[0.07] rounded-lg px-3 py-2
-              hover:border-teal-500/30 hover:text-teal-400/70 hover:bg-teal-500/5
-              transition-colors duration-150 text-left"
+            className="text-[11px] text-gray-500 border border-gray-200 rounded-lg px-3 py-2 bg-white
+              hover:border-teal-300 hover:text-teal-600 hover:bg-teal-50
+              transition-colors duration-150 text-left shadow-sm"
           >
             {sugerencia}
           </button>
@@ -190,7 +189,6 @@ export default function AsistentePage() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Iniciales del usuario para el avatar
   const initials = nombreUsuario
     .split(' ')
     .map(n => n[0])
@@ -198,12 +196,10 @@ export default function AsistentePage() {
     .join('')
     .toUpperCase() || 'TU'
 
-  // ── Cancelar stream al desmontar ──
   useEffect(() => {
     return () => { abortControllerRef.current?.abort() }
   }, [])
 
-  // ── Cargar nombre del usuario ──
   const cargarUsuario = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -220,8 +216,6 @@ export default function AsistentePage() {
     cargarUsuario()
   }, [cargarUsuario])
 
-  // ── Auto-scroll al último mensaje ──
-  // Usamos scrollTop directo en el contenedor para no scrollear el body
   useEffect(() => {
     const container = messagesContainerRef.current
     if (container) {
@@ -229,7 +223,6 @@ export default function AsistentePage() {
     }
   }, [mensajes])
 
-  // ── Ajustar altura del textarea ──
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
@@ -237,7 +230,6 @@ export default function AsistentePage() {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [input])
 
-  // ── Enviar mensaje ──
   const enviar = async (textoOverride?: string) => {
     const texto = (textoOverride ?? input).trim()
     if (!texto || enviando) return
@@ -257,7 +249,6 @@ export default function AsistentePage() {
     ])
 
     try {
-      // Cancelar request anterior si aún está en curso
       if (abortControllerRef.current) abortControllerRef.current.abort()
       abortControllerRef.current = new AbortController()
 
@@ -270,7 +261,6 @@ export default function AsistentePage() {
 
       if (!res.ok || !res.body) throw new Error('Error en la respuesta')
 
-      // Leer conversacionId del header (el servidor lo envía en X-Conversation-Id)
       const convIdHeader = res.headers.get('X-Conversation-Id')
       if (convIdHeader) setConversacionId(convIdHeader)
 
@@ -283,7 +273,6 @@ export default function AsistentePage() {
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
-
         acumulado += chunk
 
         const contenidoActual = acumulado
@@ -296,14 +285,12 @@ export default function AsistentePage() {
         )
       }
 
-      // Finalizar streaming
       setMensajes(prev =>
         prev.map(m =>
           m.id === idAssistant ? { ...m, streaming: false } : m
         )
       )
     } catch (err) {
-      // AbortError es intencional (navegación o nuevo mensaje) — no mostrar error al usuario
       if (err instanceof Error && err.name === 'AbortError') return
       console.error('Error en chat:', err)
       setErrorRed(true)
@@ -322,20 +309,17 @@ export default function AsistentePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-3rem)] min-h-0"> {/* 3rem = altura del header */}
+    <div className="flex flex-col h-[calc(100dvh-3rem)] min-h-0 bg-gray-50">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/15 flex items-center justify-center">
-          <Bot className="w-4 h-4 text-teal-400" />
-        </div>
+      <div className="flex-shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-3">
+        <Image src="/heero-icons3.svg" alt="" width={36} height={36} />
         <div>
-          <p className="text-sm font-medium text-white/80">{t('asistente.title')}</p>
-          <p className="text-[11px] text-white/30">{t('asistente.subtitle')}</p>
+          <p className="text-sm font-semibold text-gray-900">CopilBot</p>
+          <p className="text-[11px] text-gray-400">{t('asistente.subtitle')}</p>
         </div>
-        {/* Dot de estado activo */}
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_6px_rgba(13,148,136,0.7)] animate-pulse" />
-          <span className="text-[10px] text-white/30">{t('asistente.online')}</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+          <span className="text-[10px] text-gray-400">{t('asistente.online')}</span>
         </div>
       </div>
 
@@ -343,7 +327,7 @@ export default function AsistentePage() {
       <div
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.1) transparent' }}
       >
         {mensajes.length === 0 ? (
           <EstadoVacio nombre={nombreUsuario} onSugerencia={enviar} />
@@ -357,7 +341,7 @@ export default function AsistentePage() {
                 variants={msgVariants}
                 initial="hidden"
                 animate="show"
-                className="flex items-center gap-2 text-xs text-red-400/70 px-1"
+                className="flex items-center gap-2 text-xs text-red-500 px-1"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 {t('asistente.error')}
@@ -368,8 +352,8 @@ export default function AsistentePage() {
       </div>
 
       {/* ── Input ── */}
-      <div className="flex-shrink-0 border-t border-white/[0.06] p-3">
-        <div className="flex items-end gap-2 glass-card rounded-xl px-3 py-2">
+      <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3">
+        <div className="flex items-end gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
           <textarea
             ref={inputRef}
             value={input}
@@ -377,13 +361,13 @@ export default function AsistentePage() {
             onKeyDown={handleKeyDown}
             placeholder={t('asistente.placeholder')}
             rows={1}
-            className="flex-1 bg-transparent text-sm text-white/80 placeholder:text-white/25
+            className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400
               resize-none outline-none py-1.5 leading-relaxed max-h-[120px]"
           />
           <button
             onClick={() => enviar()}
             disabled={!input.trim() || enviando}
-            className="w-8 h-8 rounded-lg bg-[#0EA5E9]/80 hover:bg-[#0EA5E9]
+            className="w-8 h-8 rounded-lg bg-indigo-500 hover:bg-indigo-600
               disabled:opacity-30 disabled:cursor-not-allowed
               flex items-center justify-center flex-shrink-0
               transition-colors duration-150 mb-0.5"
@@ -394,7 +378,7 @@ export default function AsistentePage() {
             }
           </button>
         </div>
-        <p className="text-[10px] text-white/20 text-center mt-1.5">
+        <p className="text-[10px] text-gray-400 text-center mt-1.5">
           {t('asistente.hint')}
         </p>
       </div>

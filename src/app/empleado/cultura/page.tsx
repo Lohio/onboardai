@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Lock, CheckCircle2, BookOpen, Target, Users,
   ClipboardList, Trophy, ChevronDown, ArrowRight,
@@ -21,7 +22,6 @@ import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Renderer simple de Markdown
-// Soporta: ##, ###, **, -, listas, párrafos
 // ─────────────────────────────────────────────
 
 function MarkdownContent({ text }: { text: string }) {
@@ -31,7 +31,7 @@ function MarkdownContent({ text }: { text: string }) {
     const parts = raw.split(/(\*\*[^*]+\*\*)/g)
     return parts.map((part, i) =>
       part.startsWith('**') && part.endsWith('**')
-        ? <strong key={i} className="text-white/85 font-semibold">{part.slice(2, -2)}</strong>
+        ? <strong key={i} className="text-gray-800 font-semibold">{part.slice(2, -2)}</strong>
         : part
     )
   }
@@ -60,35 +60,35 @@ function MarkdownContent({ text }: { text: string }) {
     if (trimmed.startsWith('### ')) {
       flushList()
       elements.push(
-        <h3 key={key++} className="text-sm font-bold text-white/90 mt-4 mb-1.5">
+        <h3 key={key++} className="text-sm font-bold text-gray-900 mt-4 mb-1.5">
           {renderInline(trimmed.slice(4))}
         </h3>
       )
     } else if (trimmed.startsWith('## ')) {
       flushList()
       elements.push(
-        <h2 key={key++} className="text-base font-bold text-white/95 mt-5 mb-2">
+        <h2 key={key++} className="text-base font-bold text-gray-900 mt-5 mb-2">
           {renderInline(trimmed.slice(3))}
         </h2>
       )
     } else if (trimmed.startsWith('# ')) {
       flushList()
       elements.push(
-        <h1 key={key++} className="text-base font-bold text-white mt-5 mb-2">
+        <h1 key={key++} className="text-base font-bold text-gray-900 mt-5 mb-2">
           {renderInline(trimmed.slice(2))}
         </h1>
       )
     } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       listItems.push(
-        <li key={key++} className="flex items-start gap-2 text-white/65">
-          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />
+        <li key={key++} className="flex items-start gap-2 text-gray-600">
+          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
           <span>{renderInline(trimmed.slice(2))}</span>
         </li>
       )
     } else {
       flushList()
       elements.push(
-        <p key={key++} className="text-white/65 leading-relaxed">
+        <p key={key++} className="text-gray-600 leading-relaxed">
           {renderInline(trimmed)}
         </p>
       )
@@ -123,7 +123,6 @@ const BLOQUES_ORDEN: BloqueKey[] = [
 const BLOQUES_CONFIG: Record<BloqueKey, {
   label: string
   icon: React.ReactNode
-  gradient: string
   iconBg: string
   iconText: string
   accent: string
@@ -131,42 +130,37 @@ const BLOQUES_CONFIG: Record<BloqueKey, {
   historia: {
     label: 'Nuestra historia',
     icon: <BookOpen className="w-5 h-5" />,
-    gradient: 'from-[#0EA5E9]/20 via-[#0EA5E9]/5 to-transparent',
-    iconBg: 'bg-[#0EA5E9]/20',
-    iconText: 'text-[#0EA5E9]',
-    accent: 'border-[#0EA5E9]/30',
+    iconBg: 'bg-sky-100',
+    iconText: 'text-sky-600',
+    accent: 'border-sky-200',
   },
   mision: {
     label: 'Misión, visión y valores',
     icon: <Target className="w-5 h-5" />,
-    gradient: 'from-teal-600/20 via-teal-600/5 to-transparent',
-    iconBg: 'bg-teal-600/20',
-    iconText: 'text-teal-400',
-    accent: 'border-teal-500/30',
+    iconBg: 'bg-teal-100',
+    iconText: 'text-teal-600',
+    accent: 'border-teal-200',
   },
   como_trabajamos: {
     label: 'Cómo trabajamos',
     icon: <Users className="w-5 h-5" />,
-    gradient: 'from-sky-600/20 via-sky-600/5 to-transparent',
-    iconBg: 'bg-sky-600/20',
-    iconText: 'text-sky-400',
-    accent: 'border-sky-500/30',
+    iconBg: 'bg-blue-100',
+    iconText: 'text-blue-600',
+    accent: 'border-blue-200',
   },
   expectativas: {
     label: 'Cultura en el día a día',
     icon: <ClipboardList className="w-5 h-5" />,
-    gradient: 'from-amber-600/20 via-amber-600/5 to-transparent',
-    iconBg: 'bg-amber-600/20',
-    iconText: 'text-amber-400',
-    accent: 'border-amber-500/30',
+    iconBg: 'bg-amber-100',
+    iconText: 'text-amber-600',
+    accent: 'border-amber-200',
   },
   hitos: {
     label: 'Nuestros hitos',
     icon: <Trophy className="w-5 h-5" />,
-    gradient: 'from-rose-600/20 via-rose-600/5 to-transparent',
-    iconBg: 'bg-rose-600/20',
-    iconText: 'text-rose-400',
-    accent: 'border-rose-500/30',
+    iconBg: 'bg-rose-100',
+    iconText: 'text-rose-600',
+    accent: 'border-rose-200',
   },
 }
 
@@ -291,11 +285,6 @@ const PREGUNTAS: Record<BloqueKey, Pregunta[]> = {
 // Animaciones
 // ─────────────────────────────────────────────
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
-}
-
 const blockVariants = {
   hidden: { opacity: 0, y: 24 },
   show: {
@@ -327,7 +316,7 @@ function SkeletonCultura() {
   return (
     <div className="space-y-4">
       {[1, 2, 3, 4, 5].map(i => (
-        <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
+        <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-xl p-5 animate-pulse">
           <div className="flex items-center gap-3">
             <div className="shimmer rounded-xl w-11 h-11 flex-shrink-0" />
             <div className="flex-1 space-y-2">
@@ -346,23 +335,20 @@ function SkeletonCultura() {
 // Barra de progreso de lectura (por bloque)
 // ─────────────────────────────────────────────
 
-function ReadBar({ value, color }: { value: number; color: string }) {
+function ReadBar({ value, colorClass }: { value: number; colorClass: string }) {
   return (
-    <div className="h-0.5 w-full rounded-full bg-white/[0.06] overflow-hidden mt-2">
+    <div className="h-1 w-full rounded-full bg-gray-200 overflow-hidden mt-2">
       <motion.div
-        className={cn('h-full rounded-full', color)}
+        className={cn('h-full rounded-full', colorClass)}
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        style={{
-          boxShadow: value > 0 ? `0 0 8px ${color.includes('0EA5E9') ? 'rgba(14,165,233,0.6)' : 'rgba(14,165,233,0.4)'}` : 'none',
-        }}
       />
     </div>
   )
 }
 
 // ─────────────────────────────────────────────
-// Quiz de comprensión — rediseñado
+// Quiz de comprensión
 // ─────────────────────────────────────────────
 
 interface QuizProps {
@@ -385,12 +371,12 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
     <div className="mt-6 space-y-5">
       {/* Divider con label */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-white/[0.07]" />
+        <div className="flex-1 h-px bg-gray-200" />
         <div className={cn('flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium', cfg.iconBg, cfg.iconText)}>
           <Sparkles className="w-3 h-3" />
           {t('cultura.quiz.title')}
         </div>
-        <div className="flex-1 h-px bg-white/[0.07]" />
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
 
       {preguntas.map((p, qIdx) => {
@@ -400,7 +386,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
 
         return (
           <div key={qIdx} className="space-y-3">
-            <p className="text-sm text-white/80 font-medium leading-snug">
+            <p className="text-sm text-gray-800 font-medium leading-snug">
               <span className={cn('inline-block w-5 h-5 rounded-full text-center text-[11px] font-bold mr-2 leading-5', cfg.iconBg, cfg.iconText)}>
                 {qIdx + 1}
               </span>
@@ -411,15 +397,15 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
                 const seleccionada = respuesta === opIdx
                 const esLaCorrecta = opIdx === p.correcta
 
-                let style = 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] text-white/70'
+                let style = 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300 text-gray-700'
                 if (respondida && seleccionada && esCorrecta)
-                  style = 'bg-teal-600/15 border-teal-500/40 text-teal-200'
+                  style = 'bg-teal-50 border-teal-300 text-teal-700'
                 else if (respondida && seleccionada && !esCorrecta)
-                  style = 'bg-red-500/10 border-red-500/30 text-red-300'
+                  style = 'bg-red-50 border-red-300 text-red-700'
                 else if (respondida && esLaCorrecta)
-                  style = 'bg-teal-600/10 border-teal-500/20 text-teal-300/80'
+                  style = 'bg-teal-50/60 border-teal-200 text-teal-600'
                 else if (respondida)
-                  style = 'bg-white/[0.02] border-white/[0.05] text-white/30'
+                  style = 'bg-gray-50 border-gray-100 text-gray-400'
 
                 return (
                   <button
@@ -461,7 +447,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
                 'w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200',
                 'bg-gradient-to-r from-teal-600 to-teal-500 text-white',
                 'hover:from-teal-500 hover:to-teal-400',
-                'shadow-[0_0_24px_rgba(13,148,136,0.35)] hover:shadow-[0_0_32px_rgba(13,148,136,0.5)]',
+                'shadow-sm hover:shadow-md',
                 'disabled:opacity-60 disabled:cursor-wait',
               )}
             >
@@ -486,12 +472,12 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
+            className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-200"
           >
-            <p className="text-xs text-amber-300/80">{t('cultura.quiz.error')}</p>
+            <p className="text-xs text-amber-700">{t('cultura.quiz.error')}</p>
             <button
               onClick={onReset}
-              className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors ml-3 flex-shrink-0"
+              className="text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors ml-3 flex-shrink-0"
             >
               Reintentar →
             </button>
@@ -503,7 +489,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
 }
 
 // ─────────────────────────────────────────────
-// BloqueCard — rediseñado
+// BloqueCard
 // ─────────────────────────────────────────────
 
 interface BloqueCardProps {
@@ -542,6 +528,9 @@ function BloqueCard({
   const showQuiz = readProgress >= 80 && !completado && contenido !== null
   const locked = !unlocked
 
+  // Mapear iconText (text-sky-600) a bg equivalente para la ReadBar
+  const readBarColor = cfg.iconText.replace('text-', 'bg-')
+
   return (
     <motion.div
       variants={blockVariants}
@@ -550,25 +539,15 @@ function BloqueCard({
     >
       <div
         className={cn(
-          'relative rounded-2xl overflow-hidden border transition-all duration-300',
+          'relative bg-white rounded-xl overflow-hidden border transition-all duration-300',
           completado
-            ? 'border-teal-500/20 bg-[#111110]/60'
+            ? 'border-teal-200 shadow-sm'
             : isActive
-            ? cn('border-white/[0.1] bg-[#111110]/80', cfg.accent)
-            : 'border-white/[0.06] bg-[#111110]/50',
+            ? cn('border-gray-300 shadow-md', cfg.accent)
+            : 'border-gray-200 shadow-sm',
           locked && 'opacity-60',
         )}
       >
-        {/* Gradiente decorativo en la esquina superior izquierda */}
-        {!locked && (
-          <div
-            className={cn(
-              'absolute inset-0 pointer-events-none',
-              `bg-gradient-to-br ${cfg.gradient}`,
-            )}
-          />
-        )}
-
         {/* ── Header ── */}
         <div
           className={cn(
@@ -583,10 +562,10 @@ function BloqueCard({
               className={cn(
                 'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300',
                 completado
-                  ? 'bg-teal-500/15 text-teal-400 shadow-[0_0_16px_rgba(20,184,166,0.2)]'
+                  ? 'bg-teal-100 text-teal-600'
                   : isActive
                   ? cn(cfg.iconBg, cfg.iconText)
-                  : 'bg-white/[0.05] text-white/25',
+                  : 'bg-gray-100 text-gray-300',
               )}
             >
               {completado ? <CheckCircle2 className="w-5 h-5" /> : cfg.icon}
@@ -598,8 +577,8 @@ function BloqueCard({
               completado
                 ? 'bg-teal-500 text-white'
                 : isActive
-                ? 'bg-[#0EA5E9] text-white'
-                : 'bg-white/10 text-white/30',
+                ? 'bg-indigo-500 text-white'
+                : 'bg-gray-200 text-gray-500',
             )}>
               {numero}
             </div>
@@ -609,21 +588,18 @@ function BloqueCard({
           <div className="flex-1 min-w-0 pt-0.5">
             <h3 className={cn(
               'text-sm font-semibold leading-tight',
-              completado ? 'text-white/60' : 'text-white/90',
+              completado ? 'text-gray-400' : 'text-gray-900',
             )}>
               {cfg.label}
             </h3>
 
             {/* Barra de lectura */}
             {unlocked && !completado && (
-              <ReadBar
-                value={readProgress}
-                color={cfg.iconText.replace('text-', 'bg-')}
-              />
+              <ReadBar value={readProgress} colorClass={readBarColor} />
             )}
 
             {completado && (
-              <p className="text-xs text-teal-400/70 mt-1">Completado ✓</p>
+              <p className="text-xs text-teal-600 mt-1">Completado ✓</p>
             )}
           </div>
 
@@ -635,12 +611,12 @@ function BloqueCard({
             {completado ? (
               <ChevronDown
                 className={cn(
-                  'w-4 h-4 text-white/25 transition-transform duration-200',
+                  'w-4 h-4 text-gray-400 transition-transform duration-200',
                   !expandido && 'rotate-180',
                 )}
               />
             ) : locked ? (
-              <Lock className="w-4 h-4 text-white/20" />
+              <Lock className="w-4 h-4 text-gray-300" />
             ) : null}
           </div>
         </div>
@@ -661,13 +637,15 @@ function BloqueCard({
               >
                 {/* Texto del bloque */}
                 {contenido ? (
-                  <MarkdownContent text={contenido.contenido} />
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
+                    <MarkdownContent text={contenido.contenido} />
+                  </div>
                 ) : (
                   <div className="py-4 text-center space-y-1">
-                    <p className="text-sm text-white/30 italic">
+                    <p className="text-sm text-gray-400 italic">
                       Contenido no disponible. El administrador aún no cargó este bloque.
                     </p>
-                    <p className="text-xs text-white/20">
+                    <p className="text-xs text-gray-300">
                       Este bloque no puede completarse hasta que el contenido esté disponible.
                     </p>
                   </div>
@@ -704,13 +682,13 @@ function BloqueCard({
           {locked && (
             <motion.div
               exit={{ opacity: 0, transition: { duration: 0.25 } }}
-              className="absolute inset-0 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center gap-2"
-              style={{ background: 'rgba(7,15,30,0.6)' }}
+              className="absolute inset-0 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center gap-2"
+              style={{ background: 'rgba(255,255,255,0.75)' }}
             >
-              <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
-                <Lock className="w-4 h-4 text-white/25" />
+              <div className="w-9 h-9 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+                <Lock className="w-4 h-4 text-gray-400" />
               </div>
-              <p className="text-xs text-white/30 text-center px-6">
+              <p className="text-xs text-gray-500 text-center px-6">
                 Completá el bloque anterior para desbloquear
               </p>
             </motion.div>
@@ -722,7 +700,7 @@ function BloqueCard({
 }
 
 // ─────────────────────────────────────────────
-// OrgBloqueCard — bloque organigrama con auto-complete
+// OrgBloqueCard
 // ─────────────────────────────────────────────
 
 function OrgBloqueCard({
@@ -741,24 +719,23 @@ function OrgBloqueCard({
   }, [completado, onAutoComplete])
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-indigo-500/20 bg-[#111110]/80">
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-indigo-600/10 via-indigo-600/5 to-transparent" />
-      <div className="relative p-5">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600/20 text-indigo-400 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-100 text-indigo-600 flex-shrink-0">
             <GitBranch className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white/90">Organigrama de la empresa</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Organigrama de la empresa</h3>
             {completado ? (
-              <p className="text-xs text-teal-400/70 mt-0.5">Completado ✓</p>
+              <p className="text-xs text-teal-600 mt-0.5">Completado ✓</p>
             ) : (
-              <p className="text-xs text-white/35 mt-0.5">Se marcará como visto en unos segundos</p>
+              <p className="text-xs text-gray-400 mt-0.5">Se marcará como visto en unos segundos</p>
             )}
           </div>
-          {completado && <CheckCircle2 className="w-4 h-4 text-teal-400 ml-auto flex-shrink-0" />}
+          {completado && <CheckCircle2 className="w-4 h-4 text-teal-500 ml-auto flex-shrink-0" />}
         </div>
-        <div className="overflow-x-auto rounded-xl border border-white/[0.05] bg-white/[0.02]">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50">
           <OrgChart raices={arbol} modo="lectura" />
         </div>
       </div>
@@ -784,7 +761,6 @@ function ScrollProgressBar() {
       style={{
         scaleX,
         background: 'linear-gradient(90deg, #6366f1, #3b82f6, #14b8a6)',
-        boxShadow: '0 0 12px rgba(99,102,241,0.6)',
       }}
     />
   )
@@ -886,7 +862,6 @@ export default function CulturaPage() {
         setProgreso(mapa)
       }
 
-      // Organigrama: construir árbol si hay nodos
       if (orgNodosRes.data && orgNodosRes.data.length > 0) {
         setOrgArbol(construirArbol(orgNodosRes.data as OrgNodo[]))
       }
@@ -1002,7 +977,7 @@ export default function CulturaPage() {
     }
   }, [userId, orgCompletado, orgCompletando])
 
-  // ── Derivados (memoizados para no recalcular en re-renders por scroll) ──
+  // ── Derivados ──
   const { totalCompletados, porcentajeGlobal, todoCompleto } = useMemo(() => {
     const total = BLOQUES_ORDEN.filter(b => progreso[b]?.completado).length
     return {
@@ -1021,7 +996,7 @@ export default function CulturaPage() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8">
+      <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <div className="shimmer rounded-md h-8 w-52 mb-2" />
           <div className="shimmer rounded-md h-4 w-36 mb-6" />
@@ -1035,7 +1010,7 @@ export default function CulturaPage() {
   // ── Error ──
   if (hasError) {
     return (
-      <div className="min-h-dvh gradient-bg flex items-center justify-center p-6">
+      <div className="min-h-dvh bg-gray-50 flex items-center justify-center p-6">
         <ErrorState mensaje="No se pudo cargar el módulo de cultura." onRetry={cargarDatos} />
       </div>
     )
@@ -1044,42 +1019,18 @@ export default function CulturaPage() {
   // ── Render principal ──
   return (
     <>
-      {/* Barra de desplazamiento global animada */}
       <ScrollProgressBar />
 
-      <div className="min-h-dvh gradient-bg p-4 sm:p-6 lg:p-8 pt-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8 pt-6">
+        <div className="max-w-6xl mx-auto">
 
-          {/* ── Page header M3 ── */}
-          <div className="mod-m3-header flex items-center justify-between gap-6 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-[#0D9488]/20 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-5 h-5 text-[#2DD4BF]" />
-              </div>
-              <div>
-                <p className="tag-m3 mb-1">Módulo 3</p>
-                <h1 className="text-xl font-bold text-white leading-tight">Cultura e identidad</h1>
-                <p className="text-sm text-white/45 mt-0.5">Historia, misión, valores y reglas de trabajo</p>
-              </div>
-            </div>
-            {/* Círculo de progreso */}
-            <div className="flex-shrink-0 relative w-16 h-16">
-              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                <motion.circle
-                  cx="32" cy="32" r="26"
-                  fill="none"
-                  stroke="#0D9488"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - porcentajeGlobal / 100) }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm font-bold text-white">{Math.round(porcentajeGlobal)}%</span>
-              </div>
+          {/* ── Page header ── */}
+          <div className="flex items-center gap-4 mb-6">
+            <Image src="/heero-icons1.svg" alt="" width={45} height={45} />
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 2</p>
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight">Cultura</h1>
+              <p className="text-sm text-gray-500 mt-0.5">Historia, misión, valores y reglas de trabajo</p>
             </div>
           </div>
 
@@ -1098,14 +1049,14 @@ export default function CulturaPage() {
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                     activo && !completado
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
                       : activo && completado
-                      ? 'bg-teal-500/20 text-teal-300 border border-teal-500/35'
+                      ? 'bg-teal-100 text-teal-700 border border-teal-300'
                       : completado
-                      ? 'bg-teal-500/10 text-teal-400/70 border border-teal-500/20'
+                      ? 'bg-teal-50 text-teal-600 border border-teal-200'
                       : desbloqueado
-                      ? 'bg-white/[0.04] border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20'
-                      : 'bg-white/[0.02] text-white/20 border border-white/[0.05] cursor-not-allowed opacity-50',
+                      ? 'bg-white border border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300 hover:shadow-sm'
+                      : 'bg-gray-50 text-gray-300 border border-gray-100 cursor-not-allowed opacity-50',
                   )}
                 >
                   {completado ? (
@@ -1118,19 +1069,19 @@ export default function CulturaPage() {
               )
             })}
 
-            {/* Pill organigrama — solo si la empresa tiene nodos */}
+            {/* Pill organigrama */}
             {orgArbol.length > 0 && (
               <button
                 onClick={() => { setOrgActivo(v => !v); setBloqueActivo(null) }}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                   orgActivo && !orgCompletado
-                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
                     : orgActivo && orgCompletado
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/35'
+                    ? 'bg-teal-100 text-teal-700 border border-teal-300'
                     : orgCompletado
-                    ? 'bg-teal-500/10 text-teal-400/70 border border-teal-500/20'
-                    : 'bg-white/[0.04] border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20',
+                    ? 'bg-teal-50 text-teal-600 border border-teal-200'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300 hover:shadow-sm',
                 )}
               >
                 {orgCompletado ? (
@@ -1143,17 +1094,44 @@ export default function CulturaPage() {
             )}
           </div>
 
-          {/* Barra de progreso */}
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-[11px] text-white/30 uppercase tracking-widest font-medium flex-shrink-0">Progreso</span>
-            <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-teal-400"
-                animate={{ width: `${porcentajeGlobal}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
+          {/* Card de progreso */}
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
+                Mi progreso en Cultura
+              </span>
+              <span className="text-xs text-gray-500 font-mono">
+                {totalCompletados} / {BLOQUES_ORDEN.length} bloques
+              </span>
             </div>
-            <span className="text-xs font-mono text-white/40 flex-shrink-0">{totalCompletados}/{BLOQUES_ORDEN.length}</span>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-shrink-0" style={{ width: 56, height: 56 }}>
+                <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5" />
+                  <motion.circle
+                    cx="28" cy="28" r="22" fill="none"
+                    stroke="url(#culturaProgressGrad)" strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={138.2}
+                    animate={{ strokeDashoffset: 138.2 - (138.2 * porcentajeGlobal / 100) }}
+                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                  />
+                  <defs>
+                    <linearGradient id="culturaProgressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#3B4FD8" />
+                      <stop offset="100%" stopColor="#0D9488" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xs font-bold text-gray-900 leading-none">{Math.round(porcentajeGlobal)}%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Progreso del módulo</p>
+                <p className="text-xs text-gray-500">Completá los bloques para avanzar</p>
+              </div>
+            </div>
           </div>
 
           {/* Bloque activo */}
@@ -1211,22 +1189,18 @@ export default function CulturaPage() {
                 initial={{ opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.2 }}
-                className="mt-6 rounded-2xl overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(20,184,166,0.18) 0%, rgba(13,148,136,0.08) 100%)',
-                  border: '1px solid rgba(20,184,166,0.25)',
-                }}
+                className="mt-6 bg-teal-50 border border-teal-200 rounded-xl overflow-hidden"
               >
                 <div className="p-5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(20,184,166,0.3)]">
-                      <Star className="w-5 h-5 text-teal-400 fill-teal-400/30" />
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-5 h-5 text-teal-600 fill-teal-200" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-teal-200">
+                      <p className="text-sm font-bold text-teal-800">
                         ¡Completaste Cultura e identidad!
                       </p>
-                      <p className="text-xs text-teal-300/60 mt-0.5">
+                      <p className="text-xs text-teal-600 mt-0.5">
                         Conocés la empresa y sus valores. Ahora es el momento de conocer tu rol.
                       </p>
                     </div>
@@ -1234,8 +1208,8 @@ export default function CulturaPage() {
                   <Link
                     href="/empleado/rol"
                     className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold
-                      bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 hover:text-teal-200
-                      border border-teal-500/25 transition-all duration-150"
+                      bg-teal-100 text-teal-700 hover:bg-teal-200 hover:text-teal-800
+                      border border-teal-300 transition-all duration-150"
                   >
                     Ir a mi Rol
                     <ArrowRight className="w-3.5 h-3.5" />

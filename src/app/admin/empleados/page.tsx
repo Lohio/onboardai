@@ -253,21 +253,21 @@ function DetalleEmpleado({
         </div>
 
         {/* Acciones */}
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col items-center gap-2 pt-2">
           <Link
             href={`/admin/empleados/${emp.id}`}
-            className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-white/90 hover:bg-white/[0.07] hover:border-white/[0.14]
               transition-colors duration-150"
           >
             <Pencil className="w-3.5 h-3.5" />
-            Editar colaborador
+            Editar
           </Link>
 
           <button
             onClick={onResetear}
-            className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-amber-400/80 hover:bg-amber-500/[0.08] hover:border-amber-500/20
               transition-colors duration-150"
@@ -284,7 +284,7 @@ function DetalleEmpleado({
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                className="rounded-lg bg-red-500/[0.08] border border-red-500/25 p-3 space-y-2.5"
+                className="w-full rounded-lg bg-red-500/[0.08] border border-red-500/25 p-3 space-y-2.5"
               >
                 <div className="flex items-center gap-2 text-sm text-red-400/90">
                   <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -312,13 +312,13 @@ function DetalleEmpleado({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 onClick={onConfirmDelete}
-                className="flex items-center justify-center gap-2 h-9 rounded-lg text-sm
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
                   bg-white/[0.04] border border-white/[0.08] text-white/65
                   hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
-                  transition-colors duration-150 w-full cursor-pointer"
+                  transition-colors duration-150 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Eliminar colaborador
+                Eliminar
               </motion.button>
             )}
           </AnimatePresence>
@@ -383,7 +383,7 @@ export default function EmpleadosPage() {
         .from('usuarios')
         .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, rol')
         .eq('empresa_id', adminData.empresa_id)
-        .neq('rol', 'dev')
+        .eq('rol', 'empleado')
         .order('nombre')
 
       const empRows = rows ?? []
@@ -510,18 +510,16 @@ export default function EmpleadosPage() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-white">Colaboradores</h1>
-          <p className="text-sm text-white/40">{empleados.length} colaboradores</p>
+          <h1 className="text-xl font-semibold text-white">Equipo</h1>
+          <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? 'persona' : 'personas'}</p>
         </div>
         <button
           onClick={() => setModalAbierto(true)}
-          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
-            text-sm font-semibold
-            bg-gradient-to-r from-cyan-500 to-indigo-500
-            hover:from-cyan-400 hover:to-indigo-400
-            shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40
-            hover:scale-105 transition-all duration-300"
-          style={{ color: 'white' }}
+          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[9px]
+            text-sm font-semibold text-white
+            bg-[#3B4FD8] hover:bg-[#4B5EE8]
+            shadow-[0_0_20px_rgba(59,79,216,0.2)] hover:shadow-[0_0_28px_rgba(59,79,216,0.35)]
+            transition-all duration-200"
         >
           <Sparkles className="w-4 h-4" />
           <span className="hidden sm:inline">Sumar al equipo</span>
