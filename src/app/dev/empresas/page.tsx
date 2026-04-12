@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, X, Building2, Users, Calendar,
-  Pencil, Trash2, AlertTriangle, Check, ChevronDown, ChevronUp,
+  Pencil, Trash2, AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink,
 } from 'lucide-react'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -317,6 +318,13 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
 
         {/* Acciones */}
         <div className="flex items-center gap-1 flex-shrink-0">
+          <Link
+            href={`/dev/empresas/${empresa.id}`}
+            className="p-1.5 text-white/30 hover:text-indigo-400 transition-colors rounded-md hover:bg-indigo-500/[0.08]"
+            title="Ver detalle"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
           <button
             onClick={() => setExpanded(p => !p)}
             className="p-1.5 text-white/30 hover:text-white/70 transition-colors rounded-md hover:bg-white/[0.04]"
