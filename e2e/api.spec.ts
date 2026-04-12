@@ -38,17 +38,19 @@ test.describe("API routes — Empleado", () => {
 test.describe("API routes — Admin", () => {
   test.use({ storageState: "e2e/.auth/admin.json" })
 
-  test("GET /api/admin/empleados → lista de empleados", async ({ page }) => {
+  // El endpoint POST /api/admin/empleados crea empleados (no hay GET).
+  // Verificamos que rechaza datos inválidos con 4xx, no con 500.
+  test("POST /api/admin/empleados con datos inválidos → 4xx (no 500)", async ({ page }) => {
     await page.goto("/admin")
     const response = await page.evaluate(async () => {
-      const res = await fetch("/api/admin/empleados")
-      const body = await res.json().catch(() => null)
-      return {
-        status: res.status,
-        isArray: Array.isArray(body) || Array.isArray(body?.empleados) || Array.isArray(body?.data),
-      }
+      const res = await fetch("/api/admin/empleados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      return { status: res.status }
     })
-    expect(response.status).toBe(200)
-    expect(response.isArray).toBe(true)
+    expect(response.status).not.toBe(500)
+    expect([400, 401, 403, 409, 422]).toContain(response.status)
   })
 })

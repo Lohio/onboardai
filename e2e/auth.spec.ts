@@ -5,10 +5,12 @@ import * as path from "path"
 // Cargar credenciales de test
 dotenv.config({ path: path.resolve(__dirname, ".env.test") })
 
-const EMPLEADO_EMAIL = process.env.TEST_EMPLEADO_EMAIL ?? "test.empleado@heero.dev"
-const EMPLEADO_PASSWORD = process.env.TEST_EMPLEADO_PASSWORD ?? "TestHeero2024!"
-const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? "test.admin@heero.dev"
-const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? "TestHeero2024!"
+// Usuarios DEDICADOS para tests de form — distintos a los de storageState
+// para evitar que el login aquí invalide la sesión guardada por global-setup
+const EMPLEADO_EMAIL = "form.empleado@heero.dev"
+const EMPLEADO_PASSWORD = "TestHeero2024!"
+const ADMIN_EMAIL = "form.admin@heero.dev"
+const ADMIN_PASSWORD = "TestHeero2024!"
 
 test.describe("Auth — Login y Logout", () => {
   test.beforeEach(async ({ page }) => {
