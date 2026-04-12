@@ -18,7 +18,13 @@ async function verificarTokenGoogle(token: string): Promise<boolean> {
       try {
         const creds = JSON.parse(credJson) as { client_email?: string }
         expectedEmail = creds.client_email ?? null
-      } catch { /* continuar sin verificar email específico */ }
+      } catch { /* JSON malformado — se rechazará abajo */ }
+    }
+
+    // Requerir que el service account esté correctamente configurado con client_email
+    if (!expectedEmail) {
+      console.warn('[gchat] verificarTokenGoogle: GCHAT_SERVICE_ACCOUNT_JSON no contiene client_email — rechazando token')
+      return false
     }
 
     const res = await fetch(
@@ -30,13 +36,8 @@ async function verificarTokenGoogle(token: string): Promise<boolean> {
     // Rechazar tokens con error explícito de Google
     if (data.error) return false
 
-    // Si tenemos el email del service account, verificar que el token venga de ahí
-    if (expectedEmail) {
-      return data.email === expectedEmail || data.issued_to === expectedEmail
-    }
-
-    // Fallback: al menos debe ser un token Google válido con email
-    return !!data.email
+    // Verificar que el token venga exactamente del service account configurado
+    return data.email === expectedEmail || data.issued_to === expectedEmail
   } catch {
     return false
   }

@@ -58,9 +58,9 @@ function mensajePorDia(
 async function enviarMensajeGchat(
   spaceName: string, // ej: "spaces/AAAA"
   texto: string
-): Promise<void> {
+): Promise<boolean> {
   const credJson = process.env.GCHAT_SERVICE_ACCOUNT_JSON
-  if (!credJson) return
+  if (!credJson) return false
 
   try {
     // Importar dinámicamente google-auth-library solo si está disponible
@@ -74,7 +74,7 @@ async function enviarMensajeGchat(
     const client = await auth.getClient()
     const token  = await client.getAccessToken()
 
-    await fetch(
+    const res = await fetch(
       `https://chat.googleapis.com/v1/${spaceName}/messages`,
       {
         method:  'POST',
@@ -85,8 +85,10 @@ async function enviarMensajeGchat(
         body: JSON.stringify({ text: texto }),
       }
     )
+    return res.ok
   } catch (err) {
     console.warn('[recordatorios] Error enviando a GChat:', err)
+    return false
   }
 }
 
@@ -97,9 +99,9 @@ async function enviarMensajeGchat(
 async function enviarMensajeTeams(
   webhookUrl: string,
   texto: string
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await fetch(webhookUrl, {
+    const res = await fetch(webhookUrl, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -107,8 +109,10 @@ async function enviarMensajeTeams(
         text: texto,
       }),
     })
+    return res.ok
   } catch (err) {
     console.warn('[recordatorios] Error enviando a Teams:', err)
+    return false
   }
 }
 
@@ -175,8 +179,9 @@ export const GET = withHandler(
           if (vin.plataforma === 'gchat') {
             // chat_user_id tiene formato "users/123"; el DM space está asociado al user
             // En producción deberías guardar el spaceName real en la vinculación
-            await enviarMensajeGchat(vin.chat_user_id, texto)
-            enviados++
+            const ok = await enviarMensajeGchat(vin.chat_user_id, texto)
+            if (ok) enviados++
+            else errores.push(`GChat userId=${vin.chat_user_id}: send falló`)
           }
 
           if (vin.plataforma === 'teams') {
@@ -188,8 +193,9 @@ export const GET = withHandler(
               .maybeSingle()
 
             if (empresaData?.teams_webhook_url) {
-              await enviarMensajeTeams(empresaData.teams_webhook_url, texto)
-              enviados++
+              const ok = await enviarMensajeTeams(empresaData.teams_webhook_url, texto)
+              if (ok) enviados++
+              else errores.push(`Teams empresa=${empleado.empresa_id}: send falló`)
             }
           }
         }

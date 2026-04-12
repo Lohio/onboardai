@@ -18,7 +18,11 @@ function verificarHmacTeams(body: string, authHeader: string): boolean {
     const hmac = crypto.createHmac('sha256', Buffer.from(token, 'base64'))
     hmac.update(Buffer.from(body, 'utf8'))
     const hashEsperado = 'HMAC ' + hmac.digest('base64')
-    return authHeader === hashEsperado
+    // Comparación en tiempo constante para evitar timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(authHeader),
+      Buffer.from(hashEsperado)
+    )
   } catch {
     return false
   }
@@ -72,9 +76,10 @@ export const POST = withHandler(
         })
       }
 
-      const chatUserId = body.from?.id          ?? ''
-      // aadObjectId es el ID de Azure AD — más estable que el ID de conversación
-      const email      = body.from?.aadObjectId ?? null
+      const chatUserId = body.from?.id ?? ''
+      // aadObjectId es un GUID de Azure AD, NO es un email — no usar para vinculación por email
+      // La vinculación se hace manualmente o via chatUserId (primera interacción en la app web)
+      const email: null = null
 
       // Procesar con el core del bot
       const { respuesta, linkWebApp } = await procesarMensajeBot({
