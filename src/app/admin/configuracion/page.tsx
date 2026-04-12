@@ -6,9 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
   Save, Check, Plus, MessageSquareMore, Bot,
-  Trash2, ExternalLink, Key, ChevronRight, Palette, PlayCircle, Globe,
+  Trash2, ExternalLink, Key, ChevronRight, PlayCircle, Globe,
 } from 'lucide-react'
-import { ThemeSelector } from '@/components/shared/ThemeSelector'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -305,18 +304,6 @@ export default function ConfiguracionPage() {
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
             className="space-y-4"
           >
-            {/* Apariencia */}
-            <Card>
-              <div className="flex items-center gap-2 mb-1">
-                <Palette className="w-4 h-4 text-sky-400" />
-                <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
-                  {t('config.appearance')}
-                </h2>
-              </div>
-              <p className="text-xs text-white/40 mb-4">{t('config.appearance.desc')}</p>
-              <ThemeSelector />
-            </Card>
-
             {/* Idioma */}
             <Card>
               <div className="flex items-center gap-2 mb-1">

@@ -19,6 +19,8 @@ export function useThemeSection() {
 }
 
 export function getStoredTheme(section: string): Theme {
+  // Admin y dev siempre dark — no se puede cambiar
+  if (section === 'admin' || section === 'dev') return DEFAULT
   if (typeof window === 'undefined') return DEFAULT
   const stored = localStorage.getItem(storageKey(section))
   if (THEMES.includes(stored as Theme)) return stored as Theme
@@ -47,6 +49,10 @@ export function ThemeProvider({
   section: string
 }) {
   useEffect(() => {
+    // Admin y dev: limpiar cualquier tema guardado y forzar dark
+    if (section === 'admin' || section === 'dev') {
+      localStorage.removeItem(storageKey(section))
+    }
     applyTheme(getStoredTheme(section), section)
   }, [section])
 
