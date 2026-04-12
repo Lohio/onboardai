@@ -600,7 +600,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <ThemeProvider section="admin">
     <div className="min-h-dvh flex" style={{ background: 'var(--background)' }}>
       {/* ── Sidebar desktop (fijo) ── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0"
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 sticky top-0 h-dvh"
         style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}>
         <SidebarContent
           adminNombre={adminNombre}
