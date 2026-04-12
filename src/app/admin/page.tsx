@@ -473,7 +473,7 @@ export default function AdminDashboardPage() {
       >
         <button
           onClick={() => router.push('/admin/empleados')}
-          className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
             text-sm font-semibold
             bg-gradient-to-r from-cyan-500 to-indigo-500
             hover:from-cyan-400 hover:to-indigo-400
@@ -481,7 +481,7 @@ export default function AdminDashboardPage() {
             hover:scale-105 transition-all duration-300"
           style={{ color: 'white' }}
         >
-          <Sparkles className="w-5 h-5" />
+          <Sparkles className="w-4 h-4" />
           <span>Sumar al equipo</span>
         </button>
       </motion.div>

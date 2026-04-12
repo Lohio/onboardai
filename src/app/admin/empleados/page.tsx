@@ -253,7 +253,7 @@ function DetalleEmpleado({
         </div>
 
         {/* Acciones */}
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2 max-w-[172px] mx-auto w-full">
           <Link
             href={`/admin/empleados/${emp.id}`}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
