@@ -261,11 +261,13 @@ function AdminHeader({
   onMenuClick: () => void
 }) {
   return (
-    <header className="h-14 border-b border-gray-200 bg-gray-50 flex items-center px-4 gap-3 flex-shrink-0">
+    <header className="h-14 flex items-center px-4 gap-3 flex-shrink-0"
+      style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
       {/* Hamburger — solo mobile */}
       <button
         onClick={onMenuClick}
-        className="md:hidden text-gray-500 hover:text-gray-900 transition-colors duration-150 p-1 -ml-1"
+        className="md:hidden transition-colors duration-150 p-1 -ml-1
+          text-[var(--text-muted)] hover:text-[var(--foreground)]"
         aria-label="Abrir menú"
       >
         <Menu className="w-5 h-5" />
@@ -275,8 +277,8 @@ function AdminHeader({
 
       {/* Bell + badge */}
       <button
-        className="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100
-          transition-colors duration-150"
+        className="relative p-2 rounded-lg transition-colors duration-150
+          text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--glass-bg)]"
         aria-label="Alertas pendientes"
       >
         <Bell className="w-4.5 h-4.5" />
@@ -433,14 +435,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ThemeProvider section="admin">
-    <div className="min-h-dvh bg-black flex">
+    <div className="min-h-dvh flex" style={{ background: 'var(--background)' }}>
       {/* ── Sidebar desktop (fijo) ── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-white/10 bg-[#000000]">
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0"
+        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}>
         <SidebarContent adminNombre={adminNombre} pathname={pathname} onLogout={handleLogout} />
       </aside>
 
       {/* ── Contenido principal ── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
+      <div className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--background)' }}>
         <AdminHeader
           alertasCount={alertasCount}
           onMenuClick={() => setSidebarAbierto(true)}
@@ -494,8 +497,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Drawer */}
             <motion.aside
-              className="fixed left-0 top-0 h-full w-64 md:hidden z-50
-                border-r border-white/10 bg-[#000000]"
+              className="fixed left-0 top-0 h-full w-64 md:hidden z-50"
+              style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}

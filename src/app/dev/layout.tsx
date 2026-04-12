@@ -175,7 +175,8 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
     <ThemeProvider section="dev">
     <div className="min-h-dvh gradient-bg flex">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-white/[0.06] bg-[#111110]/40">
+      <aside className="hidden md:flex flex-col w-56 flex-shrink-0"
+        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}>
         <SidebarContent
           pathname={pathname}
           devNombre={devNombre}
@@ -216,8 +217,8 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
               onClick={() => setSidebarOpen(false)}
             />
             <motion.aside
-              className="fixed left-0 top-0 h-full w-56 md:hidden z-50
-                border-r border-white/[0.06] bg-[#111110]/95 backdrop-blur-xl"
+              className="fixed left-0 top-0 h-full w-56 md:hidden z-50"
+              style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}
               initial={{ x: -240 }}
               animate={{ x: 0 }}
               exit={{ x: -240 }}
