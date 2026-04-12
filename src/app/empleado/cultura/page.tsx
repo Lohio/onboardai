@@ -331,21 +331,7 @@ function SkeletonCultura() {
   )
 }
 
-// ─────────────────────────────────────────────
-// Barra de progreso de lectura (por bloque)
-// ─────────────────────────────────────────────
 
-function ReadBar({ value, colorClass }: { value: number; colorClass: string }) {
-  return (
-    <div className="h-1 w-full rounded-full bg-gray-200 overflow-hidden mt-2">
-      <motion.div
-        className={cn('h-full rounded-full', colorClass)}
-        animate={{ width: `${value}%` }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-      />
-    </div>
-  )
-}
 
 // ─────────────────────────────────────────────
 // Quiz de comprensión
@@ -528,9 +514,6 @@ function BloqueCard({
   const showQuiz = readProgress >= 80 && !completado && contenido !== null
   const locked = !unlocked
 
-  // Mapear iconText (text-sky-600) a bg equivalente para la ReadBar
-  const readBarColor = cfg.iconText.replace('text-', 'bg-')
-
   return (
     <motion.div
       variants={blockVariants}
@@ -592,11 +575,6 @@ function BloqueCard({
             )}>
               {cfg.label}
             </h3>
-
-            {/* Barra de lectura */}
-            {unlocked && !completado && (
-              <ReadBar value={readProgress} colorClass={readBarColor} />
-            )}
 
             {completado && (
               <p className="text-xs text-teal-600 mt-1">Completado ✓</p>
