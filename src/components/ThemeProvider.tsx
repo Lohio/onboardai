@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 export type Theme = 'theme-dark' | 'theme-light' | 'theme-gray'
 
@@ -11,8 +11,16 @@ function storageKey(section: string) {
   return `onboard_theme_${section}`
 }
 
-// Context para que ThemeSelector sepa en qué sección está
-export const ThemeContext = createContext<{ section: string }>({ section: 'admin' })
+// Context expone sección, tema actual y setter reactivo
+export const ThemeContext = createContext<{
+  section: string
+  currentTheme: Theme
+  setTheme: (t: Theme) => void
+}>({
+  section: 'admin',
+  currentTheme: DEFAULT,
+  setTheme: () => {},
+})
 
 export function useThemeSection() {
   return useContext(ThemeContext).section
@@ -47,12 +55,21 @@ export function ThemeProvider({
   children: React.ReactNode
   section: string
 }) {
+  const [currentTheme, setCurrentThemeState] = useState<Theme>(DEFAULT)
+
   useEffect(() => {
-    applyTheme(getStoredTheme(section), section)
+    const theme = getStoredTheme(section)
+    setCurrentThemeState(theme)
+    applyTheme(theme, section)
   }, [section])
 
+  function setTheme(theme: Theme) {
+    applyTheme(theme, section)
+    setCurrentThemeState(theme)
+  }
+
   return (
-    <ThemeContext.Provider value={{ section }}>
+    <ThemeContext.Provider value={{ section, currentTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   )

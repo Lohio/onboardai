@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, useContext } from 'react'
+import { useContext } from 'react'
 import { Check } from 'lucide-react'
 import {
   type Theme,
-  applyTheme,
-  getStoredTheme,
   ThemeContext,
 } from '@/components/ThemeProvider'
 
@@ -27,27 +25,17 @@ const OPCIONES: { value: Theme; label: string; bg: string; surface: string; text
 ]
 
 export function ThemeSelector() {
-  const { section } = useContext(ThemeContext)
-  const [current, setCurrent] = useState<Theme>('theme-dark')
-
-  useEffect(() => {
-    setCurrent(getStoredTheme(section))
-  }, [section])
-
-  function handleSelect(theme: Theme) {
-    setCurrent(theme)
-    applyTheme(theme, section)
-  }
+  const { currentTheme, setTheme } = useContext(ThemeContext)
 
   return (
     <div className="flex gap-3 flex-wrap">
       {OPCIONES.map(op => {
-        const active = current === op.value
+        const active = currentTheme === op.value
         return (
           <button
             key={op.value}
             type="button"
-            onClick={() => handleSelect(op.value)}
+            onClick={() => setTheme(op.value)}
             className={`relative flex-1 min-w-[100px] rounded-xl border-2 p-1.5 transition-all duration-150
               ${active
                 ? 'border-sky-500 shadow-[0_0_0_1px_rgba(14,165,233,0.3)]'
