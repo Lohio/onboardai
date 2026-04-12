@@ -355,9 +355,9 @@ export default function UsuariosPage() {
 
       {/* Lista */}
       {loading ? (
-        <div className="space-y-3 animate-pulse">
+        <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-16 bg-white/[0.04] rounded-xl" />
+            <div key={i} className="shimmer h-16 rounded-xl" />
           ))}
         </div>
       ) : usuariosFiltrados.length === 0 ? (

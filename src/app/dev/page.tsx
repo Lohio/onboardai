@@ -170,11 +170,11 @@ export default function DevDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-6 w-40 bg-white/[0.06] rounded" />
+      <div className="space-y-6">
+        <div className="shimmer h-6 w-40 rounded" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 bg-white/[0.04] rounded-xl" />
+            <div key={i} className="shimmer h-28 rounded-xl" />
           ))}
         </div>
       </div>

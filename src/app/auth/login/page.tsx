@@ -71,7 +71,7 @@ export default function LoginPage() {
         const supabase = createClient()
         await supabase.auth.setSession({ access_token: json.access_token, refresh_token: json.refresh_token })
       }
-      const destinos: Record<string, string> = { dev: '/superadmin', admin: '/admin', empleado: '/empleado/perfil' }
+      const destinos: Record<string, string> = { dev: '/dev', admin: '/admin', empleado: '/empleado/perfil' }
       router.push(destinos[json.rol] ?? '/empleado/perfil')
     } catch {
       setAuthError('Error inesperado. Intentá de nuevo')
@@ -139,7 +139,7 @@ export default function LoginPage() {
                   placeholder="tu@empresa.com" autoComplete="email"
                   className={`w-full h-11 px-3.5 text-sm text-white placeholder:text-[#555]
                     bg-[#151515] rounded-lg border outline-none transition-all duration-150
-                    focus:ring-1 focus:ring-[#29d4fc]/40 focus:border-[#29d4fc]/50
+                    focus:ring-1 focus:ring-[#3B4FD8]/40 focus:border-[#3B4FD8]/50
                     ${emailError ? 'border-red-500/40' : 'border-[#2a2a2a] hover:border-[#3a3a3a]'}`}
                 />
                 {emailError && (
@@ -158,7 +158,7 @@ export default function LoginPage() {
                     placeholder="Contraseña" autoComplete="current-password"
                     className={`w-full h-11 px-3.5 pr-10 text-sm text-white placeholder:text-[#555]
                       bg-[#151515] rounded-lg border outline-none transition-all duration-150
-                      focus:ring-1 focus:ring-[#29d4fc]/40 focus:border-[#29d4fc]/50
+                      focus:ring-1 focus:ring-[#3B4FD8]/40 focus:border-[#3B4FD8]/50
                       ${passwordError ? 'border-red-500/40' : 'border-[#2a2a2a] hover:border-[#3a3a3a]'}`}
                   />
                   <button
@@ -181,8 +181,8 @@ export default function LoginPage() {
                 whileHover={!loading ? { scale: 1.01 } : undefined}
                 whileTap={!loading ? { scale: 0.98 } : undefined}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="w-full h-11 rounded-lg bg-[#29d4fc] text-black text-sm font-semibold
-                           hover:bg-[#20c4ec] transition-colors cursor-pointer
+                className="w-full h-11 rounded-lg bg-[#3B4FD8] text-white text-sm font-semibold
+                           hover:bg-[#2d3ec0] transition-colors cursor-pointer
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Ingresando...' : 'Comenzar'}

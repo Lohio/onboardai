@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase'
 import { construirArbol, generarNodosDesdeUsuarios } from '@/lib/organigrama'
 import OrgChart from '@/components/shared/OrgChart'
 import { Portal } from '@/components/shared/Portal'
+import { ErrorState } from '@/components/shared/ErrorState'
 import { cn } from '@/lib/utils'
 import type { OrgNodo } from '@/types'
 
@@ -92,6 +93,7 @@ function ModalBase({ titulo, onClose, children }: { titulo: string; onClose: () 
 
 export default function OrganigramaAdminPage() {
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [empresaNombre, setEmpresaNombre] = useState('')
 
@@ -180,6 +182,7 @@ export default function OrganigramaAdminPage() {
         await cargarNodos(empId)
       } catch (err) {
         console.error('Error cargando organigrama:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar el organigrama')
       } finally {
         setLoading(false)
       }
@@ -455,6 +458,15 @@ export default function OrganigramaAdminPage() {
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="shimmer rounded-xl h-14" />
         <div className="shimmer rounded-xl h-[400px]" />
+      </div>
+    )
+  }
+
+  // ── Error ──
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <ErrorState mensaje={error} onRetry={() => { setError(null); if (empresaId) cargarNodos(empresaId) }} />
       </div>
     )
   }

@@ -505,9 +505,9 @@ export default function EmpresasPage() {
 
       {/* Lista */}
       {loading ? (
-        <div className="space-y-4 animate-pulse">
+        <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 bg-white/[0.04] rounded-xl" />
+            <div key={i} className="shimmer h-24 rounded-xl" />
           ))}
         </div>
       ) : empresas.length === 0 ? (
