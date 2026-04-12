@@ -28,7 +28,7 @@ export const POST = withHandler(
     // ── Datos del empleado ────────────────────────────────────────
     const { data: usuario } = await supabase!
       .from('usuarios')
-      .select('nombre, puesto, empresa_id, fecha_ingreso')
+      .select('nombre, puesto, area, empresa_id, fecha_ingreso')
       .eq('id', user!.id)
       .single()
 
@@ -52,7 +52,9 @@ export const POST = withHandler(
     // ── System prompt: instrucciones agente + conocimiento empresa ─
     const { systemPrompt, config } = await buildSystemPromptWithConfig(
       usuario.empresa_id,
-      contextoEmpleado
+      contextoEmpleado,
+      usuario.area ?? null,
+      usuario.puesto ?? null,
     )
     const systemPromptAgente = `${INSTRUCCIONES_AGENTE}\n\n${systemPrompt}`
 

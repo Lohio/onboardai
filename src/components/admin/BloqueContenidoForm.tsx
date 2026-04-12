@@ -21,6 +21,8 @@ export interface BloqueContenido {
   orden: number
   created_at: string
   updated_at: string
+  area?: string | null
+  puesto?: string | null
 }
 
 interface BloqueContenidoFormProps {
@@ -32,6 +34,10 @@ interface BloqueContenidoFormProps {
   bloque?: BloqueContenido
   /** Posición para un bloque nuevo */
   orden?: number
+  /** Capa de área — se persiste en la columna area */
+  area?: string | null
+  /** Capa de puesto — se persiste en la columna puesto */
+  puesto?: string | null
   onSuccess: (bloque: BloqueContenido) => void
   onCancel: () => void
 }
@@ -65,6 +71,8 @@ export function BloqueContenidoForm({
   modulo,
   bloque,
   orden = 1,
+  area,
+  puesto,
   onSuccess,
   onCancel,
 }: BloqueContenidoFormProps) {
@@ -120,6 +128,8 @@ export function BloqueContenidoForm({
         contenido: form.contenido.trim(),
         orden: esEdicion ? bloque.orden : orden,
         updated_at: new Date().toISOString(),
+        ...(area !== undefined ? { area: area ?? null } : {}),
+        ...(puesto !== undefined ? { puesto: puesto ?? null } : {}),
       }
 
       const { data, error } = await supabase

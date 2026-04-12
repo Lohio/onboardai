@@ -21,6 +21,7 @@ export interface Usuario {
   contacto_it_email?: string
   contacto_rrhh_nombre?: string
   contacto_rrhh_email?: string
+  notas_ia?: string | null
   password_corporativo?: string | null
   password_bitlocker?: string | null
   rol_responsabilidades?: string[] | null
@@ -78,6 +79,8 @@ export interface ContenidoBloque {
   storage_path?: string | null
   metadata?: Record<string, string | number | boolean | null> | null
   created_at: string
+  area?: string | null
+  puesto?: string | null
 }
 
 export interface ProgresoModulo {

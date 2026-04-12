@@ -28,6 +28,10 @@ export interface StreamChatParams {
    * Se inyecta al final del system prompt para personalizar las respuestas.
    */
   contextoEmpleado?: string
+  /** Área del empleado — habilita capa de contenido específico de área */
+  empleadoArea?: string | null
+  /** Puesto del empleado — habilita capa de contenido específico de rol */
+  empleadoPuesto?: string | null
   onChunk: (text: string) => void
   onDone: () => void
 }
@@ -119,7 +123,9 @@ interface SystemPromptResult {
 
 export async function buildSystemPromptWithConfig(
   empresaId: string,
-  contextoEmpleado?: string
+  contextoEmpleado?: string,
+  empleadoArea?: string | null,
+  empleadoPuesto?: string | null,
 ): Promise<SystemPromptResult> {
   const supabase = createClient()
 
@@ -127,7 +133,7 @@ export async function buildSystemPromptWithConfig(
   const [{ data: bloques }, config, { data: empresa }] = await Promise.all([
     supabase
       .from('conocimiento')
-      .select('modulo, bloque, titulo, contenido')
+      .select('modulo, bloque, titulo, contenido, area, puesto')
       .eq('empresa_id', empresaId)
       .order('modulo', { ascending: true })
       .order('bloque', { ascending: true }),
@@ -139,14 +145,29 @@ export async function buildSystemPromptWithConfig(
       .single(),
   ])
 
-  // ── Organizar bloques por módulo ──────────────────────────────
+  const todosLosBloques = bloques ?? []
+
+  // ── Capa 1: empresa (sin area ni puesto) — comportamiento original ──
+  const empresaBloques = todosLosBloques.filter(b => !b.area && !b.puesto)
+
+  // ── Capa 2: área del empleado ──
+  const areaBloques = empleadoArea
+    ? todosLosBloques.filter(b => b.area === empleadoArea && !b.puesto)
+    : []
+
+  // ── Capa 3: puesto/rol del empleado ──
+  const rolBloques = empleadoPuesto
+    ? todosLosBloques.filter(b => b.puesto === empleadoPuesto)
+    : []
+
+  // ── Organizar bloques de empresa por módulo (lógica original) ──
   const porModulo: Record<string, { titulo: string; contenido: string }[]> = {}
-  for (const item of (bloques ?? [])) {
+  for (const item of empresaBloques) {
     if (!porModulo[item.modulo]) porModulo[item.modulo] = []
     porModulo[item.modulo].push({ titulo: item.titulo, contenido: item.contenido })
   }
 
-  const seccionesConocimiento =
+  const seccionesEmpresa =
     Object.keys(porModulo).length > 0
       ? Object.entries(porModulo)
           .map(([modulo, items]) => {
@@ -159,8 +180,8 @@ export async function buildSystemPromptWithConfig(
       : 'No hay contenido cargado para esta empresa. Indicá al empleado que consulte con su manager o buddy.'
 
   // ── Ensamblar el prompt final ─────────────────────────────────
-  // Orden: base global (dev) → instrucciones (dev, editables) →
-  //        personalización empresa (admin) → conocimiento → contexto empleado
+  // Orden: base global → instrucciones → personalización empresa →
+  //        conocimiento empresa → capa área → capa rol → contexto empleado
   const partes: string[] = []
 
   if (config.systemPromptBase.trim()) {
@@ -169,13 +190,26 @@ export async function buildSystemPromptWithConfig(
 
   partes.push(config.systemPromptInstrucciones.trim())
 
-  // Personalización por empresa (override del admin)
   const promptEmpresa = empresa?.prompt_personalizado?.trim()
   if (promptEmpresa) {
     partes.push(`# Instrucciones específicas de esta empresa\n\n${promptEmpresa}`)
   }
 
-  partes.push(`# Conocimiento de la empresa\n\n${seccionesConocimiento}`)
+  partes.push(`# Conocimiento de la empresa\n\n${seccionesEmpresa}`)
+
+  if (areaBloques.length > 0) {
+    const cuerpo = areaBloques
+      .map(i => `### ${i.titulo}\n${i.contenido.trim()}`)
+      .join('\n\n')
+    partes.push(`# Información del área: ${empleadoArea}\n\n${cuerpo}`)
+  }
+
+  if (rolBloques.length > 0) {
+    const cuerpo = rolBloques
+      .map(i => `### ${i.titulo}\n${i.contenido.trim()}`)
+      .join('\n\n')
+    partes.push(`# Información del rol: ${empleadoPuesto}\n\n${cuerpo}`)
+  }
 
   if (contextoEmpleado?.trim()) {
     partes.push(`# Contexto del empleado\n\n${contextoEmpleado.trim()}`)
@@ -202,13 +236,18 @@ export async function buildSystemPrompt(empresaId: string): Promise<string> {
 export async function streamChat({
   empresaId,
   contextoEmpleado,
+  empleadoArea,
+  empleadoPuesto,
   mensajes,
   onChunk,
   onDone,
 }: StreamChatParams): Promise<TokenUsage> {
-  // buildSystemPromptWithConfig devuelve el prompt Y la config en una sola llamada
-  // (evita la doble query a app_config que existía antes)
-  const { systemPrompt, config } = await buildSystemPromptWithConfig(empresaId, contextoEmpleado)
+  const { systemPrompt, config } = await buildSystemPromptWithConfig(
+    empresaId,
+    contextoEmpleado,
+    empleadoArea,
+    empleadoPuesto,
+  )
 
   const stream = anthropic.messages.stream({
     model: config.claudeModel,

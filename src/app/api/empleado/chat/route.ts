@@ -24,7 +24,7 @@ export const POST = withHandler(
     // ── Datos del empleado ────────────────────────────────────────
     const { data: usuario } = await supabase!
       .from('usuarios')
-      .select('nombre, puesto, empresa_id, fecha_ingreso')
+      .select('nombre, puesto, area, empresa_id, fecha_ingreso, notas_ia')
       .eq('id', user!.id)
       .single()
 
@@ -86,6 +86,7 @@ export const POST = withHandler(
       usuario.nombre ? `El empleado se llama ${usuario.nombre}.` : '',
       usuario.puesto ? `Su puesto es ${usuario.puesto}.` : '',
       diasOnboarding ? `Lleva ${diasOnboarding} día${diasOnboarding === 1 ? '' : 's'} en la empresa.` : '',
+      usuario.notas_ia?.trim() ? `Notas del manager para este empleado: ${usuario.notas_ia.trim()}` : '',
     ].filter(Boolean).join(' ')
 
     // Capturar referencias para uso dentro del ReadableStream
@@ -101,6 +102,8 @@ export const POST = withHandler(
           tokenUsage = await streamChat({
             empresaId,
             contextoEmpleado,
+            empleadoArea: usuario.area ?? null,
+            empleadoPuesto: usuario.puesto ?? null,
             mensajes: [
               ...historial,
               { role: 'user', content: mensaje },
