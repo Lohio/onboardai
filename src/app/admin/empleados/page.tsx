@@ -253,10 +253,10 @@ function DetalleEmpleado({
         </div>
 
         {/* Acciones */}
-        <div className="flex flex-col items-center gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2">
           <Link
             href={`/admin/empleados/${emp.id}`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-white/90 hover:bg-white/[0.07] hover:border-white/[0.14]
               transition-colors duration-150"
@@ -267,7 +267,7 @@ function DetalleEmpleado({
 
           <button
             onClick={onResetear}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-amber-400/80 hover:bg-amber-500/[0.08] hover:border-amber-500/20
               transition-colors duration-150"
@@ -312,7 +312,7 @@ function DetalleEmpleado({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 onClick={onConfirmDelete}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-auto
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
                   bg-white/[0.04] border border-white/[0.08] text-white/65
                   hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
                   transition-colors duration-150 cursor-pointer"
@@ -515,11 +515,13 @@ export default function EmpleadosPage() {
         </div>
         <button
           onClick={() => setModalAbierto(true)}
-          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[9px]
-            text-sm font-semibold text-white
-            bg-[#3B4FD8] hover:bg-[#4B5EE8]
-            shadow-[0_0_20px_rgba(59,79,216,0.2)] hover:shadow-[0_0_28px_rgba(59,79,216,0.35)]
-            transition-all duration-200"
+          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+            text-sm font-semibold
+            bg-gradient-to-r from-cyan-500 to-indigo-500
+            hover:from-cyan-400 hover:to-indigo-400
+            shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40
+            hover:scale-105 transition-all duration-300"
+          style={{ color: 'white' }}
         >
           <Sparkles className="w-4 h-4" />
           <span className="hidden sm:inline">Sumar al equipo</span>
