@@ -20,7 +20,7 @@ export function getAllowedOrigin(
   allowedOrigins: string[]
 ): string | null {
   if (!requestOrigin || allowedOrigins.length === 0) return null
-  if (allowedOrigins.includes('*')) return '*'
+  // Wildcard bloqueado — cada empresa debe listar orígenes explícitos
   if (allowedOrigins.includes(requestOrigin)) return requestOrigin
   return null
 }

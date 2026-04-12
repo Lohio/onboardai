@@ -79,6 +79,7 @@ export function safeDecrypt(value: string | null | undefined): string | null {
     const parts = value.split(':')
     if (parts.length !== 3) {
       // Plaintext legacy — devolver como está (migración pendiente)
+      console.warn('[encryption] safeDecrypt: valor en plaintext detectado — ejecutar migración de cifrado')
       return value
     }
     return decrypt(value)

@@ -561,6 +561,42 @@ aside {
   border-color: var(--border) !important;
 }
 
+/* ── bg-gray-200 / bg-gray-300 → surface vars ── */
+.theme-dark main [class*="bg-gray-200"],
+.theme-gray main [class*="bg-gray-200"] {
+  background-color: var(--surface-2) !important;
+}
+.theme-dark main [class*="bg-gray-300"],
+.theme-gray main [class*="bg-gray-300"] {
+  background-color: rgba(255,255,255,0.10) !important;
+}
+
+/* ── text-gray-300 / text-gray-200 → muted white ── */
+.theme-dark main [class*="text-gray-300"],
+.theme-gray main [class*="text-gray-300"] {
+  color: rgba(255,255,255,0.32) !important;
+}
+.theme-dark main [class*="text-gray-200"],
+.theme-gray main [class*="text-gray-200"] {
+  color: rgba(255,255,255,0.22) !important;
+}
+
+/* ── Placeholder text en inputs (dark/gray) ── */
+.theme-dark main input::placeholder,
+.theme-dark main textarea::placeholder,
+.theme-gray main input::placeholder,
+.theme-gray main textarea::placeholder {
+  color: rgba(255,255,255,0.28) !important;
+}
+
+/* ── Mismo para el agente flotante (Portal) ── */
+.theme-dark .agente-portal input::placeholder,
+.theme-dark .agente-portal textarea::placeholder,
+.theme-gray .agente-portal input::placeholder,
+.theme-gray .agente-portal textarea::placeholder {
+  color: rgba(255,255,255,0.28) !important;
+}
+
 /* ── Shimmer skeletons en dark ── */
 .theme-dark main .shimmer,
 .theme-gray main .shimmer {

@@ -213,7 +213,12 @@ export default function EncuestasAdminPage() {
       }
 
       const { data } = await query
-      setEncuestas((data ?? []) as unknown as EncuestaRow[])
+      // Supabase retorna el join usuario como array — normalizar a objeto único
+      const rows: EncuestaRow[] = (data ?? []).map(r => ({
+        ...r,
+        usuario: Array.isArray(r.usuario) ? (r.usuario[0] ?? null) : (r.usuario ?? null),
+      }))
+      setEncuestas(rows)
     } catch (err) {
       console.error('[encuestas admin] Error:', err)
       setHasError(true)

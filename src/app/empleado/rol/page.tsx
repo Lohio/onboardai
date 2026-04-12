@@ -618,7 +618,9 @@ export default function RolPage() {
       if (objetivosRes.error)    console.warn('[M3] objetivos_rol:', objetivosRes.error.message)
       if (orgRes.error)          console.warn('[M3] organigrama:', orgRes.error.message)
       setOrgDescripcion((orgRes.data?.contenido as string | null) ?? '')
-      const mgr = managerRes.data?.miembro as unknown as { nombre: string } | null
+      // Supabase retorna el join como array — tomar el primer elemento
+      const mgrRaw = managerRes.data?.miembro
+      const mgr = (Array.isArray(mgrRaw) ? (mgrRaw[0] ?? null) : (mgrRaw ?? null)) as { nombre: string } | null
       setManagerNombre(mgr?.nombre ?? '')
 
       // Organigrama: si hay nodos personalizados usarlos, sino generar desde usuarios
