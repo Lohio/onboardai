@@ -192,27 +192,32 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
   return (
     <ThemeProvider section="empleado">
-    <div className="min-h-dvh flex flex-col bg-gray-50">
+    <div className="min-h-dvh flex flex-col" style={{ background: 'var(--background)' }}>
 
       {/* ── Header simplificado (sticky) ── */}
-      <header className="flex-shrink-0 sticky top-0 z-30 border-b border-gray-200 bg-white h-12 px-4 sm:px-6 lg:px-8">
+      <header className="flex-shrink-0 sticky top-0 z-30 border-b h-12 px-4 sm:px-6 lg:px-8"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto h-full flex items-center justify-between">
           {/* Avatar con dropdown */}
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setShowUserMenu(v => !v)}
-              className="w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-semibold text-sm flex items-center justify-center hover:bg-sky-200 transition-colors"
+              className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 text-[#38BDF8] font-semibold text-sm flex items-center justify-center hover:bg-[#0EA5E9]/30 transition-colors"
               aria-label="Menú de usuario"
             >
               {iniciales || '?'}
             </button>
             {showUserMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[160px]">
+              <div className="absolute top-full left-0 mt-2 rounded-lg shadow-xl p-1 min-w-[160px] z-50"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors"
+                  style={{ color: 'var(--foreground)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <LogOut className="w-4 h-4" />
                   Cerrar sesión
@@ -225,7 +230,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           <button
             type="button"
             aria-label="Notificaciones"
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="transition-colors" style={{ color: 'var(--text-muted)' }}
           >
             <Bell className="w-5 h-5" />
           </button>
@@ -237,29 +242,33 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         {children}
       </main>
 
-      {/* ── Bottom Navigation Bar (pill flotante) ── */}
+      {/* ── Bottom Navigation Bar ── */}
       <nav
-        className="fixed left-1/2 -translate-x-1/2 z-50 bg-white rounded-2xl shadow-xl border border-gray-200"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t"
+        style={{
+          background: 'rgba(10, 22, 40, 0.96)',
+          borderColor: 'rgba(255, 255, 255, 0.06)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
-        <div className="flex items-stretch px-4 py-3 gap-1">
+        <div className="max-w-lg mx-auto flex items-stretch px-4 py-2 gap-1">
           {MODULOS.map((mod, idx) => {
             const completado = modulos[mod.key]
             const esActual   = pathname.startsWith(mod.href)
             const bloqueado  = esTrial(planEmpresa) && idx === 2
 
             const labelClass = bloqueado
-              ? 'text-gray-400'
+              ? 'text-white/25'
               : esActual
-              ? 'text-sky-600 font-semibold'
+              ? 'text-[#38BDF8] font-semibold'
               : completado
-              ? 'text-green-700'
-              : 'text-gray-500'
+              ? 'text-teal-400'
+              : 'text-white/40'
 
             const iconWrapClass = cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg transition-colors',
               bloqueado && 'opacity-50 cursor-not-allowed',
-              esActual && !bloqueado && 'bg-sky-50',
+              esActual && !bloqueado && 'bg-[#0EA5E9]/15',
             )
 
             const inner = (
@@ -276,7 +285,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                     )}
                   />
                   {completado && !esActual && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 border border-white" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-teal-400 border border-[#0A1628]" />
                   )}
                 </div>
                 <span className={cn('text-[10px] leading-none mt-0.5', labelClass)}>
@@ -297,7 +306,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           })}
 
           {/* Botón configuración con dropdown */}
-          <div className="w-12 flex items-center justify-center border-l border-gray-200 ml-2 pl-2">
+          <div className="w-12 flex items-center justify-center border-l border-white/[0.08] ml-2 pl-2">
             <SettingsDropdown />
           </div>
         </div>

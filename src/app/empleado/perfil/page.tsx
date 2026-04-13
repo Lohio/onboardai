@@ -522,7 +522,7 @@ export default function PerfilPage() {
   // ── Render: loading ──
   if (loading) {
     return (
-      <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-dvh p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <div className="shimmer rounded-md h-8 w-40 mb-6" />
           <ProfileSkeleton />
@@ -534,7 +534,7 @@ export default function PerfilPage() {
   // ── Render: error ──
   if (hasError) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-dvh flex items-center justify-center p-4">
         <ErrorState
           mensaje="No se pudo cargar tu perfil."
           onRetry={cargarDatos}
@@ -546,7 +546,7 @@ export default function PerfilPage() {
   // ── Render: sin perfil ──
   if (!perfil) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <p className="text-gray-500 text-sm">No se encontró tu perfil.</p>
       </div>
     )
@@ -554,7 +554,7 @@ export default function PerfilPage() {
 
   // ── Render: principal ──
   return (
-    <div className="min-h-dvh bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-dvh p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* ── Page header M1 ── */}
