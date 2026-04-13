@@ -153,9 +153,9 @@ function OrgColumna({ nodo, depth, ...cardProps }: CardProps & { nodo: OrgNodo; 
       {tieneHijos && (
         <>
           {/* Línea vertical hacia abajo desde el nodo padre */}
-          <div className="w-px h-6 bg-white/[0.08] flex-shrink-0" />
+          <div className="w-px h-6 bg-white/20 flex-shrink-0" />
 
-          {/* Fila de hijos */}
+          {/* Fila de hijos — sin padding en el container para que los conectores se toquen */}
           <div className="flex flex-row">
             {hijos.map((hijo, i) => {
               const isFirst = i === 0
@@ -163,15 +163,17 @@ function OrgColumna({ nodo, depth, ...cardProps }: CardProps & { nodo: OrgNodo; 
               const isSingle = hijos.length === 1
 
               return (
-                <div key={hijo.id} className="flex flex-col items-center px-2">
-                  {/* Conector superior: línea horizontal + vertical */}
-                  <div className="relative w-full flex justify-center" style={{ height: 24 }}>
+                // Sin px en este div — el w-full del connector ocupa el ancho total
+                // incluyendo el espaciado (que viene del px-3 interno)
+                <div key={hijo.id} className="flex flex-col items-center">
+                  {/* Conector: w-full = ancho total del container, sin padding aquí */}
+                  <div className="relative w-full" style={{ height: 24 }}>
                     {/* Línea vertical (del conector horizontal al nodo) */}
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/[0.08]" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/20" />
                     {/* Línea horizontal (une los hermanos entre sí) */}
                     {!isSingle && (
                       <div
-                        className="absolute top-0 h-px bg-white/[0.08]"
+                        className="absolute top-0 h-px bg-white/20"
                         style={{
                           left: isFirst ? '50%' : 0,
                           right: isLast ? '50%' : 0,
@@ -179,8 +181,10 @@ function OrgColumna({ nodo, depth, ...cardProps }: CardProps & { nodo: OrgNodo; 
                       />
                     )}
                   </div>
-
-                  <OrgColumna nodo={hijo} depth={depth + 1} {...cardProps} />
+                  {/* El padding va aquí, DEBAJO del conector, para dar espaciado visual entre cards */}
+                  <div className="px-3">
+                    <OrgColumna nodo={hijo} depth={depth + 1} {...cardProps} />
+                  </div>
                 </div>
               )
             })}
@@ -202,7 +206,7 @@ function OrgVertical({ nodos, depth = 0, ...cardProps }: CardProps & { nodos: Or
           <div key={nodo.id} style={{ paddingLeft: depth * 24 }}>
             <NodoCard nodo={nodo} {...cardProps} />
             {(nodo.children?.filter((n) => n.visible).length ?? 0) > 0 && (
-              <div className="mt-3 pl-3 border-l border-white/[0.08]">
+              <div className="mt-3 pl-3 border-l border-white/20">
                 <OrgVertical nodos={nodo.children!} depth={depth + 1} {...cardProps} />
               </div>
             )}

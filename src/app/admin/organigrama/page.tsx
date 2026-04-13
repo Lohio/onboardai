@@ -558,7 +558,7 @@ export default function OrganigramaAdminPage() {
           </div>
         ) : (
           /* OrgChart */
-          <div className="glass-card rounded-xl p-4 overflow-hidden">
+          <div className="glass-card rounded-xl p-4 overflow-x-auto">
             <OrgChart
               raices={arbol}
               modo="edicion"
