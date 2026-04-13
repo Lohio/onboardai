@@ -250,6 +250,34 @@ export default function OrganigramaAdminPage() {
     try {
       const supabase = createClient()
 
+      // Si estamos en modo automático, guardar los nodos existentes primero
+      // (raíces antes que hijos para respetar la FK de parent_id)
+      if (modoFuente === 'automatico' && nodos.length > 0) {
+        const mapear = (n: OrgNodo) => ({
+          id: n.id,
+          empresa_id: n.empresa_id,
+          usuario_id: n.usuario_id,
+          nombre: n.nombre,
+          puesto: n.puesto,
+          area: n.area,
+          foto_url: n.foto_url,
+          parent_id: n.parent_id,
+          orden: n.orden,
+          visible: n.visible,
+        })
+        const sinParent = nodos.filter(n => !n.parent_id)
+        const conParent = nodos.filter(n => !!n.parent_id)
+        if (sinParent.length > 0) {
+          const { error: e1 } = await supabase.from('organigrama_nodos').upsert(sinParent.map(mapear), { onConflict: 'id' })
+          if (e1) throw new Error(e1.message)
+        }
+        if (conParent.length > 0) {
+          const { error: e2 } = await supabase.from('organigrama_nodos').upsert(conParent.map(mapear), { onConflict: 'id' })
+          if (e2) throw new Error(e2.message)
+        }
+        setModoFuente('personalizado')
+      }
+
       let payload: Record<string, unknown>
 
       if (tipoPersona === 'existente') {
