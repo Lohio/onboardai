@@ -82,7 +82,9 @@ function ModalBase({ titulo, onClose, children }: { titulo: string; onClose: () 
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="p-4">{children}</div>
+          <div className="p-4">
+            {children}
+          </div>
         </div>
       </motion.div>
     </>
@@ -105,6 +107,7 @@ export default function OrganigramaAdminPage() {
 
   // UI
   const [guardando, setGuardando] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
   const [modoModal, setModoModal] = useState<ModoModal>(null)
   const [nodoSeleccionado, setNodoSeleccionado] = useState<OrgNodo | null>(null)
 
@@ -243,6 +246,7 @@ export default function OrganigramaAdminPage() {
   const agregarNodo = async () => {
     if (!empresaId) return
     setGuardando(true)
+    setModalError(null)
     try {
       const supabase = createClient()
 
@@ -250,7 +254,10 @@ export default function OrganigramaAdminPage() {
 
       if (tipoPersona === 'existente') {
         const u = usuariosTodos.find((u) => u.id === usuarioIdSel)
-        if (!u) return
+        if (!u) {
+          setModalError('Seleccioná un empleado válido.')
+          return
+        }
         payload = {
           empresa_id: empresaId,
           usuario_id: u.id,
@@ -263,7 +270,10 @@ export default function OrganigramaAdminPage() {
           visible: true,
         }
       } else {
-        if (!nombreExt.trim()) return
+        if (!nombreExt.trim()) {
+          setModalError('El nombre es obligatorio.')
+          return
+        }
         payload = {
           empresa_id: empresaId,
           usuario_id: null,
@@ -312,6 +322,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error agregando nodo:', err)
+      setModalError(err instanceof Error ? err.message : 'Error al agregar persona. Revisá la consola.')
     } finally {
       setGuardando(false)
     }
@@ -321,6 +332,7 @@ export default function OrganigramaAdminPage() {
   const guardarEdicion = async () => {
     if (!nodoSeleccionado) return
     setGuardando(true)
+    setModalError(null)
     try {
       const supabase = createClient()
       const updates = {
@@ -346,6 +358,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error editando nodo:', err)
+      setModalError(err instanceof Error ? err.message : 'Error al guardar cambios.')
     } finally {
       setGuardando(false)
     }
@@ -379,6 +392,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error eliminando nodo:', err)
+      setModalError(err instanceof Error ? err.message : 'Error al eliminar persona.')
     } finally {
       setGuardando(false)
     }
@@ -439,6 +453,7 @@ export default function OrganigramaAdminPage() {
   const cerrarModal = () => {
     setModoModal(null)
     setNodoSeleccionado(null)
+    setModalError(null)
     setTipoPersona('existente')
     setUsuarioIdSel('')
     setNombreExt('')
@@ -680,6 +695,11 @@ export default function OrganigramaAdminPage() {
                 )}
               </Campo>
 
+              {modalError && (
+                <p className="mt-3 text-[12px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                  {modalError}
+                </p>
+              )}
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
                   Cancelar
@@ -736,6 +756,11 @@ export default function OrganigramaAdminPage() {
                 )}
               </div>
 
+              {modalError && (
+                <p className="mt-3 text-[12px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                  {modalError}
+                </p>
+              )}
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
                   Cancelar
