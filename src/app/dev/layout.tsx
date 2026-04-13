@@ -155,10 +155,14 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
   }, [router])
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }, [router])
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
+    window.location.href = '/auth/login'
+  }, [])
 
   if (loading) {
     return (

@@ -478,10 +478,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }, [router])
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
+    window.location.href = '/auth/login'
+  }, [])
 
   // ── Refetch count de alertas ──
   const refetchAlertasCount = useCallback(async () => {

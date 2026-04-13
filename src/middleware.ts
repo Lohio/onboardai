@@ -80,7 +80,13 @@ export async function middleware(request: NextRequest) {
   // Sin sesión → login (si ya estamos en /auth/* dejamos pasar)
   if (!user) {
     if (pathname.startsWith('/auth')) return supabaseResponse
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+
+    const loginResponse = NextResponse.redirect(new URL('/auth/login', request.url))
+    // Limpiar cookies de caché para que el próximo login lea el rol fresco
+    for (const name of [COOKIE_ROL, COOKIE_SETUP, COOKIE_PREBOARDING]) {
+      loginResponse.cookies.set(name, '', { maxAge: 0, path: '/' })
+    }
+    return loginResponse
   }
 
   // ── 2. Obtener rol (con caché en cookie) ─────────────────────

@@ -69,10 +69,14 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const { t } = useLanguage()
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }, [router])
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
+    window.location.href = '/auth/login'
+  }, [])
 
   const cargarProgreso = useCallback(async () => {
     const supabase = createClient()
