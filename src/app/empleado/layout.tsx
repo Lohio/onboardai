@@ -358,11 +358,12 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: 'spring', stiffness: 400, damping: 24 }}
               onClick={() => setNavAbierto(true)}
-              className="w-11 h-11 rounded-full backdrop-blur-xl shadow-lg flex items-center justify-center"
+              className="w-11 h-11 rounded-full backdrop-blur-xl flex items-center justify-center"
               style={{
                 background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-muted)',
+                border: '1px solid rgba(56,189,248,0.35)',
+                color: '#38BDF8',
+                boxShadow: '0 0 0 3px rgba(56,189,248,0.08), 0 4px 20px rgba(0,0,0,0.45)',
               }}
               aria-label="Abrir navegación"
             >

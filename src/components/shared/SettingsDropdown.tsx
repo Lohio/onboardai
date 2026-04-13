@@ -32,11 +32,13 @@ export function SettingsDropdown() {
     <div ref={ref} className="relative flex-shrink-0">
       <button
         onClick={() => setOpen(prev => !prev)}
-        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150
-          ${open
-            ? 'text-white/75 bg-white/[0.08]'
-            : 'text-white/40 hover:text-white/65 hover:bg-white/[0.06]'
-          }`}
+        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150"
+        style={{
+          color: open ? 'var(--foreground)' : 'var(--text-muted)',
+          background: open ? 'var(--surface-2)' : 'transparent',
+        }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.background = 'var(--surface-2)' }}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'transparent' }}
         aria-label={t('settings.title')}
       >
         <Settings className="w-[15px] h-[15px]" />
