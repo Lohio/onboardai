@@ -325,7 +325,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                         height={22}
                         className="w-[22px] h-[22px] transition-all duration-150"
                         style={{
-                          opacity: bloqueado ? 0.3 : esActual ? 1 : completado ? 0.75 : 0.55,
+                          opacity: bloqueado ? 0.3 : esActual ? 1 : completado ? 1 : 0.85,
                           filter: esActual && !bloqueado ? mod.glow : 'none',
                         }}
                       />
