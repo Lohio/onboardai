@@ -253,10 +253,17 @@ function DetalleEmpleado({
         </div>
 
         {/* Acciones */}
+<<<<<<< Updated upstream
         <div className="flex flex-col gap-2 pt-2 max-w-[224px] mx-auto w-full">
           <Link
             href={`/admin/empleados/${emp.id}`}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+=======
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <Link
+            href={`/admin/empleados/${emp.id}`}
+            className="inline-flex items-center gap-2 w-auto px-4 py-2 rounded-lg text-sm
+>>>>>>> Stashed changes
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-white/90 hover:bg-white/[0.07] hover:border-white/[0.14]
               transition-colors duration-150"
@@ -267,7 +274,11 @@ function DetalleEmpleado({
 
           <button
             onClick={onResetear}
+<<<<<<< Updated upstream
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+=======
+            className="inline-flex items-center gap-2 w-auto px-4 py-2 rounded-lg text-sm
+>>>>>>> Stashed changes
               bg-white/[0.04] border border-white/[0.08] text-white/65
               hover:text-amber-400/80 hover:bg-amber-500/[0.08] hover:border-amber-500/20
               transition-colors duration-150"
@@ -312,7 +323,11 @@ function DetalleEmpleado({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 onClick={onConfirmDelete}
+<<<<<<< Updated upstream
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+=======
+                className="inline-flex items-center gap-2 w-auto px-4 py-2 rounded-lg text-sm
+>>>>>>> Stashed changes
                   bg-white/[0.04] border border-white/[0.08] text-white/65
                   hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
                   transition-colors duration-150 cursor-pointer"
@@ -511,7 +526,11 @@ export default function EmpleadosPage() {
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           <h1 className="text-xl font-semibold text-white">Equipo</h1>
+<<<<<<< Updated upstream
           <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? 'persona' : 'personas'}</p>
+=======
+          <p className="text-sm text-white/40">{empleados.length} integrantes</p>
+>>>>>>> Stashed changes
         </div>
         <button
           onClick={() => setModalAbierto(true)}
