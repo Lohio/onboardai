@@ -21,28 +21,46 @@ import { cn } from '@/lib/utils'
 // ─────────────────────────────────────────────
 
 const MODULOS = [
-  { key: 'M1', href: '/empleado/perfil' },
-  { key: 'M2', href: '/empleado/rol' },
-  { key: 'M3', href: '/empleado/cultura' },
-  { key: 'plan', href: '/empleado/plan' },
+  {
+    key: 'M1',
+    href: '/empleado/perfil',
+    label: 'Perfil',
+    icon: '/heero-icons2.svg',
+    color: '#2DD4BF',
+    activeBg: 'rgba(45,212,191,0.14)',
+    glow: 'drop-shadow(0 0 5px rgba(45,212,191,0.55))',
+  },
+  {
+    key: 'M2',
+    href: '/empleado/rol',
+    label: 'Rol',
+    icon: '/heero-icons4.svg',
+    color: '#FCD34D',
+    activeBg: 'rgba(252,211,77,0.14)',
+    glow: 'drop-shadow(0 0 5px rgba(252,211,77,0.55))',
+  },
+  {
+    key: 'M3',
+    href: '/empleado/cultura',
+    label: 'Cultura',
+    icon: '/heero-icons1.svg',
+    color: '#FDE047',
+    activeBg: 'rgba(253,224,71,0.14)',
+    glow: 'drop-shadow(0 0 5px rgba(253,224,71,0.45))',
+  },
+  {
+    key: 'plan',
+    href: '/empleado/plan',
+    label: 'CopilBot',
+    icon: '/heero-icons3.svg',
+    color: '#38BDF8',
+    activeBg: 'rgba(56,189,248,0.14)',
+    glow: 'drop-shadow(0 0 5px rgba(56,189,248,0.55))',
+  },
 ] as const
 
 type ModuloKey = (typeof MODULOS)[number]['key']
 type EstadoModulos = Record<ModuloKey, boolean>
-
-const MODULO_LABELS: Record<string, string> = {
-  M1: 'Perfil',
-  M2: 'Rol',
-  M3: 'Cultura',
-  plan: 'CopilBot',
-}
-
-const MODULO_ICONS: Record<string, string> = {
-  M1: '/heero-icons2.svg',
-  M2: '/heero-icons4.svg',
-  M3: '/heero-icons1.svg',
-  plan: '/heero-icons3.svg',
-}
 
 // ─────────────────────────────────────────────
 // Layout
@@ -296,47 +314,52 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                   <div
                     className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-150"
                     style={{
-                      background: esActual && !bloqueado ? 'rgba(14,165,233,0.12)' : 'transparent',
+                      background: esActual && !bloqueado ? mod.activeBg : 'transparent',
                     }}
                   >
                     <div className="relative">
                       <Image
-                        src={MODULO_ICONS[mod.key]}
+                        src={mod.icon}
                         alt=""
                         width={22}
                         height={22}
-                        className={cn('w-[22px] h-[22px]', bloqueado || (!esActual && !completado) ? 'opacity-40' : '')}
+                        className="w-[22px] h-[22px] transition-all duration-150"
+                        style={{
+                          opacity: bloqueado ? 0.3 : esActual ? 1 : completado ? 0.75 : 0.55,
+                          filter: esActual && !bloqueado ? mod.glow : 'none',
+                        }}
                       />
                       {completado && !esActual && (
-                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-teal-400" />
+                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" style={{ background: mod.color }} />
                       )}
                     </div>
                     <span
-                      className="text-[10px] font-medium leading-none"
+                      className="text-[10px] leading-none transition-all duration-150"
                       style={{
+                        fontWeight: esActual ? 600 : 500,
                         color: bloqueado
                           ? 'var(--text-muted)'
                           : esActual
-                          ? '#38BDF8'
+                          ? mod.color
                           : completado
-                          ? '#2DD4BF'
+                          ? mod.color + 'b3'
                           : 'var(--text-muted)',
                       }}
                     >
-                      {MODULO_LABELS[mod.key]}
+                      {mod.label}
                     </span>
                   </div>
                 )
 
                 return bloqueado ? (
-                  <div key={mod.key} className="opacity-50 cursor-not-allowed" title={`${MODULO_LABELS[mod.key]} (Pro)`}>
+                  <div key={mod.key} className="opacity-50 cursor-not-allowed" title={`${mod.label} (Pro)`}>
                     {inner}
                   </div>
                 ) : (
                   <Link
                     key={mod.key}
                     href={mod.href}
-                    title={MODULO_LABELS[mod.key]}
+                    title={mod.label}
                     onClick={() => setNavAbierto(false)}
                   >
                     {inner}
