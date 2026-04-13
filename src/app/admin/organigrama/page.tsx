@@ -54,7 +54,7 @@ function ModalBase({ titulo, onClose, children }: { titulo: string; onClose: () 
   return (
     <>
       <motion.div
-        className="fixed inset-0 bg-black/70 z-40"
+        className="fixed inset-0 bg-black/75 backdrop-blur-[12px] z-[99]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -62,7 +62,7 @@ function ModalBase({ titulo, onClose, children }: { titulo: string; onClose: () 
         onClick={onClose}
       />
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
