@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { User, Phone, Mail, CheckCircle, ArrowLeft, Lock, Camera, Eye, EyeOff } from 'lucide-react'
+import { User, Phone, Mail, CheckCircle, ArrowLeft, Lock, Camera, Eye, EyeOff, Save } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 
