@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { User, Phone, Mail, Save, CheckCircle, ArrowLeft } from 'lucide-react'
+import { User, Phone, Mail, CheckCircle, ArrowLeft, Lock, Camera, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 
@@ -20,6 +20,10 @@ export default function AdminPerfilPage() {
   const [telefono, setTelefono]     = useState('')
   const [emailRecupero, setEmailRecupero] = useState('')
   const [userId, setUserId]         = useState('')
+  const [avatarUrl, setAvatarUrl]   = useState<string | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const cargarDatos = useCallback(async () => {
     const supabase = createClient()
@@ -33,11 +37,12 @@ export default function AdminPerfilPage() {
 
     const { data } = await supabase
       .from('usuarios')
-      .select('nombre')
+      .select('nombre, avatar_url')
       .eq('id', user.id)
       .single()
 
     setNombre(data?.nombre ?? '')
+    setAvatarUrl(data?.avatar_url ?? null)
 
     // Teléfono guardado localmente
     const savedPhone = localStorage.getItem(PHONE_STORAGE_KEY)
@@ -69,10 +74,48 @@ export default function AdminPerfilPage() {
         await supabase.auth.updateUser({ email: emailRecupero })
       }
 
+      // Cambiar contraseña si se escribió una nueva
+      if (newPassword) {
+        if (newPassword.length < 6) {
+          throw new Error('La contraseña debe tener al menos 6 caracteres')
+        }
+        const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword })
+        if (pwErr) throw pwErr
+        setNewPassword('')
+        setShowPassword(false)
+      }
+
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      console.error('Error guardando perfil:', err)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `avatars/${userId}.${ext}`
+
+    try {
+      const supabase = createClient()
+      const { error: upErr } = await supabase.storage
+        .from('conocimiento')
+        .upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+
+      const { data: urlData } = supabase.storage
+        .from('conocimiento')
+        .getPublicUrl(path)
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+      await supabase.from('usuarios').update({ avatar_url: publicUrl }).eq('id', userId)
+      setAvatarUrl(publicUrl)
+    } catch (err) {
+      console.error('Error subiendo avatar:', err)
     }
   }
 
@@ -115,9 +158,34 @@ export default function AdminPerfilPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8 flex items-center gap-4"
       >
-        <div className="w-16 h-16 rounded-2xl bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
-          flex items-center justify-center flex-shrink-0">
-          <span className="text-[#7DD3FC] text-xl font-bold">{iniciales}</span>
+        <div className="relative group flex-shrink-0">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="w-16 h-16 rounded-full object-cover border-2 border-white/10"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
+              flex items-center justify-center">
+              <span className="text-[#7DD3FC] text-xl font-bold">{iniciales}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => avatarInputRef.current?.click()}
+            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center
+              opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            <Camera className="w-5 h-5 text-white" />
+          </button>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
         </div>
         <div>
           <p className="text-base font-semibold text-white">{nombre || 'Administrador'}</p>

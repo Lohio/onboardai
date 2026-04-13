@@ -392,51 +392,47 @@ function AdminHeader({
     .join('') || 'A'
 
   return (
-    <header className="h-14 flex items-center px-4 gap-3 flex-shrink-0"
+    <header className="h-14 flex-shrink-0"
       style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-      {/* Hamburger — solo mobile */}
-      <button
-        onClick={onMenuClick}
-        className="md:hidden transition-colors duration-150 p-1 -ml-1
-          text-[var(--text-muted)] hover:text-[var(--foreground)]"
-        aria-label="Abrir menú"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      <div className="max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 gap-3">
+        {/* Hamburger — solo mobile */}
+        <button
+          onClick={onMenuClick}
+          className="md:hidden transition-colors duration-150 p-1 -ml-1
+            text-[var(--text-muted)] hover:text-[var(--foreground)]"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-      {/* Avatar admin — izquierda */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
+        {/* Avatar admin — solo iniciales, sin nombre */}
+        <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/25
           flex items-center justify-center flex-shrink-0">
-          <span className="text-[#7DD3FC] text-[10px] font-bold">{iniciales}</span>
+          <span className="text-[#7DD3FC] text-[11px] font-bold">{iniciales}</span>
         </div>
-        <span className="text-sm font-medium hidden sm:block"
-          style={{ color: 'var(--foreground)' }}>
-          {adminNombre || 'Admin'}
-        </span>
+
+        <div className="flex-1" />
+
+        {/* Bell + badge — derecha */}
+        <button
+          className="relative p-2 rounded-lg transition-colors duration-150
+            text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--glass-bg)]"
+          aria-label="Alertas pendientes"
+        >
+          <Bell className="w-4.5 h-4.5" />
+          {alertasCount > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full
+                bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+            >
+              {alertasCount > 99 ? '99+' : alertasCount}
+            </motion.span>
+          )}
+        </button>
       </div>
-
-      <div className="flex-1" />
-
-      {/* Bell + badge — derecha */}
-      <button
-        className="relative p-2 rounded-lg transition-colors duration-150
-          text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--glass-bg)]"
-        aria-label="Alertas pendientes"
-      >
-        <Bell className="w-4.5 h-4.5" />
-        {alertasCount > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full
-              bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
-          >
-            {alertasCount > 99 ? '99+' : alertasCount}
-          </motion.span>
-        )}
-      </button>
     </header>
   )
 }
