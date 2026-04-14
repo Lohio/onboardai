@@ -13,8 +13,10 @@ export function getStripe(): Stripe {
   return _stripe
 }
 
-// Price IDs por plan (configurar en Stripe Dashboard y en .env)
-export const STRIPE_PRICES: Record<string, string | undefined> = {
-  pro: process.env.STRIPE_PRICE_PRO,
-  enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
-}
+// Price IDs por plan
+export const STRIPE_PRICES = {
+  pro:                  process.env.STRIPE_PRICE_PRO_MONTHLY,
+  enterprise:           process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
+  pro_extra_seat:       process.env.STRIPE_PRICE_PRO_EXTRA_SEAT,
+  enterprise_extra_seat: process.env.STRIPE_PRICE_ENTERPRISE_EXTRA_SEAT,
+} as const
