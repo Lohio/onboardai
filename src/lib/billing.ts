@@ -54,8 +54,8 @@ export function puedeAgregarEmpleado(plan: string | null | undefined, empleadosA
 }
 
 export function calcularCostoMensual(plan: PlanId, empleadosActivos: number): number {
-  const p = PLANES[plan] ?? PLANES.trial
-  if (!p || p.precioUSD === 0) return 0
+  const p = PLANES[plan]
+  if (p.precioUSD === 0) return 0
   const extras = Math.max(0, empleadosActivos - p.empleadosIncluidos)
   return p.precioUSD + extras * p.extraPorEmpleado
 }

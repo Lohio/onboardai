@@ -38,57 +38,15 @@ const PLAN_ICONS: Record<PlanId, React.ReactNode> = {
 }
 
 const PLAN_COLORS: Record<PlanId, string> = {
-  trial: 'bg-gray-100 border-gray-200',
-  pro: 'bg-gray-200 border-gray-300',
-  enterprise: 'bg-gray-900 border-gray-800',
+  trial: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
+  pro: 'from-[#0EA5E9]/20 to-[#3B4FD8]/10 border-[#0EA5E9]/30',
+  enterprise: 'from-violet-500/20 to-violet-600/10 border-violet-500/30',
 }
 
-const PLAN_BADGE: Record<PlanId, { bg: string; text: string; icon: string }> = {
-  trial: { bg: 'bg-gray-200', text: 'text-gray-700', icon: 'text-gray-500' },
-  pro: { bg: 'bg-gray-300', text: 'text-gray-800', icon: 'text-gray-600' },
-  enterprise: { bg: 'bg-gray-700', text: 'text-white', icon: 'text-gray-300' },
-}
-
-const PLAN_STYLE: Record<PlanId, {
-  primary: string
-  secondary: string
-  muted: string
-  check: string
-  subBox: string
-  button: string
-  ring: string
-  actualBadge: string
-}> = {
-  trial: {
-    primary: 'text-gray-900',
-    secondary: 'text-gray-600',
-    muted: 'text-gray-500',
-    check: 'text-gray-700',
-    subBox: 'bg-black/5 border-black/10',
-    button: 'bg-gray-900 hover:bg-gray-800 text-white',
-    ring: 'ring-gray-400/50',
-    actualBadge: 'bg-gray-200 text-gray-700 border-gray-300',
-  },
-  pro: {
-    primary: 'text-gray-900',
-    secondary: 'text-gray-700',
-    muted: 'text-gray-500',
-    check: 'text-gray-800',
-    subBox: 'bg-black/5 border-black/10',
-    button: 'bg-gray-900 hover:bg-gray-800 text-white',
-    ring: 'ring-gray-500/50',
-    actualBadge: 'bg-gray-300 text-gray-800 border-gray-400',
-  },
-  enterprise: {
-    primary: 'text-white',
-    secondary: 'text-gray-300',
-    muted: 'text-gray-400',
-    check: 'text-gray-200',
-    subBox: 'bg-white/[0.06] border-white/[0.08]',
-    button: 'bg-white hover:bg-gray-100 text-gray-900',
-    ring: 'ring-gray-400/40',
-    actualBadge: 'bg-white/15 text-white border-white/25',
-  },
+const PLAN_BADGE: Record<PlanId, string> = {
+  trial: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
+  pro: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
+  enterprise: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
 }
 
 function formatFecha(iso?: string | null) {
@@ -144,33 +102,32 @@ function PlanCard({
   const features = getPlanFeatureList(planId)
   const esPlanActual = planId === actual
   const costo = calcularCostoMensual(planId, empleadosActivos)
-  const s = PLAN_STYLE[planId]
-  const b = PLAN_BADGE[planId]
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative rounded-2xl border p-5 flex flex-col gap-4
+      className={`relative rounded-2xl border bg-gradient-to-br p-5 flex flex-col gap-4
         ${PLAN_COLORS[planId]}
-        ${esPlanActual ? `ring-2 ${s.ring}` : ''}
+        ${esPlanActual ? 'ring-2 ring-[#0EA5E9]/30' : ''}
       `}
     >
       {/* Badge plan actual */}
       {esPlanActual && (
-        <span className={`absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${s.actualBadge}`}>
+        <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full
+          bg-[#0EA5E9]/15 text-[#38BDF8] border border-[#0EA5E9]/25">
           Plan actual
         </span>
       )}
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${b.bg} ${b.icon}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${PLAN_BADGE[planId]}`}>
           {PLAN_ICONS[planId]}
         </div>
         <div>
-          <h3 className={`text-sm font-bold ${s.primary}`}>{plan.nombre}</h3>
-          <p className={`text-xs ${s.secondary}`}>
+          <h3 className="text-sm font-bold text-white/90">{plan.nombre}</h3>
+          <p className="text-xs text-white/40">
             {plan.precioUSD === 0 ? 'Gratis' : `$${plan.precioUSD} USD/mes`}
             {plan.extraPorEmpleado > 0 && ` + $${plan.extraPorEmpleado}/empleado extra`}
           </p>
@@ -179,12 +136,12 @@ function PlanCard({
 
       {/* Costo calculado */}
       {planId !== 'trial' && (
-        <div className={`px-3 py-2 rounded-xl border ${s.subBox}`}>
-          <p className={`text-[11px] ${s.muted}`}>
+        <div className="px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+          <p className="text-[11px] text-white/40">
             Con {empleadosActivos} empleados activos
           </p>
-          <p className={`text-lg font-bold ${s.primary}`}>
-            ${costo} <span className={`text-xs font-normal ${s.muted}`}>USD/mes</span>
+          <p className="text-lg font-bold text-white/85">
+            ${costo} <span className="text-xs font-normal text-white/35">USD/mes</span>
           </p>
         </div>
       )}
@@ -192,8 +149,8 @@ function PlanCard({
       {/* Features */}
       <ul className="space-y-1.5 flex-1">
         {features.map(f => (
-          <li key={f} className={`flex items-start gap-2 text-xs ${s.secondary}`}>
-            <Check className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${s.check}`} />
+          <li key={f} className="flex items-start gap-2 text-xs text-white/60">
+            <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
             {f}
           </li>
         ))}
@@ -205,12 +162,12 @@ function PlanCard({
           type="button"
           onClick={() => onSelect(planId)}
           disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
-            ${s.button} transition-colors duration-150
-            disabled:opacity-50 disabled:cursor-not-allowed`}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
+            bg-[#0EA5E9] hover:bg-[#0284C7] text-white transition-colors duration-150
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
               Activar {plan.nombre}
@@ -337,7 +294,7 @@ export default function SuscripcionPage() {
             <div key={label} className="flex flex-col gap-1">
               <p className="text-[11px] text-white/35">{label}</p>
               {badge ? (
-                <span className={`self-start text-xs font-semibold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
+                <span className={`self-start text-xs font-semibold px-2 py-0.5 rounded-full border ${badge}`}>
                   {value}
                 </span>
               ) : (
