@@ -189,6 +189,46 @@ export interface PlanItem {
   created_at: string
 }
 
+// ── Billing / Suscripciones ──
+export type PlanId = 'trial' | 'pro' | 'enterprise'
+export type SuscripcionEstado = 'activa' | 'cancelada' | 'vencida' | 'trial'
+export type ProveedorPago = 'stripe' | 'mercadopago'
+export type EstadoPago = 'pendiente' | 'completado' | 'fallido' | 'reembolsado'
+
+export interface PlanConfig {
+  id: PlanId
+  nombre: string
+  precioUSD: number
+  empleadosIncluidos: number
+  extraPorEmpleado: number
+  modulos: string[]
+}
+
+export interface Suscripcion {
+  plan: PlanId
+  plan_empleados: number
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  mp_subscription_id?: string | null
+  suscripcion_estado: SuscripcionEstado
+  suscripcion_inicio?: string | null
+  suscripcion_fin?: string | null
+  proveedor_pago?: ProveedorPago | null
+}
+
+export interface Pago {
+  id: string
+  empresa_id: string
+  proveedor: ProveedorPago
+  proveedor_pago_id?: string | null
+  monto: number
+  moneda: string
+  estado: EstadoPago
+  plan?: string | null
+  descripcion?: string | null
+  created_at: string
+}
+
 // ── Organigrama ──
 export interface OrgNodo {
   id: string

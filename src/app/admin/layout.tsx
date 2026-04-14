@@ -18,9 +18,11 @@ import {
   Pencil,
   ImagePlus,
   ChevronDown,
+  CreditCard,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { esTrial, TRIAL_LIMITS } from '@/lib/trial'
+import { esTrial, UPGRADE_MSG } from '@/lib/billing'
+import type { PlanId } from '@/types'
 import AdminProductTour from '@/components/AdminProductTour'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -171,6 +173,13 @@ const navItems: NavItemDef[] = [
     icon: <Settings className="w-[18px] h-[18px]" />,
     disabled: false,
     tourId: 'tour-nav-configuracion',
+  },
+  {
+    labelKey: 'nav.subscription',
+    label: 'Suscripción',
+    href: '/admin/suscripcion',
+    icon: <CreditCard className="w-[18px] h-[18px]" />,
+    disabled: false,
   },
 ]
 
@@ -454,7 +463,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [alertasCount, setAlertasCount] = useState(0)
   const [sidebarAbierto, setSidebarAbierto] = useState(false)
-  const [plan, setPlan] = useState<string>('trial')
+  const [plan, setPlan] = useState<PlanId>('trial')
   const [empleadosCount, setEmpleadosCount] = useState(0)
   const [logoUrl, setLogoUrl] = useState('')
 
@@ -626,16 +635,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-amber-400 text-xs flex-shrink-0">⚡ Trial</span>
               <span className="text-xs text-amber-300/70 truncate">
-                {empleadosCount}/{TRIAL_LIMITS.maxEmpleados} empleados
-                · M1 y M2 habilitados
+                {UPGRADE_MSG.empleados(3).replace('Upgradeá para agregar más.', '')}
               </span>
             </div>
             <a
-              href="mailto:hola@onboardai.app?subject=Quiero upgradear mi plan"
+              href="/admin/suscripcion"
               className="flex-shrink-0 text-[11px] font-semibold text-amber-400
                 hover:text-amber-300 underline underline-offset-2 transition-colors"
             >
-              Upgradear →
+              Ver planes →
             </a>
           </div>
         )}
