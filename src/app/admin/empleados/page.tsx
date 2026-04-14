@@ -469,16 +469,10 @@ export default function EmpleadosPage() {
         </div>
         <button
           onClick={() => setModalAbierto(true)}
-          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
-            text-sm font-semibold
-            bg-gradient-to-r from-cyan-500 to-indigo-500
-            hover:from-cyan-400 hover:to-indigo-400
-            shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40
-            hover:scale-105 transition-all duration-300"
-          style={{ color: 'white' }}
+          className="bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-1.5 rounded-xl flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-cyan-500/25 font-medium text-sm"
         >
-          <Sparkles className="w-4 h-4" />
-          <span className="hidden sm:inline">Sumar al equipo</span>
+          <Sparkles className="w-4 h-4" style={{ color: 'white' }} />
+          <span style={{ color: 'white' }}>Sumar al equipo</span>
         </button>
       </div>
 

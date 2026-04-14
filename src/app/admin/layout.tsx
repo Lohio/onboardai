@@ -625,7 +625,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-dvh flex" style={{ background: 'var(--background)' }}>
       {/* ── Sidebar desktop (fijo) ── */}
       <aside className="hidden md:flex flex-col w-64 flex-shrink-0 sticky top-0 h-dvh"
-        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}>
+        style={{ backgroundColor: '#000000', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
         <SidebarContent
           adminNombre={adminNombre}
           empresaNombre={empresaNombre}
@@ -686,7 +686,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             />
             <motion.aside
               className="fixed left-0 top-0 h-full w-64 md:hidden z-50"
-              style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border)' }}
+              style={{ backgroundColor: '#000000', borderRight: '1px solid rgba(255,255,255,0.08)' }}
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}

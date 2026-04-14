@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
   Save, Check, Plus, MessageSquareMore, Bot,
   Trash2, ExternalLink, Key, ChevronRight, Palette, PlayCircle, Globe,
-  Lock, Camera, Eye, EyeOff,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -70,19 +69,6 @@ export default function ConfiguracionPage() {
   }
   const [vinculaciones, setVinculaciones] = useState<BotVinculacion[]>([])
 
-  // Perfil del admin
-  const [adminNombre, setAdminNombre] = useState('')
-  const [adminEmail, setAdminEmail]   = useState('')
-  const [avatarUrl, setAvatarUrl]     = useState<string | null>(null)
-  const [adminId, setAdminId]         = useState('')
-  const avatarInputRef = useRef<HTMLInputElement>(null)
-  const [savingProfile, setSavingProfile] = useState(false)
-
-  // Contraseña
-  const [newPassword, setNewPassword]         = useState('')
-  const [showPassword, setShowPassword]       = useState(false)
-  const [savingPassword, setSavingPassword]   = useState(false)
-
   // Herramientas estándar seleccionadas
   const [seleccionadas, setSeleccionadas] = useState<string[]>(['email'])
   const [original, setOriginal]           = useState<string[]>(['email'])
@@ -123,7 +109,7 @@ export default function ConfiguracionPage() {
 
       const { data: adminData } = await supabase
         .from('usuarios')
-        .select('empresa_id, rol, nombre, foto_url')
+        .select('empresa_id, rol')
         .eq('id', user.id)
         .single()
 
@@ -133,10 +119,6 @@ export default function ConfiguracionPage() {
       }
 
       setEmpresaId(adminData.empresa_id)
-      setAdminId(user.id)
-      setAdminNombre(adminData.nombre ?? '')
-      setAdminEmail(user.email ?? '')
-      setAvatarUrl(adminData.foto_url ?? null)
 
       const [empresaRes, vinRes] = await Promise.all([
         supabase
@@ -185,73 +167,6 @@ export default function ConfiguracionPage() {
   }, [router])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
-
-  // ── Guardar perfil (nombre + avatar) ──
-  async function handleGuardarPerfil() {
-    if (!adminId) return
-    setSavingProfile(true)
-    try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('usuarios')
-        .update({ nombre: adminNombre.trim() })
-        .eq('id', adminId)
-      if (error) throw error
-      toast.success('Perfil actualizado')
-    } catch {
-      toast.error('Error al guardar el perfil')
-    } finally {
-      setSavingProfile(false)
-    }
-  }
-
-  // ── Subir avatar ──
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !adminId) return
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `avatars/${adminId}.${ext}`
-
-    try {
-      const supabase = createClient()
-      const { error: upErr } = await supabase.storage
-        .from('conocimiento')
-        .upload(path, file, { upsert: true })
-      if (upErr) throw upErr
-
-      const { data: urlData } = supabase.storage
-        .from('conocimiento')
-        .getPublicUrl(path)
-
-      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
-      await supabase.from('usuarios').update({ foto_url: publicUrl }).eq('id', adminId)
-      setAvatarUrl(publicUrl)
-      toast.success('Avatar actualizado')
-    } catch {
-      toast.error('Error al subir la imagen')
-    }
-  }
-
-  // ── Cambiar contraseña ──
-  async function handleCambiarPassword() {
-    if (newPassword.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-    setSavingPassword(true)
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
-      if (error) throw error
-      setNewPassword('')
-      setShowPassword(false)
-      toast.success('Contraseña actualizada')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar la contraseña')
-    } finally {
-      setSavingPassword(false)
-    }
-  }
 
   async function handleGuardar() {
     if (!empresaId || arrayFinal.length === 0) return
@@ -395,134 +310,10 @@ export default function ConfiguracionPage() {
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
             className="space-y-4"
           >
-            {/* ── Mi perfil ── */}
-            <Card>
-              <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">
-                Mi perfil
-              </h2>
-
-              <div className="flex items-start gap-5">
-                {/* Avatar con overlay de edición */}
-                <div className="relative group flex-shrink-0">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Avatar"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white/10"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-[#0EA5E9]/20 border-2 border-[#0EA5E9]/25
-                      flex items-center justify-center">
-                      <span className="text-[#7DD3FC] text-lg font-bold">
-                        {adminNombre.split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?'}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100
-                      flex items-center justify-center transition-opacity duration-150 cursor-pointer"
-                  >
-                    <Camera className="w-5 h-5 text-white" />
-                  </button>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                </div>
-
-                {/* Nombre y email */}
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1">Nombre</label>
-                    <input
-                      type="text"
-                      value={adminNombre}
-                      onChange={e => setAdminNombre(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-sm
-                        bg-white/[0.04] border border-white/[0.10] text-white
-                        placeholder:text-white/25
-                        focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
-                        transition-all duration-150"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={adminEmail}
-                      disabled
-                      className="w-full px-3 py-2 rounded-lg text-sm
-                        bg-white/[0.02] border border-white/[0.06] text-white/40
-                        cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Contraseña */}
-              <div className="mt-6 pt-5 border-t border-white/[0.06]">
-                <h3 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-3">
-                  Contraseña
-                </h3>
-                <div className="max-w-xs">
-                  <label className="block text-xs text-white/40 mb-1">Nueva contraseña</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-3 py-2 pr-10 rounded-lg text-sm
-                        bg-white/[0.04] border border-white/[0.10] text-white
-                        placeholder:text-white/25
-                        focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
-                        transition-all duration-150"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded
-                        text-white/30 hover:text-white/70 transition-colors duration-150"
-                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    >
-                      {showPassword
-                        ? <EyeOff className="w-4 h-4" />
-                        : <Eye className="w-4 h-4" />
-                      }
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botón Guardar */}
-              <div className="flex justify-end mt-5 pt-4 border-t border-white/[0.06]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newPassword) handleCambiarPassword()
-                    handleGuardarPerfil()
-                  }}
-                  disabled={savingProfile || savingPassword}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                    bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed
-                    hover:bg-gray-800 transition-colors duration-150 cursor-pointer"
-                  style={{ color: 'white' }}
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  {savingProfile || savingPassword ? 'Guardando…' : 'Guardar'}
-                </button>
-              </div>
-            </Card>
-
             {/* Apariencia */}
             <Card>
               <div className="flex items-center gap-2 mb-1">
-                <Palette className="w-4 h-4 text-sky-400" />
+                <Palette className="w-4 h-4 text-gray-300" />
                 <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
                   {t('config.appearance')}
                 </h2>
@@ -562,7 +353,7 @@ export default function ConfiguracionPage() {
             {/* Tour del panel */}
             <Card>
               <div className="flex items-center gap-2 mb-1">
-                <PlayCircle className="w-4 h-4 text-indigo-400" />
+                <PlayCircle className="w-4 h-4 text-gray-300" />
                 <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
                   {t('config.tour')}
                 </h2>
@@ -572,8 +363,8 @@ export default function ConfiguracionPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('start-admin-tour'))}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                  bg-indigo-500/10 text-indigo-300 border border-indigo-500/20
-                  hover:bg-indigo-500/20 hover:border-indigo-500/40
+                  bg-gray-800 text-gray-300 border border-gray-600
+                  hover:bg-gray-700 hover:border-gray-500
                   transition-all duration-150"
               >
                 <PlayCircle className="w-4 h-4" />
@@ -630,19 +421,19 @@ export default function ConfiguracionPage() {
                         'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
                         'border transition-all duration-150',
                         isSelected
-                          ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]/30'
+                          ? 'bg-gray-800 border-gray-600'
                           : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
                       )}
                     >
                       <span className={cn(
                         'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-150',
-                        isSelected ? 'border-[#38BDF8] bg-[#38BDF8]' : 'border-white/20 bg-transparent'
+                        isSelected ? 'border-gray-500 bg-gray-500' : 'border-white/20 bg-transparent'
                       )}>
                         {isSelected && <Check className="w-2 h-2 text-white" />}
                       </span>
                       <span className={cn(
                         'flex-shrink-0 transition-colors duration-150',
-                        isSelected ? 'text-[#7DD3FC]' : 'text-white/30'
+                        isSelected ? 'text-gray-300' : 'text-white/30'
                       )}>
                         <HerramientaIcon herramienta={value} />
                       </span>
@@ -666,19 +457,19 @@ export default function ConfiguracionPage() {
                     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left',
                     'border transition-all duration-150',
                     otraSeleccionada
-                      ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]/30'
+                      ? 'bg-gray-800 border-gray-600'
                       : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
                   )}
                 >
                   <span className={cn(
                     'w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-150',
-                    otraSeleccionada ? 'border-[#38BDF8] bg-[#38BDF8]' : 'border-white/20 bg-transparent'
+                    otraSeleccionada ? 'border-gray-500 bg-gray-500' : 'border-white/20 bg-transparent'
                   )}>
                     {otraSeleccionada && <Check className="w-2 h-2 text-white" />}
                   </span>
                   <span className={cn(
                     'flex-shrink-0 transition-colors duration-150',
-                    otraSeleccionada ? 'text-[#7DD3FC]' : 'text-white/30'
+                    otraSeleccionada ? 'text-gray-300' : 'text-white/30'
                   )}>
                     <Plus className="w-4 h-4" />
                   </span>
@@ -710,7 +501,7 @@ export default function ConfiguracionPage() {
                         className="w-full px-3 py-2 rounded-lg text-sm
                           bg-white/[0.04] border border-white/[0.10]
                           text-white placeholder:text-white/25
-                          focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
+                          focus:outline-none focus:border-gray-500 focus:bg-white/[0.06]
                           transition-all duration-150"
                         autoFocus
                       />
@@ -777,7 +568,7 @@ export default function ConfiguracionPage() {
             {/* Chat integration */}
             <Card>
               <div className="flex items-center gap-2 mb-1">
-                <MessageSquareMore className="w-4 h-4 text-[#38BDF8]" />
+                <MessageSquareMore className="w-4 h-4 text-gray-300" />
                 <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
                   {t('config.integrations.title')}
                 </h2>
@@ -787,12 +578,12 @@ export default function ConfiguracionPage() {
               {/* Microsoft Teams */}
               <div className="space-y-3 mb-5">
                 <div className="flex items-center gap-2">
-                  <HerramientaIcon herramienta="teams" className="w-4 h-4 text-[#7DD3FC]" />
+                  <HerramientaIcon herramienta="teams" className="w-4 h-4 text-gray-300" />
                   <h3 className="text-sm font-medium text-white/80">{t('config.integrations.teams.title')}</h3>
                 </div>
                 <p className="text-xs text-white/40">
                   Creá un Outgoing Webhook en Teams y pegá su token en la variable
-                  de entorno <code className="text-[#38BDF8] bg-white/[0.06] px-1 rounded">TEAMS_WEBHOOK_TOKEN</code>.
+                  de entorno <code className="text-gray-300 bg-white/[0.06] px-1 rounded">TEAMS_WEBHOOK_TOKEN</code>.
                   Luego copiá la URL del webhook entrante que Teams genera para tu canal
                   y guardala acá para recibir notificaciones proactivas.
                 </p>
@@ -808,7 +599,7 @@ export default function ConfiguracionPage() {
                     className="w-full px-3 py-2 rounded-lg text-sm
                       bg-white/[0.04] border border-white/[0.10] text-white
                       placeholder:text-white/25
-                      focus:outline-none focus:border-[#0EA5E9]/50 focus:bg-white/[0.06]
+                      focus:outline-none focus:border-gray-500 focus:bg-white/[0.06]
                       transition-all duration-150"
                   />
                   <p className="text-[11px] text-white/25">{t('config.integrations.teams.hint')}</p>
@@ -821,7 +612,7 @@ export default function ConfiguracionPage() {
                 <p className="text-xs text-white/40">
                   Para activar el bot en Google Chat necesitás configurar un proyecto
                   en Google Cloud Console y agregar las credenciales de service account
-                  en la variable <code className="text-[#38BDF8] bg-white/[0.06] px-1 rounded">GCHAT_SERVICE_ACCOUNT_JSON</code>.
+                  en la variable <code className="text-gray-300 bg-white/[0.06] px-1 rounded">GCHAT_SERVICE_ACCOUNT_JSON</code>.
                 </p>
                 <ol className="space-y-1.5 text-xs text-white/40 list-decimal list-inside">
                   <li>Creá un proyecto en Google Cloud Console</li>
@@ -834,7 +625,7 @@ export default function ConfiguracionPage() {
                   href="https://developers.google.com/chat/how-tos/bots-develop"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-[#38BDF8]/70 hover:text-[#38BDF8] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" />
                   Ver documentación de Google Chat
@@ -900,7 +691,7 @@ export default function ConfiguracionPage() {
                       </div>
                       <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                         vin.plataforma === 'teams'
-                          ? 'bg-[#0EA5E9]/10 text-[#38BDF8] border-[#0EA5E9]/20'
+                          ? 'bg-gray-800 text-gray-300 border-gray-600'
                           : 'bg-green-500/10 text-green-400 border-green-500/20'
                       }`}>
                         {vin.plataforma === 'teams' ? 'Teams' : 'Google Chat'}
@@ -927,9 +718,9 @@ export default function ConfiguracionPage() {
             {/* ── Personalización del asistente IA ── */}
             <Card padding="md" className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20
+                <div className="w-8 h-8 rounded-lg bg-gray-800 border border-gray-600
                   flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-indigo-400" />
+                  <Bot className="w-4 h-4 text-gray-300" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white/85">Personalización del asistente</h3>
@@ -952,7 +743,7 @@ export default function ConfiguracionPage() {
                 rows={5}
                 className="w-full px-3 py-2.5 rounded-xl text-sm bg-white/[0.03] border border-white/[0.07]
                   text-white/80 placeholder:text-white/20 outline-none resize-none
-                  focus:border-indigo-500/40 transition-colors font-mono"
+                  focus:border-gray-500 transition-colors font-mono"
               />
 
               <div className="flex items-center justify-between">
@@ -975,7 +766,7 @@ export default function ConfiguracionPage() {
             {/* API Keys */}
             <Card>
               <div className="flex items-center gap-2 mb-1">
-                <Key className="w-4 h-4 text-indigo-400" />
+                <Key className="w-4 h-4 text-gray-300" />
                 <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest">
                   {t('config.apikeys.title')}
                 </h2>
@@ -985,12 +776,12 @@ export default function ConfiguracionPage() {
                 href="/admin/configuracion/api-keys"
                 className="flex items-center justify-between px-3 py-2.5 rounded-lg
                   bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05]
-                  hover:border-indigo-500/30 transition-all duration-150 group"
+                  hover:border-gray-500 transition-all duration-150 group"
               >
                 <span className="text-sm text-white/70 group-hover:text-white transition-colors">
                   {t('config.apikeys.btn')}
                 </span>
-                <ChevronRight className="w-4 h-4 text-white/25 group-hover:text-indigo-400 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-white/25 group-hover:text-gray-200 transition-colors" />
               </Link>
             </Card>
           </motion.div>
