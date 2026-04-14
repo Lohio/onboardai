@@ -123,7 +123,7 @@ export default function ConfiguracionPage() {
 
       const { data: adminData } = await supabase
         .from('usuarios')
-        .select('empresa_id, rol, nombre, avatar_url')
+        .select('empresa_id, rol, nombre, foto_url')
         .eq('id', user.id)
         .single()
 
@@ -136,7 +136,7 @@ export default function ConfiguracionPage() {
       setAdminId(user.id)
       setAdminNombre(adminData.nombre ?? '')
       setAdminEmail(user.email ?? '')
-      setAvatarUrl(adminData.avatar_url ?? null)
+      setAvatarUrl(adminData.foto_url ?? null)
 
       const [empresaRes, vinRes] = await Promise.all([
         supabase
@@ -224,7 +224,7 @@ export default function ConfiguracionPage() {
         .getPublicUrl(path)
 
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
-      await supabase.from('usuarios').update({ avatar_url: publicUrl }).eq('id', adminId)
+      await supabase.from('usuarios').update({ foto_url: publicUrl }).eq('id', adminId)
       setAvatarUrl(publicUrl)
       toast.success('Avatar actualizado')
     } catch {
