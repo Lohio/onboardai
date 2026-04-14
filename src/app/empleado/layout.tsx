@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { LogOut, Bell, Menu } from 'lucide-react'
+import { LogOut, Bell, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import Image from 'next/image'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
@@ -85,6 +85,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const [accesosPendientes, setAccesosPendientes] = useState(0)
   const [planEmpresa, setPlanEmpresa]             = useState<string>('trial')
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [navColapsado, setNavColapsado] = useState(false)
   const { t } = useLanguage()
 
   const handleLogout = useCallback(async () => {
@@ -213,29 +214,6 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     return () => window.removeEventListener('progreso-actualizado', handler)
   }, [cargarProgreso])
 
-  // ── Nav colapsable ────────────────────────────────────────
-  const [navAbierto, setNavAbierto] = useState(false)
-  const navRef = useRef<HTMLDivElement>(null)
-
-  // Cerrar al click fuera
-  useEffect(() => {
-    if (!navAbierto) return
-    const handler = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setNavAbierto(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [navAbierto])
-
-  // Auto-cerrar después de 5s
-  useEffect(() => {
-    if (!navAbierto) return
-    const timer = setTimeout(() => setNavAbierto(false), 5000)
-    return () => clearTimeout(timer)
-  }, [navAbierto])
-
   return (
     <ThemeProvider section="empleado">
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--background)' }}>
@@ -288,113 +266,121 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         {children}
       </main>
 
-      {/* ── Bottom Navigation (colapsable) ── */}
-      <div
-        ref={navRef}
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <AnimatePresence mode="wait">
-          {navAbierto ? (
-            <motion.div
-              key="nav-expanded"
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+      {/* ── Bottom Navigation ── */}
+      {(() => {
+        const renderModulo = (mod: (typeof MODULOS)[number], idx: number) => {
+          const completado = modulos[mod.key]
+          const esActual   = pathname.startsWith(mod.href)
+          const bloqueado  = esTrial(planEmpresa) && idx === 2
+
+          const inner = (
+            <div
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-150"
+              style={{
+                background: esActual && !bloqueado ? mod.activeBg : 'transparent',
+              }}
+            >
+              <div className="relative">
+                <Image
+                  src={mod.icon}
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="w-[22px] h-[22px] transition-all duration-150"
+                  style={{
+                    opacity: bloqueado ? 0.3 : esActual ? 1 : completado ? 1 : 0.85,
+                    filter: esActual && !bloqueado ? mod.glow : 'none',
+                  }}
+                />
+                {completado && !esActual && (
+                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" style={{ background: mod.color }} />
+                )}
+              </div>
+              <span
+                className="text-[10px] leading-none transition-all duration-150"
+                style={{
+                  fontWeight: esActual ? 600 : 500,
+                  color: bloqueado
+                    ? 'var(--text-muted)'
+                    : esActual
+                    ? mod.color
+                    : completado
+                    ? mod.color + 'b3'
+                    : 'var(--text-muted)',
+                }}
+              >
+                {mod.label}
+              </span>
+            </div>
+          )
+
+          return bloqueado ? (
+            <div key={mod.key} className="opacity-50 cursor-not-allowed" title={`${mod.label} (Pro)`}>
+              {inner}
+            </div>
+          ) : (
+            <Link key={mod.key} href={mod.href} title={mod.label}>
+              {inner}
+            </Link>
+          )
+        }
+
+        const modActivoIdx = MODULOS.findIndex(m => pathname.startsWith(m.href))
+        const modActivo = modActivoIdx >= 0 ? MODULOS[modActivoIdx] : null
+
+        return (
+          <motion.nav
+            layout
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            <div
               className="flex items-center gap-0.5 px-3 py-2 rounded-2xl backdrop-blur-xl shadow-2xl"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
-              {MODULOS.map((mod, idx) => {
-                const completado = modulos[mod.key]
-                const esActual   = pathname.startsWith(mod.href)
-                const bloqueado  = esTrial(planEmpresa) && idx === 2
-
-                const inner = (
-                  <div
-                    className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-150"
-                    style={{
-                      background: esActual && !bloqueado ? mod.activeBg : 'transparent',
-                    }}
+              <AnimatePresence mode="wait" initial={false}>
+                {navColapsado ? (
+                  <motion.div
+                    key="nav-collapsed"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
                   >
-                    <div className="relative">
-                      <Image
-                        src={mod.icon}
-                        alt=""
-                        width={22}
-                        height={22}
-                        className="w-[22px] h-[22px] transition-all duration-150"
-                        style={{
-                          opacity: bloqueado ? 0.3 : esActual ? 1 : completado ? 1 : 0.85,
-                          filter: esActual && !bloqueado ? mod.glow : 'none',
-                        }}
-                      />
-                      {completado && !esActual && (
-                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" style={{ background: mod.color }} />
-                      )}
-                    </div>
-                    <span
-                      className="text-[10px] leading-none transition-all duration-150"
-                      style={{
-                        fontWeight: esActual ? 600 : 500,
-                        color: bloqueado
-                          ? 'var(--text-muted)'
-                          : esActual
-                          ? mod.color
-                          : completado
-                          ? mod.color + 'b3'
-                          : 'var(--text-muted)',
-                      }}
-                    >
-                      {mod.label}
-                    </span>
-                  </div>
-                )
-
-                return bloqueado ? (
-                  <div key={mod.key} className="opacity-50 cursor-not-allowed" title={`${mod.label} (Pro)`}>
-                    {inner}
-                  </div>
+                    {modActivo && renderModulo(modActivo, modActivoIdx)}
+                  </motion.div>
                 ) : (
-                  <Link
-                    key={mod.key}
-                    href={mod.href}
-                    title={mod.label}
-                    onClick={() => setNavAbierto(false)}
+                  <motion.div
+                    key="nav-expanded"
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="flex items-center gap-0.5 overflow-hidden"
                   >
-                    {inner}
-                  </Link>
-                )
-              })}
+                    {MODULOS.map((mod, idx) => renderModulo(mod, idx))}
+                    <div className="w-px self-stretch mx-1" style={{ background: 'var(--border)' }} />
+                    <div className="px-1">
+                      <SettingsDropdown />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {/* Separator + Settings */}
-              <div className="w-px self-stretch mx-1" style={{ background: 'var(--border)' }} />
-              <div className="px-1">
-                <SettingsDropdown />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.button
-              key="nav-collapsed"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-              onClick={() => setNavAbierto(true)}
-              className="w-11 h-11 rounded-full backdrop-blur-xl flex items-center justify-center"
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid rgba(56,189,248,0.35)',
-                color: '#38BDF8',
-                boxShadow: '0 0 0 3px rgba(56,189,248,0.08), 0 4px 20px rgba(0,0,0,0.45)',
-              }}
-              aria-label="Abrir navegación"
-            >
-              <Menu className="w-4 h-4" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
+              <button
+                type="button"
+                onClick={() => setNavColapsado(v => !v)}
+                className="p-2 rounded-xl transition-colors hover:bg-white/5"
+                style={{ color: 'var(--text-muted)' }}
+                aria-label={navColapsado ? 'Expandir navegación' : 'Colapsar navegación'}
+              >
+                {navColapsado ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
+              </button>
+            </div>
+          </motion.nav>
+        )
+      })()}
 
       {/* Agente flotante proactivo (M1–M4) */}
       {(() => {
