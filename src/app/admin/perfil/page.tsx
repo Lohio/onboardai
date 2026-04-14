@@ -212,7 +212,7 @@ export default function AdminPerfilPage() {
             onChange={e => setNombre(e.target.value)}
             placeholder="Tu nombre y apellido"
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
-              px-4 py-3 text-sm text-white placeholder-white/25
+              px-4 py-3 text-sm text-white placeholder:text-gray-400
               focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
               transition-colors duration-150"
           />
@@ -230,7 +230,7 @@ export default function AdminPerfilPage() {
             onChange={e => setTelefono(e.target.value)}
             placeholder="+54 9 11 0000-0000"
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
-              px-4 py-3 text-sm text-white placeholder-white/25
+              px-4 py-3 text-sm text-white placeholder:text-gray-400
               focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
               transition-colors duration-150"
           />
@@ -248,7 +248,7 @@ export default function AdminPerfilPage() {
             onChange={e => setEmailRecupero(e.target.value)}
             placeholder="tu@email.com"
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
-              px-4 py-3 text-sm text-white placeholder-white/25
+              px-4 py-3 text-sm text-white placeholder:text-gray-400
               focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
               transition-colors duration-150"
           />
@@ -270,6 +270,38 @@ export default function AdminPerfilPage() {
             {email}
           </div>
         </div>
+
+        {/* Contraseña */}
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
+            <Lock className="w-3.5 h-3.5" />
+            Contraseña
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
+                px-4 py-3 pr-11 text-sm text-white placeholder:text-gray-400
+                focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
+                transition-colors duration-150"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded
+                text-white/30 hover:text-white/70 transition-colors duration-150"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword
+                ? <EyeOff className="w-4 h-4" />
+                : <Eye className="w-4 h-4" />
+              }
+            </button>
+          </div>
+        </div>
       </motion.div>
 
       {/* Botón guardar */}
@@ -283,10 +315,10 @@ export default function AdminPerfilPage() {
           onClick={handleGuardar}
           disabled={saving || !nombre.trim()}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[9px]
-            text-sm font-semibold text-white
-            bg-[#3B4FD8] hover:bg-[#4B5EE8] disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-[0_0_20px_rgba(59,79,216,0.2)] hover:shadow-[0_0_28px_rgba(59,79,216,0.35)]
-            transition-all duration-200"
+            text-sm font-semibold
+            bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
+            transition-all duration-200 cursor-pointer"
+          style={{ color: 'white' }}
         >
           {saved ? (
             <>
@@ -300,8 +332,8 @@ export default function AdminPerfilPage() {
             </>
           ) : (
             <>
-              <Save className="w-4 h-4" />
-              Guardar cambios
+              <Lock className="w-4 h-4" />
+              Guardar
             </>
           )}
         </button>

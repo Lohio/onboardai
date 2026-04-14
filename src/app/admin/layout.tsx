@@ -73,6 +73,15 @@ function NavItem({
   activo: boolean
 }) {
   const { t } = useLanguage()
+  const [hover, setHover] = useState(false)
+
+  // Colores forzados inline (sobreescriben cualquier override de tema)
+  const textColor = activo || hover ? 'white' : 'rgba(255,255,255,0.6)'
+  const iconColor = activo
+    ? 'white'
+    : hover
+      ? 'rgba(255,255,255,0.8)'
+      : 'rgba(255,255,255,0.5)'
 
   if (item.disabled) {
     return (
@@ -101,22 +110,25 @@ function NavItem({
       <Link
         href={item.href}
         id={item.tourId}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
-          font-medium transition-all duration-150 group
+          font-medium transition-all duration-150
           ${
             activo
-              ? 'bg-white/[0.05] text-white border border-white/[0.06]'
-              : 'text-white/55 hover:text-white/85 hover:bg-white/[0.04] border border-transparent'
+              ? 'bg-white/10 border border-white/[0.08]'
+              : hover
+                ? 'bg-white/[0.05] border border-transparent'
+                : 'border border-transparent'
           }`}
+        style={{ color: textColor }}
       >
         {activo && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-[#0EA5E9]" />
         )}
-        <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150
-          ${activo
-            ? 'bg-[#0EA5E9]/15 text-[#38BDF8]'
-            : 'bg-white/[0.05] text-white/40 group-hover:bg-white/[0.08] group-hover:text-white/65'
-          }`}
+        <span
+          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
+          style={{ color: iconColor }}
         >
           {item.icon}
         </span>
@@ -247,7 +259,7 @@ function SidebarContent({
           <button
             type="button"
             onClick={() => setShowLogoMenu(v => !v)}
-            className="flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1
+            className="group flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1
               hover:bg-white/[0.05] transition-colors duration-150"
           >
             {logoUrl ? (
@@ -259,23 +271,26 @@ function SidebarContent({
                     {(empresaNombre || 'E')[0].toUpperCase()}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-white/70 truncate max-w-[90px]">
+                <span className="text-sm font-semibold text-[#38BDF8]/80 truncate max-w-[90px]">
                   {empresaNombre || 'Mi empresa'}
                 </span>
               </div>
             )}
-            <ChevronDown className={`w-3 h-3 text-white/25 flex-shrink-0 transition-transform duration-150 ${showLogoMenu ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 text-[#38BDF8]/50 group-hover:text-[#38BDF8] flex-shrink-0 transition-all duration-150 ${showLogoMenu ? 'rotate-180' : ''}`} />
           </button>
 
           {showLogoMenu && (
-            <div className="absolute top-full left-0 mt-1.5 w-44 rounded-xl
-              border border-white/[0.08] bg-[#0A1628] shadow-2xl z-50 overflow-hidden py-1">
+            <div
+              className="absolute top-full left-0 mt-1.5 w-44 rounded-xl
+                border border-white/[0.08] bg-gray-900 shadow-2xl z-50 overflow-hidden py-1"
+              style={{ backgroundColor: '#111827', color: 'white' }}
+            >
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-xs
-                  text-white/55 hover:text-white/90 hover:bg-white/[0.05]
-                  transition-colors duration-150"
+                  hover:bg-white/[0.08] transition-colors duration-150"
+                style={{ color: 'white' }}
               >
                 <ImagePlus className="w-3.5 h-3.5 flex-shrink-0" />
                 {logoUrl ? 'Cambiar logo' : 'Subir logo'}
@@ -285,8 +300,8 @@ function SidebarContent({
                   type="button"
                   onClick={() => { onLogoUpload(''); setShowLogoMenu(false) }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-xs
-                    text-red-400/60 hover:text-red-400 hover:bg-red-500/[0.06]
-                    transition-colors duration-150"
+                    hover:bg-red-500/[0.12] transition-colors duration-150"
+                  style={{ color: '#fca5a5' }}
                 >
                   <X className="w-3.5 h-3.5 flex-shrink-0" />
                   Quitar logo
@@ -300,7 +315,7 @@ function SidebarContent({
           <button
             onClick={onClose}
             className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-              text-white/30 hover:text-white/70 hover:bg-white/[0.06]
+              text-white/70 hover:text-white hover:bg-white/[0.06]
               transition-colors duration-150 md:hidden"
           >
             <X className="w-4 h-4" />
@@ -341,16 +356,16 @@ function SidebarContent({
             <span className="text-[#7DD3FC] text-xs font-bold">{iniciales}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white/80 truncate">
+            <p className="text-xs font-semibold text-[#38BDF8]/80 truncate">
               {adminNombre || 'Admin'}
             </p>
-            <p className="text-[11px] text-white/35">{t('common.admin')}</p>
+            <p className="text-[11px] text-[#38BDF8]/50">{t('common.admin')}</p>
           </div>
           {/* Editar perfil */}
           <Link
             href="/admin/perfil"
             className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-              text-white/30 hover:text-white/65 hover:bg-white/[0.06]
+              text-[#38BDF8]/50 hover:text-[#38BDF8] hover:bg-[#0EA5E9]/10
               transition-colors duration-150"
             title="Editar perfil"
           >
@@ -361,7 +376,7 @@ function SidebarContent({
             onClick={onLogout}
             aria-label={t('common.logout')}
             className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-              text-white/30 hover:text-red-400 hover:bg-red-500/10
+              text-[#38BDF8]/50 hover:text-[#38BDF8] hover:bg-[#0EA5E9]/10
               transition-colors duration-150 cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -401,9 +416,9 @@ function AdminHeader({
     .join('') || 'A'
 
   return (
-    <header className="h-14 flex-shrink-0"
+    <header className="h-14 flex-shrink-0 px-4 sm:px-6"
       style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-      <div className="max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 gap-3">
+      <div className="max-w-7xl mx-auto h-full flex items-center gap-3">
         {/* Hamburger — solo mobile */}
         <button
           onClick={onMenuClick}

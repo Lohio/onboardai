@@ -199,7 +199,7 @@ const MODULOS_CONFIG = [
 
 function Skeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
       <div className="h-6 w-48 bg-white/[0.06] rounded" />
       <div className="h-10 bg-white/[0.04] rounded-xl" />
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -807,7 +807,7 @@ export default function EmpleadoDetallePage() {
   // Render
   // ─────────────────────────────────────────────
   return (
-    <div className="space-y-5">
+    <div className="max-w-7xl mx-auto space-y-5">
 
       {/* ── Header ── */}
       <div className="flex items-center gap-3 flex-wrap">

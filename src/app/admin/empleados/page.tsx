@@ -3,20 +3,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
-  UserPlus, Search, Filter, Pencil, RotateCcw, Trash2,
-  Calendar, Briefcase, MapPin, Users, AlertTriangle,
+  Search, Filter, Pencil, RotateCcw, Trash2,
+  Calendar, Briefcase, MapPin, Users,
   ArrowLeft, Mail, Monitor, Sparkles,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { getInitials, formatFecha, semaforoColor } from '@/lib/utils'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { EmpleadoModal } from '@/components/admin/EmpleadoModal'
 import { ResetProgresoModal } from '@/components/admin/ResetProgresoModal'
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
 import type { UserRole } from '@/types'
 
 // ─────────────────────────────────────────────
@@ -160,24 +160,14 @@ function EmptyDetalle() {
 
 interface DetalleEmpleadoProps {
   emp: EmpleadoConProgreso
-  onEditar: () => void
   onResetear: () => void
-  onEliminar: () => void
-  eliminando: boolean
-  confirmDelete: boolean
-  onConfirmDelete: () => void
-  onCancelDelete: () => void
+  onPedirEliminar: () => void
 }
 
 function DetalleEmpleado({
   emp,
-  onEditar,
   onResetear,
-  onEliminar,
-  eliminando,
-  confirmDelete,
-  onConfirmDelete,
-  onCancelDelete,
+  onPedirEliminar,
 }: DetalleEmpleadoProps) {
   const initials = getInitials(emp.nombre)
 
@@ -276,52 +266,16 @@ function DetalleEmpleado({
             Resetear progreso
           </button>
 
-          {/* Eliminar con confirmación inline */}
-          <AnimatePresence mode="wait">
-            {confirmDelete ? (
-              <motion.div
-                key="confirm"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="w-full rounded-lg bg-red-500/[0.08] border border-red-500/25 p-3 space-y-2.5"
-              >
-                <div className="flex items-center gap-2 text-sm text-red-400/90">
-                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>¿Eliminar a <strong>{emp.nombre}</strong>?</span>
-                </div>
-                <p className="text-xs text-red-400/50">Esta acción no se puede deshacer.</p>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={onCancelDelete} className="flex-1">
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    loading={eliminando}
-                    onClick={onEliminar}
-                    className="flex-1"
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.button
-                key="delete-btn"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                onClick={onConfirmDelete}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
-                  bg-white/[0.04] border border-white/[0.08] text-white/65
-                  hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
-                  transition-colors duration-150 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Eliminar
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <button
+            onClick={onPedirEliminar}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
+              transition-colors duration-150 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Eliminar
+          </button>
         </div>
       </div>
     </motion.div>
@@ -343,7 +297,7 @@ export default function EmpleadosPage() {
 
   // Panel derecho
   const [seleccionado, setSeleccionado] = useState<EmpleadoConProgreso | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [eliminando, setEliminando]       = useState(false)
 
   // Mobile: mostrar detalle a pantalla completa
@@ -453,7 +407,7 @@ export default function EmpleadosPage() {
   // ── Seleccionar empleado ──
   function handleSeleccionar(emp: EmpleadoConProgreso) {
     setSeleccionado(emp)
-    setConfirmDelete(false)
+    setConfirmDeleteOpen(false)
     setVistaDetalleMobile(true)
   }
 
@@ -479,7 +433,7 @@ export default function EmpleadosPage() {
       setEmpleados(prev => prev.filter(e => e.id !== seleccionado.id))
       setSeleccionado(null)
       setVistaDetalleMobile(false)
-      setConfirmDelete(false)
+      setConfirmDeleteOpen(false)
     } catch {
       toast.error('Error de conexión')
     } finally {
@@ -510,7 +464,7 @@ export default function EmpleadosPage() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-white">Equipo</h1>
+          <h1 className="text-xl font-semibold text-white">Colaboradores</h1>
           <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? 'persona' : 'personas'}</p>
         </div>
         <button
@@ -639,7 +593,7 @@ export default function EmpleadosPage() {
                 onClick={() => {
                   setVistaDetalleMobile(false)
                   setSeleccionado(null)
-                  setConfirmDelete(false)
+                  setConfirmDeleteOpen(false)
                 }}
                 className="flex items-center gap-1.5 text-sm text-white/50
                   hover:text-white/80 transition-colors duration-150"
@@ -653,13 +607,8 @@ export default function EmpleadosPage() {
           {seleccionado ? (
             <DetalleEmpleado
               emp={seleccionado}
-              onEditar={() => router.push(`/admin/empleados/${seleccionado.id}`)}
               onResetear={() => setResetTarget({ id: seleccionado.id, nombre: seleccionado.nombre })}
-              onEliminar={handleEliminar}
-              eliminando={eliminando}
-              confirmDelete={confirmDelete}
-              onConfirmDelete={() => setConfirmDelete(true)}
-              onCancelDelete={() => setConfirmDelete(false)}
+              onPedirEliminar={() => setConfirmDeleteOpen(true)}
             />
           ) : (
             <EmptyDetalle />
@@ -692,6 +641,19 @@ export default function EmpleadosPage() {
           modulo="todos"
           onClose={() => setResetTarget(null)}
           onReset={handleReset}
+        />
+      )}
+
+      {confirmDeleteOpen && seleccionado && (
+        <ConfirmModal
+          title="Eliminar colaborador"
+          description={`¿Estás seguro de que querés eliminar a ${seleccionado.nombre}? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          cancelLabel="Cancelar"
+          variant="danger"
+          loading={eliminando}
+          onConfirm={handleEliminar}
+          onClose={() => setConfirmDeleteOpen(false)}
         />
       )}
     </div>

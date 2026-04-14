@@ -11,7 +11,7 @@ import {
   FolderOpen,
   Briefcase,
   UserCheck,
-  Save,
+  Lock,
   Check,
   ChevronRight,
 } from 'lucide-react'
@@ -50,10 +50,10 @@ interface EmpleadoConNotas {
 // ─────────────────────────────────────────────
 
 const CAPAS: CapaDef[] = [
-  { key: 'empresa',  label: 'Empresa',      icon: <Building2   className="w-3.5 h-3.5" /> },
-  { key: 'area',     label: 'Por área',     icon: <FolderOpen  className="w-3.5 h-3.5" /> },
-  { key: 'rol',      label: 'Por rol',      icon: <Briefcase   className="w-3.5 h-3.5" /> },
-  { key: 'empleado', label: 'Por empleado', icon: <UserCheck   className="w-3.5 h-3.5" /> },
+  { key: 'empresa',  label: 'Empresa',     icon: <Building2   className="w-3.5 h-3.5" /> },
+  { key: 'area',     label: 'Área',        icon: <FolderOpen  className="w-3.5 h-3.5" /> },
+  { key: 'rol',      label: 'Rol',         icon: <Briefcase   className="w-3.5 h-3.5" /> },
+  { key: 'empleado', label: 'Colaborador', icon: <UserCheck   className="w-3.5 h-3.5" /> },
 ]
 
 // ─────────────────────────────────────────────
@@ -108,9 +108,8 @@ function EmptyState({ label, onAgregar }: { label: string; onAgregar: () => void
           Agregá conocimiento sobre {label.toLowerCase()} para nutrir al asistente IA
         </p>
       </div>
-      <Button variant="secondary" size="sm" onClick={onAgregar} className="flex items-center gap-1.5">
-        <Plus className="w-3.5 h-3.5" />
-        Agregar primer bloque
+      <Button variant="secondary" size="sm" onClick={onAgregar}>
+        Comenzar
       </Button>
     </motion.div>
   )
@@ -287,15 +286,24 @@ function CapaBloquePanel({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                 transition-all duration-150
                 ${activo
-                  ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/20'
-                  : 'bg-white/[0.04] text-white/50 border border-white/[0.06] hover:text-white/75 hover:bg-white/[0.06]'
+                  ? 'bg-gray-200 border border-gray-300'
+                  : 'bg-white border border-gray-200 hover:bg-gray-50'
                 }`}
+              style={activo
+                ? { color: '#111827' }
+                : { color: '#4B5563' }
+              }
             >
               {v}
               {count > 0 && (
-                <span className={`min-w-[16px] h-4 px-0.5 rounded-full text-[10px] font-bold
-                  flex items-center justify-center
-                  ${activo ? 'bg-[#0EA5E9]/30 text-[#7DD3FC]' : 'bg-white/[0.08] text-white/35'}`}>
+                <span
+                  className="min-w-[16px] h-4 px-0.5 rounded-full text-[10px] font-bold
+                    flex items-center justify-center"
+                  style={activo
+                    ? { backgroundColor: '#D1D5DB', color: '#374151' }
+                    : { backgroundColor: '#F3F4F6', color: '#6B7280' }
+                  }
+                >
                   {count}
                 </span>
               )}
@@ -364,15 +372,15 @@ function CapaBloquePanel({
                 <Badge variant={bloquesFiltrados.length > 0 ? 'success' : 'default'}>
                   {bloquesFiltrados.length} bloque{bloquesFiltrados.length !== 1 ? 's' : ''}
                 </Badge>
-                <Button
-                  variant="primary"
-                  size="sm"
+                <button
                   onClick={() => setMostrarForm(v => !v)}
-                  className="flex items-center gap-1.5"
+                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md text-xs font-semibold
+                    bg-gray-900 hover:bg-gray-800 transition-colors duration-150 cursor-pointer"
+                  style={{ color: 'white' }}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Agregar bloque
-                </Button>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -554,7 +562,7 @@ function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
             {/* Textarea de notas */}
             <div className="space-y-1.5">
               <label className="text-xs text-white/35">
-                Notas para el asistente IA
+                Notas para CopilBot
               </label>
               <textarea
                 value={notas[emp.id] ?? ''}
@@ -569,26 +577,34 @@ function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
             </div>
 
             <div className="flex justify-end">
-              <button
-                onClick={() => guardarNotas(emp.id)}
-                disabled={guardando[emp.id]}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm
-                  text-white/70 bg-white/[0.04] border border-white/[0.10]
-                  hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white/90
-                  transition-all duration-150 disabled:opacity-50"
-              >
-                {guardado[emp.id] ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    Guardado
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    Guardar
-                  </>
-                )}
-              </button>
+              {(() => {
+                const sinTexto = !(notas[emp.id]?.trim())
+                const deshabilitado = guardando[emp.id] || sinTexto
+                return (
+                  <button
+                    onClick={() => guardarNotas(emp.id)}
+                    disabled={deshabilitado}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+                      transition-colors duration-150
+                      ${deshabilitado
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-900 hover:bg-gray-800 cursor-pointer'}`}
+                    style={deshabilitado ? undefined : { color: 'white' }}
+                  >
+                    {guardado[emp.id] ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Guardado
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5" />
+                        Guardar
+                      </>
+                    )}
+                  </button>
+                )
+              })()}
             </div>
           </motion.div>
         )
@@ -736,7 +752,7 @@ export default function ContenidoPage() {
       {/* Encabezado */}
       <motion.div variants={itemVariants} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-white/90">Contenido del asistente</h1>
+          <h1 className="text-lg font-semibold text-white/90">CopilBot</h1>
           <p className="text-sm text-white/40 mt-0.5">
             Administrá el conocimiento institucional que nutre al asistente IA
           </p>
@@ -761,18 +777,25 @@ export default function ContenidoPage() {
                 className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium
                   transition-all duration-150 cursor-pointer
                   ${activo
-                    ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/20'
+                    ? 'bg-gray-900 hover:bg-gray-800'
                     : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
                   }`}
+                style={activo ? { color: 'white' } : undefined}
               >
-                <span className={activo ? 'text-[#38BDF8]' : 'text-white/25'}>
+                <span
+                  className={activo ? '' : 'text-white/25'}
+                  style={activo ? { color: 'white' } : undefined}
+                >
                   {capa.icon}
                 </span>
                 <span>{capa.label}</span>
                 {count > 0 && (
-                  <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
-                    flex items-center justify-center
-                    ${activo ? 'bg-[#0EA5E9]/30 text-[#7DD3FC]' : 'bg-white/[0.06] text-white/30'}`}>
+                  <span
+                    className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
+                      flex items-center justify-center
+                      ${activo ? 'bg-white' : 'bg-white/[0.06] text-white/30'}`}
+                    style={activo ? { color: '#111827' } : undefined}
+                  >
                     {count}
                   </span>
                 )}
@@ -803,17 +826,17 @@ export default function ContenidoPage() {
                 <Badge variant={bloquesFiltradosEmpresa.length > 0 ? 'success' : 'default'}>
                   {bloquesFiltradosEmpresa.length} bloque{bloquesFiltradosEmpresa.length !== 1 ? 's' : ''}
                 </Badge>
-                <Button
-                  variant="primary"
-                  size="sm"
+                <button
                   onClick={() =>
                     setFormulario(formulario && !formulario.bloque ? null : { modulo: 'empresa' })
                   }
-                  className="flex items-center gap-1.5"
+                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md text-xs font-semibold
+                    bg-gray-900 hover:bg-gray-800 transition-colors duration-150 cursor-pointer"
+                  style={{ color: 'white' }}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Agregar bloque
-                </Button>
+                  Agregar
+                </button>
               </div>
             </div>
 
