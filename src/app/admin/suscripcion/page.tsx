@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import {
   CreditCard,
@@ -180,17 +180,11 @@ function PlanCard({
   )
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ─── Feedback de retorno desde checkout (necesita Suspense) ──────────────────
 
-export default function SuscripcionPage() {
+function CheckoutFeedback() {
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState<SuscripcionStatus | null>(null)
-  const [loadingStatus, setLoadingStatus] = useState(true)
-  const [loadingCheckout, setLoadingCheckout] = useState(false)
-  const [loadingPortal, setLoadingPortal] = useState(false)
-  const [proveedor, setProveedor] = useState<ProveedorPago>('stripe')
 
-  // Mostrar feedback de retorno desde checkout
   useEffect(() => {
     if (searchParams.get('success') === '1') {
       toast.success('¡Suscripción activada! Bienvenido al plan Pro.')
@@ -200,6 +194,18 @@ export default function SuscripcionPage() {
       toast('Pago pendiente de acreditación.')
     }
   }, [searchParams])
+
+  return null
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+export default function SuscripcionPage() {
+  const [status, setStatus] = useState<SuscripcionStatus | null>(null)
+  const [loadingStatus, setLoadingStatus] = useState(true)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const [loadingPortal, setLoadingPortal] = useState(false)
+  const [proveedor, setProveedor] = useState<ProveedorPago>('stripe')
 
   const cargarStatus = useCallback(async () => {
     try {
@@ -264,6 +270,10 @@ export default function SuscripcionPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      <Suspense fallback={null}>
+        <CheckoutFeedback />
+      </Suspense>
+
       {/* ── Header ── */}
       <div>
         <h1 className="text-xl font-bold text-white/90">Suscripción</h1>
