@@ -32,21 +32,21 @@ const MODULOS = [
   },
   {
     key: 'M2',
-    href: '/empleado/rol',
-    label: 'Rol',
-    icon: '/heero-icons4.svg',
-    color: '#FCD34D',
-    activeBg: 'rgba(252,211,77,0.14)',
-    glow: 'drop-shadow(0 0 5px rgba(252,211,77,0.55))',
-  },
-  {
-    key: 'M3',
     href: '/empleado/cultura',
     label: 'Cultura',
     icon: '/heero-icons1.svg',
     color: '#FDE047',
     activeBg: 'rgba(253,224,71,0.14)',
     glow: 'drop-shadow(0 0 5px rgba(253,224,71,0.45))',
+  },
+  {
+    key: 'M3',
+    href: '/empleado/rol',
+    label: 'Rol',
+    icon: '/heero-icons4.svg',
+    color: '#FCD34D',
+    activeBg: 'rgba(252,211,77,0.14)',
+    glow: 'drop-shadow(0 0 5px rgba(252,211,77,0.55))',
   },
   {
     key: 'plan',
@@ -360,6 +360,20 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                     className="flex items-center gap-0.5 overflow-hidden"
                   >
                     {MODULOS.map((mod, idx) => renderModulo(mod, idx))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence initial={false}>
+                {!navColapsado && (
+                  <motion.div
+                    key="nav-settings"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-0.5"
+                  >
                     <div className="w-px self-stretch mx-1" style={{ background: 'var(--border)' }} />
                     <div className="px-1">
                       <SettingsDropdown />
@@ -393,8 +407,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
         const moduloKey =
           moduloActual === 'perfil' ? 'M1' as const
-          : moduloActual === 'rol' ? 'M2' as const
-          : moduloActual === 'cultura' ? 'M3' as const
+          : moduloActual === 'cultura' ? 'M2' as const
+          : moduloActual === 'rol' ? 'M3' as const
           : null
 
         return (
