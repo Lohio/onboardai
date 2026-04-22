@@ -248,6 +248,9 @@ export default function EmpleadoDetallePage() {
   const [generando, setGenerando] = useState(false)
   const [reporte, setReporte] = useState('')
   const [reporteVisible, setReporteVisible] = useState(false)
+  const [generandoResumen, setGenerandoResumen] = useState(false)
+  const [resumen, setResumen] = useState('')
+  const [resumenVisible, setResumenVisible] = useState(false)
 
   // Accesos y herramientas
   const [accesos, setAccesos] = useState<AccesoRow[]>([])
@@ -600,6 +603,29 @@ export default function EmpleadoDetallePage() {
     }
   }
 
+  // ── Generar resumen semanal ──
+  async function generarResumen() {
+    if (!empleado || generandoResumen) return
+    setGenerandoResumen(true)
+    setResumen('')
+    setResumenVisible(true)
+    try {
+      const res = await fetch(`/api/admin/resumen-semanal/${empleado.id}`, { method: 'POST' })
+      if (!res.ok || !res.body) throw new Error('Error en la respuesta')
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        setResumen(prev => prev + decoder.decode(value, { stream: true }))
+      }
+    } catch {
+      toast.error('No se pudo generar el resumen')
+    } finally {
+      setGenerandoResumen(false)
+    }
+  }
+
   // ── Herramienta "configurada": activa con usuario o contraseña cargados ──
   function isConfigured(a: AccesoRow): boolean {
     return a.estado === 'activo' && !!(a.usuario_acceso?.trim() || a.password_acceso?.trim())
@@ -847,18 +873,32 @@ export default function EmpleadoDetallePage() {
           </button>
         )}
         {tab === 'progreso' && (
-          <button
-            onClick={generarReporte}
-            disabled={generando}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium
-              bg-[#0EA5E9] hover:bg-[#38BDF8] text-white transition-colors duration-150
-              disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {generando
-              ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />Generando...</>
-              : <><Sparkles className="w-3 h-3" />Generar reporte</>
-            }
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={generarResumen}
+              disabled={generandoResumen}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium
+                bg-[#8B5CF6] hover:bg-[#A78BFA] text-white transition-colors duration-150
+                disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {generandoResumen
+                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />Generando...</>
+                : <><Sparkles className="w-3 h-3" />Resumen semanal</>
+              }
+            </button>
+            <button
+              onClick={generarReporte}
+              disabled={generando}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium
+                bg-[#0EA5E9] hover:bg-[#38BDF8] text-white transition-colors duration-150
+                disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {generando
+                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />Generando...</>
+                : <><Sparkles className="w-3 h-3" />Generar reporte</>
+              }
+            </button>
+          </div>
         )}
       </div>
 
@@ -1841,6 +1881,48 @@ export default function EmpleadoDetallePage() {
                 )}
               </div>
             </div>
+
+            {/* Resumen semanal IA */}
+            <AnimatePresence>
+              {resumenVisible && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/[0.04] p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[#A78BFA]" />
+                      <span className="text-xs font-semibold text-white/80">Resumen semanal</span>
+                    </div>
+                    {resumen ? (
+                      <p className="text-sm text-white/70 leading-relaxed">
+                        {resumen}
+                        {generandoResumen && (
+                          <span className="inline-block w-1 h-4 bg-[#A78BFA] animate-pulse ml-0.5 align-middle" />
+                        )}
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-2 text-white/40 text-sm">
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-[#A78BFA] rounded-full animate-spin-fast" />
+                        Analizando la semana...
+                      </div>
+                    )}
+                    {resumen && !generandoResumen && (
+                      <button
+                        onClick={() => setResumenVisible(false)}
+                        className="mt-3 flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors duration-150"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        Ocultar resumen
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Reporte ejecutivo */}
             <div className="glass-card rounded-xl p-5">
