@@ -78,7 +78,10 @@ async function verificarRolCookie(valor: string, userId: string): Promise<UserRo
 function buildCSP(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    // 'unsafe-inline' se ignora en browsers modernos cuando hay nonce presente —
+    // sirve solo como fallback para browsers sin soporte de nonces.
+    // 'strict-dynamic' se evita porque ignora 'self', bloqueando los chunks de Next.js.
+    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
