@@ -25,6 +25,52 @@ const COOKIE_ROL_MAX_AGE = 60 * 5
 /** Roles válidos para validar el valor de la cookie */
 const ROLES_VALIDOS: UserRole[] = ['empleado', 'admin', 'dev']
 
+/** Secret para firmar la cookie de rol — previene que el cliente la falsifique */
+const COOKIE_SECRET = process.env.ENCRYPTION_KEY ?? ''
+
+// ─────────────────────────────────────────────────────────────
+// HMAC: firma y verificación de la cookie de rol
+// Aunque la cookie es httpOnly, un usuario puede crearla
+// manualmente con devtools. La firma HMAC impide esto.
+// ─────────────────────────────────────────────────────────────
+
+async function firmarRol(rol: UserRole, userId: string): Promise<string> {
+  if (!COOKIE_SECRET) return rol
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(COOKIE_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const buf = await crypto.subtle.sign('HMAC', key, enc.encode(`${rol}:${userId}`))
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
+  return `${rol}:${hex}`
+}
+
+async function verificarRolCookie(valor: string, userId: string): Promise<UserRole | null> {
+  if (!COOKIE_SECRET) {
+    return esRolValido(valor) ? valor : null
+  }
+  const sep = valor.lastIndexOf(':')
+  if (sep === -1) return null
+  const rol = valor.slice(0, sep)
+  const sig = valor.slice(sep + 1)
+  if (!esRolValido(rol)) return null
+
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(COOKIE_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const buf = await crypto.subtle.sign('HMAC', key, enc.encode(`${rol}:${userId}`))
+  const expected = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
+
+  // Comparación en tiempo constante para prevenir timing attacks
+  if (sig.length !== expected.length) return null
+  let diff = 0
+  for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i)
+  return diff === 0 ? rol : null
+}
+
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
@@ -94,8 +140,8 @@ export async function middleware(request: NextRequest) {
 
   // Intentar leer el rol desde la cookie cacheada
   const rolCacheado = request.cookies.get(COOKIE_ROL)?.value
-  if (rolCacheado && esRolValido(rolCacheado)) {
-    rol = rolCacheado
+  if (rolCacheado) {
+    rol = await verificarRolCookie(rolCacheado, user.id)
   }
 
   // Si no hay caché válido, consultar Supabase
@@ -128,8 +174,8 @@ export async function middleware(request: NextRequest) {
 
       rol = perfil.rol
 
-      // Cachear el rol en cookie httpOnly de corta duración (5 min)
-      supabaseResponse.cookies.set(COOKIE_ROL, rol, {
+      // Cachear el rol en cookie httpOnly firmada con HMAC (5 min)
+      supabaseResponse.cookies.set(COOKIE_ROL, await firmarRol(rol, user.id), {
         httpOnly: true,
         sameSite: 'strict',
         maxAge: COOKIE_ROL_MAX_AGE,
