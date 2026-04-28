@@ -96,10 +96,18 @@ async function guardarSesion(email: string, password: string, statePath: string)
 }
 
 async function globalSetup() {
-  const EMPLEADO_EMAIL = process.env.TEST_EMPLEADO_EMAIL ?? "test.empleado@heero.dev"
-  const EMPLEADO_PASSWORD = process.env.TEST_EMPLEADO_PASSWORD ?? "TestHeero2024!"
-  const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? "test.admin@heero.dev"
-  const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? "TestHeero2024!"
+  const EMPLEADO_EMAIL = process.env.TEST_EMPLEADO_EMAIL
+  const EMPLEADO_PASSWORD = process.env.TEST_EMPLEADO_PASSWORD
+  const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL
+  const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD
+
+  if (!EMPLEADO_EMAIL || !EMPLEADO_PASSWORD || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error(
+      "Faltan variables de entorno para los tests E2E.\n" +
+      "Definí en e2e/.env.test:\n" +
+      "  TEST_EMPLEADO_EMAIL, TEST_EMPLEADO_PASSWORD, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD"
+    )
+  }
 
   await guardarSesion(EMPLEADO_EMAIL, EMPLEADO_PASSWORD, "e2e/.auth/empleado.json")
   await guardarSesion(ADMIN_EMAIL, ADMIN_PASSWORD, "e2e/.auth/admin.json")

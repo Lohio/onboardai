@@ -35,18 +35,32 @@ interface UsuarioTest {
   nombre: string
 }
 
+const TEST_EMPLEADO_EMAIL    = process.env.TEST_EMPLEADO_EMAIL
+const TEST_EMPLEADO_PASSWORD = process.env.TEST_EMPLEADO_PASSWORD
+const TEST_ADMIN_EMAIL       = process.env.TEST_ADMIN_EMAIL
+const TEST_ADMIN_PASSWORD    = process.env.TEST_ADMIN_PASSWORD
+
+if (!TEST_EMPLEADO_EMAIL || !TEST_EMPLEADO_PASSWORD || !TEST_ADMIN_EMAIL || !TEST_ADMIN_PASSWORD) {
+  console.error(
+    "Error: faltan variables de entorno.\n" +
+    "Definí en e2e/.env.test:\n" +
+    "  TEST_EMPLEADO_EMAIL, TEST_EMPLEADO_PASSWORD, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD"
+  )
+  process.exit(1)
+}
+
 const USUARIOS_TEST: UsuarioTest[] = [
   {
-    email: process.env.TEST_EMPLEADO_EMAIL ?? "test.empleado@heero.dev",
-    password: process.env.TEST_EMPLEADO_PASSWORD ?? "TestHeero2024!",
-    rol: "empleado",
-    nombre: "Test Empleado",
+    email:    TEST_EMPLEADO_EMAIL,
+    password: TEST_EMPLEADO_PASSWORD,
+    rol:      "empleado",
+    nombre:   "Test Empleado",
   },
   {
-    email: process.env.TEST_ADMIN_EMAIL ?? "test.admin@heero.dev",
-    password: process.env.TEST_ADMIN_PASSWORD ?? "TestHeero2024!",
-    rol: "admin",
-    nombre: "Test Admin",
+    email:    TEST_ADMIN_EMAIL,
+    password: TEST_ADMIN_PASSWORD,
+    rol:      "admin",
+    nombre:   "Test Admin",
   },
 ]
 

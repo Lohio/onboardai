@@ -47,7 +47,17 @@ Agregala en .env.local:
 
 // ── Config ──
 const EMPRESA_NOMBRE = 'Empresa Demo'
-const PASSWORD       = 'Dev1234!'
+const PASSWORD       = envVars['SEED_DEV_PASSWORD']
+
+if (!PASSWORD) {
+  console.error(`
+Error: falta SEED_DEV_PASSWORD en .env.local
+
+Agregala en .env.local:
+  SEED_DEV_PASSWORD=una_contraseña_segura_aqui
+`)
+  process.exit(1)
+}
 
 const USUARIOS = [
   {
@@ -149,7 +159,7 @@ async function seed() {
 
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Usuarios listos  —  password: ${PASSWORD}
+✅ Usuarios listos  —  password: (ver SEED_DEV_PASSWORD en .env.local)
 
   🔧 Admin    desarrollo@dev.com   → /admin
   👤 Empleado test@dev.com    → /empleado/perfil
