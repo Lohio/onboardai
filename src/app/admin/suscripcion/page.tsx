@@ -15,6 +15,8 @@ import {
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { PLANES, calcularCostoMensual, getPlanFeatureList } from '@/lib/billing'
+import { useContext } from 'react'
+import { ThemeContext } from '@/components/ThemeProvider'
 import type { PlanId, ProveedorPago } from '@/types'
 
 // ─── Estado de suscripción desde API ─────────────────────────────────────────
@@ -37,16 +39,101 @@ const PLAN_ICONS: Record<PlanId, React.ReactNode> = {
   enterprise: <Building2 className="w-5 h-5" />,
 }
 
-const PLAN_COLORS: Record<PlanId, string> = {
-  trial: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
-  pro: 'from-[#0EA5E9]/20 to-[#3B4FD8]/10 border-[#0EA5E9]/30',
-  enterprise: 'from-violet-500/20 to-violet-600/10 border-violet-500/30',
+type PlanCfg = {
+  card: string; icon: string; title: string; price: string
+  feature: string; check: string; costBox: string
+  costValue: string; costUnit: string; cta: string; badge: string
 }
 
-const PLAN_BADGE: Record<PlanId, string> = {
-  trial: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
-  pro: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
-  enterprise: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
+// Paleta dark (default)
+const PLAN_CFG_DARK: Record<PlanId, PlanCfg> = {
+  trial: {
+    card:      'bg-zinc-500/30 border-zinc-400/40',
+    icon:      'bg-zinc-400/40 border-zinc-300/30 text-white',
+    title:     'text-white/90',
+    price:     'text-white/50',
+    feature:   'text-white/70',
+    check:     'text-zinc-300',
+    costBox:   'bg-zinc-400/20 border-zinc-300/20',
+    costValue: 'text-white/90',
+    costUnit:  'text-white/40',
+    cta:       'bg-zinc-300 hover:bg-zinc-200 text-zinc-900',
+    badge:     'bg-zinc-300/20 text-zinc-200 border-zinc-300/30',
+  },
+  pro: {
+    card:      'bg-zinc-600/50 border-zinc-500/50',
+    icon:      'bg-zinc-500/50 border-zinc-400/40 text-white',
+    title:     'text-white/95',
+    price:     'text-white/60',
+    feature:   'text-white/70',
+    check:     'text-zinc-200',
+    costBox:   'bg-zinc-500/30 border-zinc-400/30',
+    costValue: 'text-white/95',
+    costUnit:  'text-white/50',
+    cta:       'bg-zinc-300 hover:bg-zinc-200 text-zinc-900',
+    badge:     'bg-zinc-400/30 text-zinc-100 border-zinc-400/40',
+  },
+  enterprise: {
+    card:      'bg-zinc-950 border-zinc-800',
+    icon:      'bg-zinc-800 border-zinc-700 text-zinc-300',
+    title:     'text-white',
+    price:     'text-zinc-400',
+    feature:   'text-zinc-400',
+    check:     'text-zinc-500',
+    costBox:   'bg-zinc-800/80 border-zinc-700',
+    costValue: 'text-white',
+    costUnit:  'text-zinc-500',
+    cta:       'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-300',
+    badge:     'bg-zinc-800 text-zinc-300 border-zinc-700',
+  },
+}
+
+// Paleta light — máximo contraste, sin depender de CSS variants
+const PLAN_CFG_LIGHT: Record<PlanId, PlanCfg> = {
+  trial: {
+    card:      'bg-zinc-100 border-zinc-300',
+    icon:      'bg-zinc-300 border-zinc-400 text-zinc-700',
+    title:     'text-zinc-900',
+    price:     'text-zinc-600',
+    feature:   'text-zinc-800',
+    check:     'text-zinc-600',
+    costBox:   'bg-zinc-200 border-zinc-300',
+    costValue: 'text-zinc-900',
+    costUnit:  'text-zinc-600',
+    cta:       'bg-zinc-800 hover:bg-zinc-700 text-[#fff]',
+    badge:     'bg-zinc-300 text-zinc-800 border-zinc-400',
+  },
+  pro: {
+    card:      'bg-zinc-300 border-zinc-400',
+    icon:      'bg-zinc-500 border-zinc-600 text-[#fff]',
+    title:     'text-zinc-950',
+    price:     'text-zinc-700',
+    feature:   'text-zinc-900',
+    check:     'text-zinc-700',
+    costBox:   'bg-zinc-200 border-zinc-400',
+    costValue: 'text-zinc-950',
+    costUnit:  'text-zinc-600',
+    cta:       'bg-zinc-800 hover:bg-zinc-700 text-[#fff]',
+    badge:     'bg-zinc-500 text-[#fff] border-zinc-600',
+  },
+  enterprise: {
+    // Siempre oscuro — text-[#fff] evita el override !important de globals.css
+    card:      'bg-zinc-900 border-zinc-800',
+    icon:      'bg-zinc-800 border-zinc-700 text-zinc-300',
+    title:     'text-[#fff]',
+    price:     'text-zinc-400',
+    feature:   'text-zinc-300',
+    check:     'text-zinc-400',
+    costBox:   'bg-zinc-800/80 border-zinc-700',
+    costValue: 'text-[#fff]',
+    costUnit:  'text-zinc-400',
+    cta:       'bg-[#fff] hover:bg-zinc-100 text-zinc-900',
+    badge:     'bg-zinc-800 text-zinc-300 border-zinc-700',
+  },
+}
+
+function getPlanCfg(planId: PlanId, isLight: boolean): PlanCfg {
+  return isLight ? PLAN_CFG_LIGHT[planId] : PLAN_CFG_DARK[planId]
 }
 
 function formatFecha(iso?: string | null) {
@@ -91,14 +178,17 @@ function PlanCard({
   empleadosActivos,
   onSelect,
   loading,
+  isLight,
 }: {
   planId: PlanId
   actual: PlanId
   empleadosActivos: number
   onSelect: (planId: PlanId) => void
   loading: boolean
+  isLight: boolean
 }) {
-  const plan = PLANES[planId]
+  const plan = PLANES[planId] ?? PLANES.trial
+  const cfg = getPlanCfg(planId, isLight)
   const features = getPlanFeatureList(planId)
   const esPlanActual = planId === actual
   const costo = calcularCostoMensual(planId, empleadosActivos)
@@ -107,27 +197,26 @@ function PlanCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative rounded-2xl border bg-gradient-to-br p-5 flex flex-col gap-4
-        ${PLAN_COLORS[planId]}
-        ${esPlanActual ? 'ring-2 ring-[#0EA5E9]/30' : ''}
+      className={`relative rounded-2xl border p-5 flex flex-col gap-4
+        ${cfg.card}
+        ${esPlanActual ? 'ring-2 ring-white/20' : ''}
       `}
     >
       {/* Badge plan actual */}
       {esPlanActual && (
-        <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full
-          bg-[#0EA5E9]/15 text-[#38BDF8] border border-[#0EA5E9]/25">
+        <span className={`absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
           Plan actual
         </span>
       )}
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${PLAN_BADGE[planId]}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${cfg.icon}`}>
           {PLAN_ICONS[planId]}
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white/90">{plan.nombre}</h3>
-          <p className="text-xs text-white/40">
+          <h3 className={`text-sm font-bold ${cfg.title}`}>{plan.nombre}</h3>
+          <p className={`text-xs ${cfg.price}`}>
             {plan.precioUSD === 0 ? 'Gratis' : `$${plan.precioUSD} USD/mes`}
             {plan.extraPorEmpleado > 0 && ` + $${plan.extraPorEmpleado}/empleado extra`}
           </p>
@@ -136,12 +225,12 @@ function PlanCard({
 
       {/* Costo calculado */}
       {planId !== 'trial' && (
-        <div className="px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-          <p className="text-[11px] text-white/40">
+        <div className={`px-3 py-2 rounded-xl border ${cfg.costBox}`}>
+          <p className={`text-[11px] ${cfg.price}`}>
             Con {empleadosActivos} empleados activos
           </p>
-          <p className="text-lg font-bold text-white/85">
-            ${costo} <span className="text-xs font-normal text-white/35">USD/mes</span>
+          <p className={`text-lg font-bold ${cfg.costValue}`}>
+            ${costo} <span className={`text-xs font-normal ${cfg.costUnit}`}>USD/mes</span>
           </p>
         </div>
       )}
@@ -149,8 +238,8 @@ function PlanCard({
       {/* Features */}
       <ul className="space-y-1.5 flex-1">
         {features.map(f => (
-          <li key={f} className="flex items-start gap-2 text-xs text-white/60">
-            <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
+          <li key={f} className={`flex items-start gap-2 text-xs ${cfg.feature}`}>
+            <Check className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${cfg.check}`} />
             {f}
           </li>
         ))}
@@ -162,12 +251,11 @@ function PlanCard({
           type="button"
           onClick={() => onSelect(planId)}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
-            bg-[#0EA5E9] hover:bg-[#0284C7] text-white transition-colors duration-150
-            disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
+            transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${cfg.cta}`}
         >
           {loading ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
           ) : (
             <>
               Activar {plan.nombre}
@@ -201,6 +289,9 @@ function CheckoutFeedback() {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function SuscripcionPage() {
+  const { currentTheme } = useContext(ThemeContext)
+  const isLight = currentTheme === 'theme-light' || currentTheme === 'theme-gray'
+
   const [status, setStatus] = useState<SuscripcionStatus | null>(null)
   const [loadingStatus, setLoadingStatus] = useState(true)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
@@ -286,7 +377,7 @@ export default function SuscripcionPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Plan', value: planActual.nombre, badge: PLAN_BADGE[status.plan] },
+            { label: 'Plan', value: planActual.nombre, badge: getPlanCfg(status.plan, isLight).badge },
             { label: 'Empleados activos', value: `${status.empleados_activos}`, badge: null },
             { label: 'Estado', value: status.suscripcion_estado, badge: null },
             { label: 'Activo desde', value: formatFecha(status.suscripcion_inicio), badge: null },
@@ -365,6 +456,7 @@ export default function SuscripcionPage() {
                 empleadosActivos={status.empleados_activos}
                 onSelect={handleSelectPlan}
                 loading={loadingCheckout}
+                isLight={isLight}
               />
             ))}
           </div>
@@ -382,6 +474,7 @@ export default function SuscripcionPage() {
               empleadosActivos={status.empleados_activos}
               onSelect={handleSelectPlan}
               loading={loadingCheckout}
+              isLight={isLight}
             />
           </div>
           <p className="text-xs text-white/35">

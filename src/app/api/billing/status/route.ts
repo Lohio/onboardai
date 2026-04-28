@@ -68,8 +68,11 @@ export async function GET() {
       .eq('empresa_id', usuario.empresa_id)
       .eq('rol', 'empleado')
 
+    const VALID_PLANS = ['trial', 'pro', 'enterprise']
+    const planNormalizado = VALID_PLANS.includes(empresa.plan ?? '') ? empresa.plan : 'trial'
+
     return NextResponse.json({
-      plan: empresa.plan ?? 'trial',
+      plan: planNormalizado,
       ...billingExtra,
       empleados_activos: count ?? 0,
     })

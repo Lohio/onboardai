@@ -38,6 +38,23 @@ CREATE INDEX IF NOT EXISTS idx_empresas_mp_sub ON empresas(mp_subscription_id) W
 -- 4. RLS
 ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;
 
+-- Limpiar políticas previas (idempotente)
+DROP POLICY IF EXISTS pagos_dev_select ON pagos;
+DROP POLICY IF EXISTS pagos_admin_select ON pagos;
+DROP POLICY IF EXISTS pagos_service_insert ON pagos;
+-- Nombres alternativos de versiones anteriores
+DROP POLICY IF EXISTS billing_dev_select ON pagos;
+DROP POLICY IF EXISTS billing_admin_select ON pagos;
+DROP POLICY IF EXISTS billing_service_insert ON pagos;
+-- Por si existía tabla billing_history
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'billing_history') THEN
+    DROP POLICY IF EXISTS billing_admin_select ON billing_history;
+    DROP POLICY IF EXISTS billing_dev_select ON billing_history;
+    DROP POLICY IF EXISTS billing_service_insert ON billing_history;
+  END IF;
+END $$;
+
 -- Solo dev puede leer todos los pagos
 CREATE POLICY pagos_dev_select ON pagos FOR SELECT
   USING (

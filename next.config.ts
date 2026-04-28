@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['google-auth-library'],
+  serverExternalPackages: ['google-auth-library', 'stripe', 'mercadopago'],
   async headers() {
     return [
       {
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' https://js.sentry-cdn.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sentry.io",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
               "frame-ancestors 'none'",
             ].join('; '),
           },

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No hay suscripción Stripe activa' }, { status: 400 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://onboardai-lohios-projects.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://heeroai-lohios-projects.vercel.app'
     const stripe = getStripe()
 
     const session = await stripe.billingPortal.sessions.create({

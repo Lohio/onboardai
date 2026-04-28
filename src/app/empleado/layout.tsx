@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { LogOut, Bell, Menu } from 'lucide-react'
+import { LogOut, Bell, Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import HeeroLogo from '@/components/shared/HeeroLogo'
 import { createClient } from '@/lib/supabase'
@@ -213,28 +213,20 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     return () => window.removeEventListener('progreso-actualizado', handler)
   }, [cargarProgreso])
 
-  // ── Nav colapsable ────────────────────────────────────────
-  const [navAbierto, setNavAbierto] = useState(false)
+  // ── Nav colapsable — persiste en localStorage para sobrevivir remounts ──────
+  const [navAbierto, setNavAbiertoState] = useState(false)
   const navRef = useRef<HTMLDivElement>(null)
 
-  // Cerrar al click fuera
+  // Leer estado guardado al montar
   useEffect(() => {
-    if (!navAbierto) return
-    const handler = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setNavAbierto(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [navAbierto])
+    const saved = localStorage.getItem('heero_nav_abierto')
+    if (saved === 'true') setNavAbiertoState(true)
+  }, [])
 
-  // Auto-cerrar después de 5s
-  useEffect(() => {
-    if (!navAbierto) return
-    const timer = setTimeout(() => setNavAbierto(false), 5000)
-    return () => clearTimeout(timer)
-  }, [navAbierto])
+  const setNavAbierto = (v: boolean) => {
+    setNavAbiertoState(v)
+    localStorage.setItem('heero_nav_abierto', String(v))
+  }
 
   return (
     <ThemeProvider section="empleado">
@@ -360,18 +352,28 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                     key={mod.key}
                     href={mod.href}
                     title={mod.label}
-                    onClick={() => setNavAbierto(false)}
                   >
                     {inner}
                   </Link>
                 )
               })}
 
-              {/* Separator + Settings */}
+              {/* Separator + Settings + Close */}
               <div className="w-px self-stretch mx-1" style={{ background: 'var(--border)' }} />
               <div className="px-1">
                 <SettingsDropdown />
               </div>
+              <button
+                type="button"
+                onClick={() => setNavAbierto(false)}
+                aria-label="Cerrar menú"
+                className="ml-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </motion.div>
           ) : (
             <motion.button

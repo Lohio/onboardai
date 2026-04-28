@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     if (!empresa) return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 })
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://onboardai-lohios-projects.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://heeroai-lohios-projects.vercel.app'
 
     // ── Stripe ────────────────────────────────────────────────────────────────
     if (proveedor === 'stripe') {
