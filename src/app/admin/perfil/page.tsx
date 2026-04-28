@@ -37,12 +37,12 @@ export default function AdminPerfilPage() {
 
     const { data } = await supabase
       .from('usuarios')
-      .select('nombre, avatar_url')
+      .select('nombre, foto_url')
       .eq('id', user.id)
       .single()
 
     setNombre(data?.nombre ?? '')
-    setAvatarUrl(data?.avatar_url ?? null)
+    setAvatarUrl(data?.foto_url ?? null)
 
     // Teléfono guardado localmente
     const savedPhone = localStorage.getItem(PHONE_STORAGE_KEY)
@@ -61,10 +61,16 @@ export default function AdminPerfilPage() {
       const supabase = createClient()
 
       // Actualizar nombre en tabla usuarios
-      await supabase
+      const { error: updateError } = await supabase
         .from('usuarios')
         .update({ nombre })
         .eq('id', userId)
+
+      if (updateError) {
+        console.error('Error actualizando nombre:', updateError)
+        alert('Error al guardar: ' + updateError.message)
+        return
+      }
 
       // Guardar teléfono en localStorage
       localStorage.setItem(PHONE_STORAGE_KEY, telefono)
@@ -112,7 +118,7 @@ export default function AdminPerfilPage() {
         .getPublicUrl(path)
 
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
-      await supabase.from('usuarios').update({ avatar_url: publicUrl }).eq('id', userId)
+      await supabase.from('usuarios').update({ foto_url: publicUrl }).eq('id', userId)
       setAvatarUrl(publicUrl)
     } catch (err) {
       console.error('Error subiendo avatar:', err)

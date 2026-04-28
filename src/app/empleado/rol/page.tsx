@@ -726,15 +726,15 @@ export default function RolPage() {
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* ── Page header M2 ── */}
-        <div className="mb-3">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 2</p>
-          <h1 className="text-xl font-bold text-gray-900 leading-tight flex items-center gap-2">
-            <Image src="/heero-icons4.svg" alt="" width={45} height={45} />
-            Rol
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Conocé tu puesto, las herramientas y tus objetivos del mes
-          </p>
+        <div className="flex items-center gap-4 mb-6">
+          <Image src="/heero-icons4.svg" alt="" width={45} height={45} />
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 3</p>
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">Rol</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Conocé tu puesto, las herramientas y tus objetivos del mes
+            </p>
+          </div>
         </div>
 
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">

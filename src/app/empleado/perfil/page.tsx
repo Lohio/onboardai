@@ -113,8 +113,8 @@ function ToolIcon({ name, className }: { name: string; className?: string }) {
 
 const MODULO_INFO = [
   { key: 'M1' as const, label: 'Perfil',     Icon: User           },
-  { key: 'M2' as const, label: 'Rol',        Icon: Briefcase      },
-  { key: 'M3' as const, label: 'Cultura',    Icon: BookOpen       },
+  { key: 'M2' as const, label: 'Cultura',    Icon: BookOpen       },
+  { key: 'M3' as const, label: 'Rol',        Icon: Briefcase      },
 ]
 
 // ─────────────────────────────────────────────
@@ -558,15 +558,15 @@ export default function PerfilPage() {
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* ── Page header M1 ── */}
-        <div className="mb-3">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 1</p>
-          <h1 className="text-xl font-bold text-gray-900 leading-tight flex items-center gap-2">
-            <Image src="/heero-icons2.svg" alt="" width={45} height={45} />
-            Mi perfil
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Tus accesos, credenciales e información de equipo
-          </p>
+        <div className="flex items-center gap-4 mb-6">
+          <Image src="/heero-icons2.svg" alt="" width={45} height={45} />
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1">Módulo 1</p>
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">Mi perfil</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Tus accesos, credenciales e información de equipo
+            </p>
+          </div>
         </div>
 
         <motion.div
@@ -845,20 +845,20 @@ export default function PerfilPage() {
                       accentBg: 'rgba(59,79,216,0.10)',
                     },
                     {
-                      key: 'M2', label: 'Rol',
-                      href: '/empleado/rol',
+                      key: 'M2', label: 'Cultura',
+                      href: '/empleado/cultura',
                       completado: modulosProgreso['M2'] ?? false,
                       activo: !(modulosProgreso['M1'] === false),
-                      accent: '#FCD34D',
-                      accentBg: 'rgba(245,158,11,0.10)',
-                    },
-                    {
-                      key: 'M3', label: 'Cultura',
-                      href: '/empleado/cultura',
-                      completado: modulosProgreso['M3'] ?? false,
-                      activo: modulosProgreso['M2'] ?? false,
                       accent: '#2DD4BF',
                       accentBg: 'rgba(13,148,136,0.10)',
+                    },
+                    {
+                      key: 'M3', label: 'Rol',
+                      href: '/empleado/rol',
+                      completado: modulosProgreso['M3'] ?? false,
+                      activo: modulosProgreso['M2'] ?? false,
+                      accent: '#FCD34D',
+                      accentBg: 'rgba(245,158,11,0.10)',
                     },
                   ]}
                   progresoTotal={progresoTotal}
