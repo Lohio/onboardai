@@ -72,24 +72,6 @@ async function verificarRolCookie(valor: string, userId: string): Promise<UserRo
 }
 
 // ─────────────────────────────────────────────────────────────
-// CSP dinámica con nonce — elimina unsafe-inline
-// ─────────────────────────────────────────────────────────────
-
-function buildCSP(nonce: string): string {
-  return [
-    "default-src 'self'",
-    // 'unsafe-inline' se ignora en browsers modernos cuando hay nonce presente —
-    // sirve solo como fallback para browsers sin soporte de nonces.
-    // 'strict-dynamic' se evita porque ignora 'self', bloqueando los chunks de Next.js.
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
-    "frame-ancestors 'none'",
-  ].join('; ')
-}
-
-// ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
 
@@ -110,17 +92,8 @@ function esRolValido(valor: string): valor is UserRole {
 // ─────────────────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
-  // Nonce por request para CSP — elimina 'unsafe-inline'
-  const nonce = btoa(crypto.randomUUID())
-  const csp = buildCSP(nonce)
-  const withCSP = (r: NextResponse) => { r.headers.set('content-security-policy', csp); return r }
-
-  // Propagar nonce a Server Components vía cabecera interna
-  const reqHeaders = new Headers(request.headers)
-  reqHeaders.set('x-nonce', nonce)
-
   // Supabase SSR requiere propagar cookies tanto en request como en response
-  let supabaseResponse = NextResponse.next({ request: { headers: reqHeaders } })
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -134,7 +107,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request: { headers: reqHeaders } })
+          supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -152,7 +125,7 @@ export async function middleware(request: NextRequest) {
 
   // Sin sesión → login (si ya estamos en /auth/* dejamos pasar)
   if (!user) {
-    if (pathname.startsWith('/auth')) return withCSP(supabaseResponse)
+    if (pathname.startsWith('/auth')) return supabaseResponse
 
     const loginResponse = NextResponse.redirect(new URL('/auth/login', request.url))
     // Limpiar cookies de caché para que el próximo login lea el rol fresco
@@ -183,7 +156,7 @@ export async function middleware(request: NextRequest) {
       if (error) {
         // Fail open: si falla la query dejamos pasar para no romper la app
         console.error('[middleware] Error al obtener rol desde Supabase:', error)
-        return withCSP(supabaseResponse)
+        return supabaseResponse
       }
 
       // Usuario autenticado en Auth pero sin fila en tabla usuarios
@@ -196,7 +169,7 @@ export async function middleware(request: NextRequest) {
       if (!esRolValido(perfil.rol)) {
         // Fail open ante un valor inesperado en la base de datos
         console.error('[middleware] Rol inválido recibido de Supabase:', perfil.rol)
-        return withCSP(supabaseResponse)
+        return supabaseResponse
       }
 
       rol = perfil.rol
@@ -226,7 +199,7 @@ export async function middleware(request: NextRequest) {
     } catch (err) {
       // Fail open ante errores de red u otros inesperados
       console.error('[middleware] Error inesperado al obtener rol:', err)
-      return withCSP(supabaseResponse)
+      return supabaseResponse
     }
   }
 
@@ -246,11 +219,11 @@ export async function middleware(request: NextRequest) {
     if (rol !== 'dev') {
       return NextResponse.redirect(new URL(homeByRol(rol), request.url))
     }
-    return withCSP(supabaseResponse)
+    return supabaseResponse
   }
 
   // ── 6. dev: acceso total al resto de rutas ───────────────────
-  if (rol === 'dev') return withCSP(supabaseResponse)
+  if (rol === 'dev') return supabaseResponse
 
   // ── 7. /admin/* → solo admin (empleado → redirect /empleado) ─
   if (pathname.startsWith('/admin')) {
@@ -260,7 +233,7 @@ export async function middleware(request: NextRequest) {
 
     // /admin/setup siempre accesible para admin — no verificar setup aquí
     if (pathname === '/admin/setup') {
-      return withCSP(supabaseResponse)
+      return supabaseResponse
     }
 
     // Para cualquier otra ruta /admin, verificar si completó el setup.
@@ -301,7 +274,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return withCSP(supabaseResponse)
+    return supabaseResponse
   }
 
   // ── 8. /empleado/* → empleado y admin ───────────────────────
@@ -311,7 +284,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(homeByRol(rol), request.url))
   }
 
-  return withCSP(supabaseResponse)
+  return supabaseResponse
 }
 
 // ─────────────────────────────────────────────────────────────
