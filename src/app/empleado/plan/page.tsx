@@ -409,7 +409,7 @@ export default function PlanPage() {
         </div>
 
         {/* ── Banner descripción de fase ── */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={`banner-${faseActiva}`}
             initial={{ opacity: 0, y: 4 }}
@@ -426,7 +426,7 @@ export default function PlanPage() {
         </AnimatePresence>
 
         {/* ── Contenido de la fase ── */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={`content-${faseActiva}`}
             initial={{ opacity: 0, y: 10 }}

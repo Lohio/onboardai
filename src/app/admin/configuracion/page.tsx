@@ -297,7 +297,7 @@ export default function ConfiguracionPage() {
       </motion.div>
 
       {/* ── Tab content ── */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {/* ══════════════════════════════════════════
             TAB GENERAL
         ══════════════════════════════════════════ */}

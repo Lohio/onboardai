@@ -19,8 +19,8 @@ const COOKIE_PREBOARDING = 'onboard_preboarding'
 /** Cookie que cachea si el setup inicial fue completado (evita query a empresas en cada request) */
 const COOKIE_SETUP = 'onboard_setup'
 
-/** Duración del caché de rol: 5 minutos en segundos */
-const COOKIE_ROL_MAX_AGE = 60 * 5
+/** Duración del caché de rol: 30 minutos en segundos */
+const COOKIE_ROL_MAX_AGE = 60 * 30
 
 /** Roles válidos para validar el valor de la cookie */
 const ROLES_VALIDOS: UserRole[] = ['empleado', 'admin', 'dev']
@@ -241,25 +241,23 @@ export async function middleware(request: NextRequest) {
     const setupCacheado = request.cookies.get(COOKIE_SETUP)?.value
 
     if (setupCacheado !== '1') {
-      // Consultar empresas en la DB
+      // Un solo join en vez de 2 queries secuenciales
       try {
-        const { data: usuario } = await supabase
+        const { data: perfil } = await supabase
           .from('usuarios')
-          .select('empresa_id')
+          .select('empresa_id, empresas(setup_completo)')
           .eq('id', user.id)
           .single()
 
-        if (usuario?.empresa_id) {
-          const { data: empresa } = await supabase
-            .from('empresas')
-            .select('setup_completo')
-            .eq('id', usuario.empresa_id)
-            .single()
+        const empresa = Array.isArray(perfil?.empresas)
+          ? perfil.empresas[0]
+          : perfil?.empresas
 
-          if (empresa && !empresa.setup_completo) {
-            return NextResponse.redirect(new URL('/admin/setup', request.url))
-          }
+        if (empresa && !empresa.setup_completo) {
+          return NextResponse.redirect(new URL('/admin/setup', request.url))
+        }
 
+        if (perfil?.empresa_id) {
           // Setup completo — cachear en cookie para próximos requests (1 hora)
           supabaseResponse.cookies.set(COOKIE_SETUP, '1', {
             httpOnly: true,

@@ -140,7 +140,7 @@ function KeyRow({ apiKey, onRevoke, revoking }: KeyRowProps) {
         {/* Acciones */}
         {apiKey.activa && !expired && (
           <div className="flex items-center gap-2 flex-shrink-0">
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {confirmando ? (
                 <motion.div
                   key="confirm"
@@ -288,7 +288,7 @@ function NuevaKeyModal({ onClose, onCreated, onConfirmed }: NuevaKeyModalProps) 
         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F1F3D] shadow-2xl overflow-hidden"
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {step === 'form' ? (
             <motion.div
               key="form"

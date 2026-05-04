@@ -242,7 +242,7 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         ) : (
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key="confirm"
               initial={{ opacity: 0, scale: 0.92 }}

@@ -827,7 +827,7 @@ export default function EmpleadoHome() {
 
           {/* ── Contenido del tab activo ── */}
           <div className="mt-5 overflow-hidden">
-            <AnimatePresence mode="wait" custom={direction}>
+            <AnimatePresence custom={direction}>
               <motion.div
                 key={tabActivo}
                 custom={direction}

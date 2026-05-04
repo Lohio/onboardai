@@ -927,7 +927,7 @@ export default function EmpleadoDetallePage() {
       </div>
 
       {/* ── Contenido ── */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {tab === 'edicion' && (
           <motion.div
             key="edicion"

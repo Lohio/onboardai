@@ -384,7 +384,7 @@ function TareaItem({
       >
         {/* Checkbox */}
         <div className="flex-shrink-0 relative w-5 h-5">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {tarea.completada ? (
               <motion.div
                 key="checked"
@@ -808,7 +808,7 @@ export default function RolPage() {
           </motion.div>
 
           {/* ══ Contenido por tab ══ */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 6 }}

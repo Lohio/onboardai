@@ -29,7 +29,9 @@
       "Bash(npx --no-install tsc --noEmit)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(ls node_modules/.bin/tsc*)",
-      "Bash(npm exec:*)"
+      "Bash(npm exec:*)",
+      "Bash(gh auth:*)",
+      "Bash(vercel --prod --yes)"
     ]
   }
 }

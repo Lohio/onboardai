@@ -417,7 +417,7 @@ function BloqueQuiz({ bloqueKey, respuestas, onRespuesta, onComplete, completand
       })}
 
       {/* Acciones */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {todasRespondidas && todasCorrectas && (
           <motion.div
             key="completar"
@@ -1113,7 +1113,7 @@ export default function CulturaPage() {
           </div>
 
           {/* Bloque activo */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {bloqueActivo && (
               <motion.div
                 key={bloqueActivo}
@@ -1142,7 +1142,7 @@ export default function CulturaPage() {
           </AnimatePresence>
 
           {/* Bloque organigrama */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {orgActivo && orgArbol.length > 0 && (
               <motion.div
                 key="organigrama"

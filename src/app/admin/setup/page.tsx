@@ -156,7 +156,7 @@ export default function SetupPage() {
       <Stepper steps={STEPS} currentStep={currentStep} />
 
       {/* Contenido del paso activo */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         <motion.div
           key={currentStep}
           variants={stepVariants}

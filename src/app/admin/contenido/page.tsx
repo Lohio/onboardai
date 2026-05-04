@@ -346,7 +346,7 @@ function CapaBloquePanel({
 
       {/* Panel de contenido del valor seleccionado */}
       {seleccionado && (
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={seleccionado}
             initial={{ opacity: 0, x: 8 }}
