@@ -1,7 +1,7 @@
 # Diseño: Agente de Bienvenida (Telegram)
 
 **Fecha:** 2026-06-04  
-**Estado:** Aprobado — listo para implementar  
+**Estado:** Aprobado — fixes incorporados 2026-06-04  
 **Scope:** Bot de Telegram separado del CopilBot. Solo responde sobre el primer día: ubicación, horario de ingreso, referente, resumen. No expone `conocimiento` institucional.
 
 ---
@@ -139,6 +139,54 @@ TELEGRAM_BOT_USERNAME=     # sin @
 - Tiene su propio `getAdminClient()` (mismo patrón)
 - Tiene su propia instancia `anthropic` (mismo patrón)
 - Solo consulta: `bot_invitaciones`, `bot_vinculaciones`, `usuarios`, `empresas`, `equipo_relaciones`, `app_config`
+
+---
+
+## Fixes pre-implementación (incorporados al spec)
+
+### Fix 1 — `/start` sin token de usuario ya vinculado
+En `procesarBienvenida`, después de resolver `datos` (tras el bloque del vínculo existente), agregar antes de `detectarTema`:
+
+```typescript
+if (/^\/?start$/i.test(texto)) {
+  return {
+    texto: `¡Hola de nuevo, ${datos.nombreEmpleado}! ¿Qué querés saber de tu primer día?`,
+    mostrarBotones: true,
+  }
+}
+```
+
+Sin esto, `/start` sin token cae en `detectarTema → 'otro' → Claude` en lugar de saludar con botones.
+
+### Fix 2 — `case 'resumen'` sin el `.replace()` hacky
+Reemplazar la concatenación con parche por un array limpio:
+
+```typescript
+case 'resumen': {
+  const fecha = fechaLegible(d.fechaIngreso)
+  const lineas = [
+    `✨ Resumen de tu primer día en ${d.nombreEmpresa}:`,
+    '',
+    `• Cuándo: ${fecha}${d.horaIngreso ? ` a las ${d.horaIngreso}` : ''}`,
+  ]
+  if (d.direccion) lineas.push(`• Dónde: ${d.direccion}`)
+  if (d.referenteNombre) lineas.push(`• Quién te recibe: ${d.referenteNombre}`)
+  lineas.push('', 'Cualquier duda escribime, para eso estoy.')
+  return lineas.join('\n')
+}
+```
+
+### Fix 3 — Guard en `TELEGRAM_BOT_USERNAME`
+En `api/admin/bienvenida/invitar/route.ts`, reemplazar el fallback silencioso:
+
+```typescript
+// ANTES (silencioso, puede generar link al bot equivocado)
+const username = process.env.TELEGRAM_BOT_USERNAME ?? 'HeeroBienvenidaBot'
+
+// DESPUÉS (falla ruidosamente)
+const username = process.env.TELEGRAM_BOT_USERNAME
+if (!username) return ApiError.internal('TELEGRAM_BOT_USERNAME no configurado')
+```
 
 ---
 
