@@ -19,6 +19,7 @@ import {
   ImagePlus,
   ChevronDown,
   CreditCard,
+  Send,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { esTrial, UPGRADE_MSG } from '@/lib/billing'
@@ -158,6 +159,12 @@ const navItems: NavItemDef[] = [
     icon: <Users className="w-[18px] h-[18px]" />,
     disabled: false,
     tourId: 'tour-nav-empleados',
+  },
+  {
+    labelKey: 'nav.welcome',
+    href:     '/admin/bienvenida',
+    icon:     <Send className="w-[18px] h-[18px]" />,
+    disabled: false,
   },
   {
     labelKey: 'nav.knowledge',
