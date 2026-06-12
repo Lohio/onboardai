@@ -48,3 +48,13 @@ next-env.d.ts
 .vercel
 .env*.local
 .worktrees/
+
+# playwright
+/playwright-report
+/test-results
+
+# typescript
+tsconfig.tsbuildinfo
+
+# artefactos accidentales de windows
+nul

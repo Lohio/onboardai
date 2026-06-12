@@ -3,32 +3,24 @@
 // Resiliente: funciona aunque billing.sql no se haya ejecutado todavía.
 
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { withHandler } from '@/lib/api/withHandler'
+import { ApiError } from '@/lib/errors'
 
-export async function GET() {
-  try {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-    const { data: usuario } = await supabase
-      .from('usuarios')
-      .select('empresa_id, rol')
-      .eq('id', user.id)
-      .single()
-
-    if (!usuario || usuario.rol !== 'admin') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-    }
-
+export const GET = withHandler(
+  {
+    auth: 'session',
+    rol: 'admin',
+    bodyType: 'none',
+  },
+  async ({ supabase, user, requestId }) => {
     // Seleccionar solo columnas que siempre existen + las de billing de forma segura
     const { data: empresa } = await supabase
       .from('empresas')
       .select('plan, nombre')
-      .eq('id', usuario.empresa_id)
+      .eq('id', user!.empresaId)
       .single()
 
-    if (!empresa) return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 })
+    if (!empresa) return ApiError.notFound('Empresa', requestId)
 
     // Intentar columnas de billing (solo existen si se ejecutó billing.sql)
     let billingExtra = {
@@ -40,32 +32,29 @@ export async function GET() {
       stripe_customer_id: null as string | null,
     }
 
-    try {
-      const { data: billingData } = await supabase
-        .from('empresas')
-        .select('plan_empleados, suscripcion_estado, suscripcion_inicio, suscripcion_fin, proveedor_pago, stripe_customer_id')
-        .eq('id', usuario.empresa_id)
-        .single()
+    // Si las columnas no existen la query falla y billingData es null — usamos defaults
+    const { data: billingData } = await supabase
+      .from('empresas')
+      .select('plan_empleados, suscripcion_estado, suscripcion_inicio, suscripcion_fin, proveedor_pago, stripe_customer_id')
+      .eq('id', user!.empresaId)
+      .single()
 
-      if (billingData) {
-        billingExtra = {
-          plan_empleados:     billingData.plan_empleados ?? 3,
-          suscripcion_estado: billingData.suscripcion_estado ?? 'trial',
-          suscripcion_inicio: billingData.suscripcion_inicio ?? null,
-          suscripcion_fin:    billingData.suscripcion_fin ?? null,
-          proveedor_pago:     billingData.proveedor_pago ?? null,
-          stripe_customer_id: billingData.stripe_customer_id ?? null,
-        }
+    if (billingData) {
+      billingExtra = {
+        plan_empleados:     billingData.plan_empleados ?? 3,
+        suscripcion_estado: billingData.suscripcion_estado ?? 'trial',
+        suscripcion_inicio: billingData.suscripcion_inicio ?? null,
+        suscripcion_fin:    billingData.suscripcion_fin ?? null,
+        proveedor_pago:     billingData.proveedor_pago ?? null,
+        stripe_customer_id: billingData.stripe_customer_id ?? null,
       }
-    } catch {
-      // Columnas de billing aún no existen — usamos defaults
     }
 
     // Contar empleados activos
     const { count } = await supabase
       .from('usuarios')
       .select('*', { count: 'exact', head: true })
-      .eq('empresa_id', usuario.empresa_id)
+      .eq('empresa_id', user!.empresaId)
       .eq('rol', 'empleado')
 
     const VALID_PLANS = ['trial', 'pro', 'enterprise']
@@ -76,8 +65,5 @@ export async function GET() {
       ...billingExtra,
       empleados_activos: count ?? 0,
     })
-  } catch (err) {
-    console.error('[billing/status]', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
-}
+)
