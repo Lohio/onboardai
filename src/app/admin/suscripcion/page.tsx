@@ -11,10 +11,12 @@ import {
   ChevronRight,
   ExternalLink,
   AlertCircle,
+  Bot,
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { PLANES, calcularCostoMensual, getPlanFeatureList } from '@/lib/billing'
+import { PLANES, calcularCostoMensual, getPlanFeatureList, cuotaIA } from '@/lib/billing'
+import { createClient } from '@/lib/supabase'
 import { useContext } from 'react'
 import { ThemeContext } from '@/components/ThemeProvider'
 import type { PlanId, ProveedorPago } from '@/types'
@@ -139,6 +141,116 @@ function getPlanCfg(planId: PlanId, isLight: boolean): PlanCfg {
 function formatFecha(iso?: string | null) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+/** Primer día del mes actual en formato YYYY-MM-01 (coincide con la columna `mes`) */
+function primerDiaMesActual(): string {
+  const ahora = new Date()
+  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+// ─── Card de uso del asistente IA ─────────────────────────────────────────────
+
+interface UsoIAMes {
+  consultas: number
+  input_tokens: number
+  output_tokens: number
+}
+
+function UsoIACard({
+  uso,
+  loading,
+  plan,
+}: {
+  uso: UsoIAMes | null
+  loading: boolean
+  plan: PlanId
+}) {
+  const limite = cuotaIA(plan)
+  const consultas = uso?.consultas ?? 0
+  const pct = limite > 0 ? Math.min(100, Math.round((consultas / limite) * 100)) : 0
+
+  // Semáforo de consumo (invertido): <70% bien (teal), 70–89% atención (amber), ≥90% crítico (rojo)
+  const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-[#0D9488]'
+  const tokensMes = (uso?.input_tokens ?? 0) + (uso?.output_tokens ?? 0)
+
+  const scrollAPlanes = () => {
+    document.getElementById('planes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-white/70">
+        <Bot className="w-4 h-4 text-[#0D9488]" />
+        Uso del asistente IA
+      </h2>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-6">
+          <div className="w-4 h-4 border-2 border-[#0EA5E9]/30 border-t-[#0EA5E9] rounded-full animate-spin" />
+        </div>
+      ) : consultas === 0 ? (
+        /* Empty state: sin uso este mes */
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <Bot className="w-7 h-7 text-white/10" />
+          <p className="text-sm text-white/40">Tu equipo todavía no usó el asistente este mes</p>
+          <p className="text-xs text-white/25">
+            Tenés {limite.toLocaleString('es-AR')} consultas incluidas en tu plan
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Barra de progreso de consultas */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[11px] text-white/40">
+              <span>Consultas este mes</span>
+              <span className="font-mono">
+                {consultas.toLocaleString('es-AR')} / {limite.toLocaleString('es-AR')}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Tokens del mes */}
+          <p className="text-[11px] text-white/35">
+            Tokens procesados este mes:{' '}
+            <span className="font-mono text-white/55">{tokensMes.toLocaleString('es-AR')}</span>
+          </p>
+
+          {/* Aviso de consumo alto con CTA */}
+          {pct >= 80 && (
+            <div className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl border
+              ${pct >= 90
+                ? 'bg-red-500/10 border-red-500/20'
+                : 'bg-amber-500/10 border-amber-500/20'
+              }`}
+            >
+              <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${pct >= 90 ? 'text-red-400' : 'text-amber-400'}`} />
+              <div className="flex-1 space-y-1.5">
+                <p className={`text-xs ${pct >= 90 ? 'text-red-300/80' : 'text-amber-300/80'}`}>
+                  Usaste el {pct}% de las consultas IA incluidas en tu plan este mes.
+                </p>
+                <button
+                  type="button"
+                  onClick={scrollAPlanes}
+                  className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors duration-150
+                    ${pct >= 90 ? 'text-red-300 hover:text-red-200' : 'text-amber-300 hover:text-amber-200'}`}
+                >
+                  Mejorar plan
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
 }
 
 // ─── Selector de proveedor ────────────────────────────────────────────────────
@@ -297,6 +409,8 @@ export default function SuscripcionPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [loadingPortal, setLoadingPortal] = useState(false)
   const [proveedor, setProveedor] = useState<ProveedorPago>('stripe')
+  const [uso, setUso] = useState<UsoIAMes | null>(null)
+  const [loadingUso, setLoadingUso] = useState(true)
 
   const cargarStatus = useCallback(async () => {
     try {
@@ -312,7 +426,45 @@ export default function SuscripcionPage() {
     }
   }, [])
 
+  // Carga no bloqueante del uso mensual de IA — si la tabla no existe aún, se muestra 0
+  const cargarUso = useCallback(async () => {
+    setLoadingUso(true)
+    const sinUso: UsoIAMes = { consultas: 0, input_tokens: 0, output_tokens: 0 }
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setUso(sinUso); return }
+
+      const { data: perfil } = await supabase
+        .from('usuarios')
+        .select('empresa_id')
+        .eq('id', user.id)
+        .single()
+      if (!perfil?.empresa_id) { setUso(sinUso); return }
+
+      const { data, error } = await supabase
+        .from('uso_mensual_ia')
+        .select('consultas, input_tokens, output_tokens')
+        .eq('empresa_id', perfil.empresa_id)
+        .eq('mes', primerDiaMesActual())
+        .maybeSingle()
+
+      if (error) {
+        console.warn('[Suscripcion] uso_mensual_ia:', error.message)
+        setUso(sinUso)
+        return
+      }
+      setUso((data as UsoIAMes | null) ?? sinUso)
+    } catch (err) {
+      console.warn('[Suscripcion] uso IA:', err)
+      setUso(sinUso)
+    } finally {
+      setLoadingUso(false)
+    }
+  }, [])
+
   useEffect(() => { cargarStatus() }, [cargarStatus])
+  useEffect(() => { cargarUso() }, [cargarUso])
 
   const handleSelectPlan = useCallback(async (planId: PlanId) => {
     setLoadingCheckout(true)
@@ -427,9 +579,12 @@ export default function SuscripcionPage() {
         )}
       </div>
 
+      {/* ── Uso del asistente IA ── */}
+      <UsoIACard uso={uso} loading={loadingUso} plan={status.plan} />
+
       {/* ── Planes disponibles ── */}
       {status.plan === 'trial' && (
-        <div className="space-y-4">
+        <div id="planes" className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-sm font-semibold text-white/70">Elegí tu plan</h2>
             <ProveedorSelector proveedor={proveedor} onChange={setProveedor} />
@@ -465,7 +620,7 @@ export default function SuscripcionPage() {
 
       {/* Si ya tiene plan pago, mostrar solo el plan actual + opción de cambiar */}
       {status.plan !== 'trial' && (
-        <div className="space-y-4">
+        <div id="planes" className="space-y-4">
           <h2 className="text-sm font-semibold text-white/70">Tu plan</h2>
           <div className="max-w-sm">
             <PlanCard

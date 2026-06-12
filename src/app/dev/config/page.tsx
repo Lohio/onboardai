@@ -48,13 +48,13 @@ interface ConfigDef {
 const CONFIGS: ConfigDef[] = [
   {
     clave: 'claude_model',
-    valorDefault: 'claude-sonnet-4-20250514',
+    valorDefault: 'claude-sonnet-4-6',
     descripcion: 'Modelo de Claude usado por el asistente IA',
     tipo: 'select',
     opciones: [
-      { value: 'claude-opus-4-5-20251101',  label: 'Claude Opus 4.5 (más potente)' },
-      { value: 'claude-sonnet-4-20250514',  label: 'Claude Sonnet 4 (recomendado)' },
-      { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (más rápido)' },
+      { value: 'claude-opus-4-6',   label: 'Claude Opus 4.6 (más potente)' },
+      { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (recomendado)' },
+      { value: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5 (más rápido)' },
     ],
   },
   {
@@ -242,7 +242,7 @@ function TablaNoEncontrada({ onReintentar }: { onReintentar: () => void }) {
 
 -- Valores por defecto
 INSERT INTO app_config (clave, valor, descripcion) VALUES
-  ('claude_model',              'claude-sonnet-4-20250514', 'Modelo de Claude usado por el asistente IA'),
+  ('claude_model',              'claude-sonnet-4-6', 'Modelo de Claude usado por el asistente IA'),
   ('max_tokens',                '1024',                     'Máximo de tokens por respuesta del asistente'),
   ('system_prompt_base',        '',                         'Prompt base del asistente IA'),
   ('onboarding_secuencial',     'true',                     'Si está activo, módulos se desbloquean en orden'),

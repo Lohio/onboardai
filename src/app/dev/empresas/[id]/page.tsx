@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Users, ShieldCheck, MessageSquare, TrendingUp,
-  Trash2, AlertTriangle, X, Building2, Calendar,
+  Trash2, AlertTriangle, X, Building2, Calendar, Bot,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
@@ -37,6 +37,20 @@ interface UsuarioFila {
   rol: UserRol
   created_at: string
   foto_url: string | null
+}
+
+interface UsoMensualFila {
+  mes: string
+  consultas: number
+  input_tokens: number
+  output_tokens: number
+  cache_read_tokens: number
+}
+
+interface FuenteResumen {
+  fuente: string
+  llamadas: number
+  tokens: number
 }
 
 // ─────────────────────────────────────────────
@@ -75,6 +89,25 @@ function formatFecha(iso: string): string {
     month: 'short',
     year: 'numeric',
   })
+}
+
+/** Formatea un número con separadores es-AR */
+function formatNum(n: number): string {
+  return n.toLocaleString('es-AR')
+}
+
+/** Formatea una fecha `mes` (YYYY-MM-01) como "junio 2026" */
+function formatMes(mes: string): string {
+  return new Date(`${mes}T00:00:00`).toLocaleDateString('es-AR', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/** Primer día del mes actual en formato YYYY-MM-01 */
+function primerDiaMesActual(): string {
+  const ahora = new Date()
+  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-01`
 }
 
 // ─────────────────────────────────────────────
@@ -289,6 +322,8 @@ export default function EmpresaDetallePage() {
   const [usuarios, setUsuarios] = useState<UsuarioFila[]>([])
   const [progresoPorUsuario, setProgresoPorUsuario] = useState<Map<string, number>>(new Map())
   const [mensajesCount, setMensajesCount] = useState<number>(0)
+  const [usoMensual, setUsoMensual] = useState<UsoMensualFila[]>([])
+  const [usoFuentes, setUsoFuentes] = useState<FuenteResumen[]>([])
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -350,6 +385,38 @@ export default function EmpresaDetallePage() {
       }
       setProgresoPorUsuario(mapa)
       setMensajesCount(msgCount ?? 0)
+
+      // Consumo IA — no bloqueante (las tablas pueden no estar migradas aún)
+      const [
+        { data: mensualData, error: mensualError },
+        { data: detalleData, error: detalleError },
+      ] = await Promise.all([
+        supabase
+          .from('uso_mensual_ia')
+          .select('mes, consultas, input_tokens, output_tokens, cache_read_tokens')
+          .eq('empresa_id', empresaId)
+          .order('mes', { ascending: false })
+          .limit(3),
+        supabase
+          .from('uso_ia')
+          .select('fuente, input_tokens, output_tokens')
+          .eq('empresa_id', empresaId)
+          .gte('created_at', primerDiaMesActual()),
+      ])
+      if (mensualError) console.warn('[EmpresaDetalle] uso_mensual_ia:', mensualError.message)
+      if (detalleError) console.warn('[EmpresaDetalle] uso_ia:', detalleError.message)
+
+      setUsoMensual((mensualData ?? []) as UsoMensualFila[])
+
+      // Agrupar detalle del mes actual por fuente (count + suma de tokens)
+      const porFuente = new Map<string, FuenteResumen>()
+      for (const row of (detalleData ?? []) as { fuente: string; input_tokens: number | null; output_tokens: number | null }[]) {
+        const acc = porFuente.get(row.fuente) ?? { fuente: row.fuente, llamadas: 0, tokens: 0 }
+        acc.llamadas += 1
+        acc.tokens += (row.input_tokens ?? 0) + (row.output_tokens ?? 0)
+        porFuente.set(row.fuente, acc)
+      }
+      setUsoFuentes(Array.from(porFuente.values()).sort((a, b) => b.llamadas - a.llamadas))
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error desconocido'
       setError(msg)
@@ -458,6 +525,64 @@ export default function EmpresaDetallePage() {
           icon={<TrendingUp className="w-4 h-4 text-amber-400" />}
           accent="bg-amber-500/12 border border-amber-500/20"
         />
+      </motion.div>
+
+      {/* ── Consumo IA ── */}
+      <motion.div variants={cardVariants} className="space-y-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-white/70">
+          <Bot className="w-4 h-4 text-[#0D9488]" />
+          Consumo IA
+        </h2>
+
+        {usoMensual.length === 0 ? (
+          <div className="glass-card rounded-xl py-10 flex flex-col items-center gap-2">
+            <Bot className="w-7 h-7 text-white/10" />
+            <p className="text-sm text-white/35">Sin consumo IA registrado para esta empresa</p>
+          </div>
+        ) : (
+          <div className="glass-card rounded-xl overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] text-white/30 border-b border-white/[0.06]">
+                  <th className="text-left font-medium px-4 py-2.5">Mes</th>
+                  <th className="text-right font-medium px-4 py-2.5">Consultas</th>
+                  <th className="text-right font-medium px-4 py-2.5">Input tokens</th>
+                  <th className="text-right font-medium px-4 py-2.5">Output tokens</th>
+                  <th className="text-right font-medium px-4 py-2.5">Cache read</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usoMensual.map(fila => (
+                  <tr key={fila.mes} className="border-b border-white/[0.04] last:border-0">
+                    <td className="px-4 py-2.5 text-white/70 capitalize">{formatMes(fila.mes)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-white/80">{formatNum(fila.consultas)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-white/50">{formatNum(fila.input_tokens)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-white/50">{formatNum(fila.output_tokens)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-white/35">{formatNum(fila.cache_read_tokens)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Desglose por fuente del mes actual */}
+        {usoFuentes.length > 0 && (
+          <div className="glass-card rounded-xl p-4 space-y-2.5">
+            <p className="text-[11px] text-white/30 font-medium">Desglose por fuente — mes actual</p>
+            <div className="space-y-1.5">
+              {usoFuentes.map(f => (
+                <div key={f.fuente} className="flex items-center justify-between gap-3 text-xs">
+                  <Badge variant="info">{f.fuente}</Badge>
+                  <div className="flex items-center gap-4 font-mono">
+                    <span className="text-white/60">{formatNum(f.llamadas)} llamadas</span>
+                    <span className="text-white/35 w-28 text-right">{formatNum(f.tokens)} tokens</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* ── Tabla de usuarios ── */}

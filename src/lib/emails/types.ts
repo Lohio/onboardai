@@ -111,6 +111,17 @@ export interface PruebaExpirandoProps {
   linkContratar: string
 }
 
+/** 12 — Aviso al admin de consumo de cuota IA (80% / 100%) */
+export interface CuotaIAProps {
+  adminNombre: string
+  empresa: string
+  /** 80 u 100 */
+  umbral: number
+  usadas: number
+  limite: number
+  linkSuscripcion: string
+}
+
 // ─────────────────────────────────────────────
 // Union type de templates
 // ─────────────────────────────────────────────
@@ -128,6 +139,7 @@ export type EmailTemplate =
   | { tipo: 'resumen-semanal-admin'; props: ResumenSemanalAdminProps }
   | { tipo: 'nuevo-empleado-admin'; props: NuevoEmpleadoAdminProps }
   | { tipo: 'prueba-expirando'; props: PruebaExpirandoProps }
+  | { tipo: 'cuota-ia'; props: CuotaIAProps }
 
 // ─────────────────────────────────────────────
 // Resultado de un template renderizado

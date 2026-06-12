@@ -9,6 +9,7 @@ import {
   getFilenameFromPath,
   getFileEmoji,
   formatFileSize,
+  urlArchivoConocimiento,
   TIPO_LABELS,
 } from '@/lib/conocimiento'
 import type { ContenidoBloque, MetadataLink, MetadataArchivo } from '@/types'
@@ -29,19 +30,21 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
       )
 
     // ── IMAGEN ────────────────────────────────────────────────
-    case 'imagen':
-      if (!bloque.url) return <EmptyPreview tipo="imagen" />
+    case 'imagen': {
+      const imagenSrc = urlArchivoConocimiento(bloque)
+      if (!imagenSrc) return <EmptyPreview tipo="imagen" />
       return (
         <div className="rounded-lg overflow-hidden border border-white/[0.08]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={bloque.url}
+            src={imagenSrc}
             alt={bloque.titulo}
             className="w-full object-cover max-h-64"
             loading="lazy"
           />
         </div>
       )
+    }
 
     // ── VIDEO ─────────────────────────────────────────────────
     case 'video':
@@ -61,10 +64,11 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
 
     // ── PDF ───────────────────────────────────────────────────
     case 'pdf': {
-      if (!bloque.url) return <EmptyPreview tipo="pdf" />
+      const pdfSrc = urlArchivoConocimiento(bloque)
+      if (!pdfSrc) return <EmptyPreview tipo="pdf" />
       const pdfNombre = bloque.storage_path
         ? getFilenameFromPath(bloque.storage_path)
-        : getDomainFromUrl(bloque.url)
+        : getDomainFromUrl(bloque.url ?? '')
       return (
         <div className="flex items-center gap-3 p-4 rounded-lg bg-white/[0.03] border border-white/[0.08]">
           <div className="w-10 h-10 rounded-lg bg-red-500/15 border border-red-500/20 flex items-center justify-center flex-shrink-0">
@@ -75,7 +79,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
             <p className="text-xs text-white/35 mt-0.5">Documento PDF</p>
           </div>
           <a
-            href={bloque.url}
+            href={pdfSrc}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-xs text-[#38BDF8] hover:text-[#7DD3FC]
@@ -129,7 +133,8 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
 
     // ── ARCHIVO ───────────────────────────────────────────────
     case 'archivo': {
-      if (!bloque.url && !bloque.storage_path) return <EmptyPreview tipo="archivo" />
+      const archivoSrc = urlArchivoConocimiento(bloque)
+      if (!archivoSrc) return <EmptyPreview tipo="archivo" />
       const meta = bloque.metadata as MetadataArchivo | null
       const nombre = meta?.nombre
         ?? (bloque.storage_path ? getFilenameFromPath(bloque.storage_path) : 'Archivo')
@@ -144,9 +149,9 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
             <p className="text-sm text-white/80 font-medium truncate">{nombre}</p>
             {tamano && <p className="text-xs text-white/35 mt-0.5">{tamano}</p>}
           </div>
-          {bloque.url && (
+          {archivoSrc && (
             <a
-              href={bloque.url}
+              href={archivoSrc}
               target="_blank"
               rel="noopener noreferrer"
               download

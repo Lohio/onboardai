@@ -77,6 +77,8 @@ export interface ContenidoBloque {
   tipo: TipoContenido
   url?: string | null
   storage_path?: string | null
+  /** Texto extraído de PDFs/DOCX subidos — nutre al agente IA */
+  contenido_extraido?: string | null
   metadata?: Record<string, string | number | boolean | null> | null
   created_at: string
   area?: string | null
@@ -202,6 +204,20 @@ export interface PlanConfig {
   empleadosIncluidos: number
   extraPorEmpleado: number
   modulos: string[]
+  /** Consultas al asistente IA incluidas por mes (por empresa) */
+  consultasIA: number
+}
+
+/** Fila de uso_mensual_ia — agregado de consumo IA por empresa/mes */
+export interface UsoMensualIA {
+  empresa_id: string
+  mes: string
+  consultas: number
+  input_tokens: number
+  output_tokens: number
+  cache_read_tokens: number
+  aviso_80_enviado: boolean
+  aviso_100_enviado: boolean
 }
 
 export interface Suscripcion {

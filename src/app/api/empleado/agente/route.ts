@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
-import { anthropic, buildSystemPromptWithConfig } from '@/lib/claude'
+import { streamChat } from '@/lib/claude'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { agenteSchema } from '@/lib/schemas/empleado'
+import { verificarCuotaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
+import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 import type { ChatMensaje } from '@/lib/claude'
 
 // ─────────────────────────────────────────────
@@ -36,53 +38,87 @@ export const POST = withHandler(
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
+    // ── Cuota mensual de consultas IA (por empresa, según plan) ───
+    const { data: empresa } = await supabase!
+      .from('empresas')
+      .select('plan')
+      .eq('id', usuario.empresa_id)
+      .single()
+
+    const cuota = await verificarCuotaIA(supabase!, usuario.empresa_id, empresa?.plan)
+    if (!cuota.permitido) {
+      return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'X-Cuota-Agotada': '1',
+        },
+      })
+    }
+
     const diasOnboarding = usuario.fecha_ingreso
       ? Math.max(1, Math.ceil((Date.now() - new Date(usuario.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24)))
       : null
 
-    // Contexto del empleado enriquecido con módulo actual
+    // Contexto del empleado enriquecido con módulo actual.
+    // El `contexto` libre del body NO entra acá: es texto controlado por el
+    // cliente y no debe ir en el system prompt — va en el turno del usuario.
     const contextoEmpleado = [
       usuario.nombre ? `El empleado se llama ${usuario.nombre}.` : '',
       usuario.puesto ? `Su puesto es ${usuario.puesto}.` : '',
       diasOnboarding ? `Lleva ${diasOnboarding} día${diasOnboarding === 1 ? '' : 's'} en la empresa.` : '',
       modulo ? `Está actualmente en el módulo: ${modulo}.` : '',
-      contexto?.trim() ? contexto.trim() : '',
     ].filter(Boolean).join(' ')
 
-    // ── System prompt: instrucciones agente + conocimiento empresa ─
-    const { systemPrompt, config } = await buildSystemPromptWithConfig(
-      usuario.empresa_id,
-      contextoEmpleado,
-      usuario.area ?? null,
-      usuario.puesto ?? null,
-    )
-    const systemPromptAgente = `${INSTRUCCIONES_AGENTE}\n\n${systemPrompt}`
+    // ── Streaming via streamChat ──────────────────────────────────
+    // Las instrucciones del agente entran al prefijo estable (cacheado);
+    // streamChat maneja el modo híbrido (tool de búsqueda en bases grandes).
+    const mensajeConContexto = contexto?.trim()
+      ? `[Contexto de la pantalla actual: ${contexto.trim()}]\n\n${mensaje}`
+      : mensaje
 
-    // ── Streaming ─────────────────────────────────────────────────
     const mensajesCompletos: ChatMensaje[] = [
       ...historial,
-      { role: 'user', content: mensaje },
+      { role: 'user', content: mensajeConContexto },
     ]
+
+    // Capturar referencias para uso dentro del ReadableStream
+    const supabaseRef = supabase!
+    const userId = user!.id
+    const empresaId = usuario.empresa_id
 
     const readable = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder()
         try {
-          const stream = anthropic.messages.stream({
-            model: config.claudeModel,
-            max_tokens: config.maxTokens,
-            system: systemPromptAgente,
-            messages: mensajesCompletos,
+          const tokenUsage = await streamChat({
+            empresaId,
+            contextoEmpleado,
+            empleadoArea: usuario.area ?? null,
+            empleadoPuesto: usuario.puesto ?? null,
+            prefijoInstrucciones: INSTRUCCIONES_AGENTE,
+            mensajes: mensajesCompletos,
+            onChunk: (text) => controller.enqueue(encoder.encode(text)),
+            onDone: () => {},
           })
 
-          for await (const event of stream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
-              controller.enqueue(encoder.encode(event.delta.text))
-            }
-          }
+          // ── Metering: registrar consumo + avisos de umbral ────
+          await registrarUsoIA({
+            supabase: supabaseRef,
+            empresaId,
+            usuarioId: userId,
+            fuente: 'agente',
+            modelo: tokenUsage.modelo,
+            inputTokens: tokenUsage.inputTokens,
+            outputTokens: tokenUsage.outputTokens,
+            cacheReadTokens: tokenUsage.cacheReadTokens,
+            cacheCreationTokens: tokenUsage.cacheCreationTokens,
+          })
+          notificarUmbralCuotaIA({
+            supabase: supabaseRef,
+            empresaId,
+            usadas: cuota.usadas + 1,
+            limite: cuota.limite,
+          })
         } catch (err) {
           console.error('[agente] Error en streaming:', err)
         } finally {

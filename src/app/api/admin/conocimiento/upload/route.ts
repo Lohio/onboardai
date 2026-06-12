@@ -26,6 +26,36 @@ const MAX_BYTES: Record<string, number> = {
   archivo: 50 * 1024 * 1024,   // 50 MB
 }
 
+/** Máximo de caracteres de texto extraído que se persiste por archivo */
+const MAX_TEXTO_EXTRAIDO = 50_000
+
+/**
+ * Extrae el texto de PDFs y DOCX para que el contenido nutra al agente IA.
+ * Best-effort: si falla, el archivo se sube igual y se retorna null.
+ */
+async function extraerTexto(buffer: Buffer, ext: string): Promise<string | null> {
+  try {
+    if (ext === 'pdf') {
+      const { extractText, getDocumentProxy } = await import('unpdf')
+      const pdf = await getDocumentProxy(new Uint8Array(buffer))
+      const { text } = await extractText(pdf, { mergePages: true })
+      const limpio = text.replace(/\s+\n/g, '\n').trim()
+      return limpio ? limpio.slice(0, MAX_TEXTO_EXTRAIDO) : null
+    }
+    if (ext === 'docx') {
+      const mammoth = await import('mammoth')
+      const { value } = await mammoth.extractRawText({ buffer })
+      const limpio = value.trim()
+      return limpio ? limpio.slice(0, MAX_TEXTO_EXTRAIDO) : null
+    }
+    return null
+  } catch (err) {
+    console.warn('[upload/conocimiento] No se pudo extraer texto:',
+      err instanceof Error ? err.message : err)
+    return null
+  }
+}
+
 /** Detecta MIME real via magic bytes — ignora el Content-Type enviado por el cliente */
 function detectarMime(buf: Buffer): string | null {
   if (buf.length < 4) return null
@@ -65,6 +95,11 @@ export const POST = withHandler(
     // Validar que el empresaId del admin coincide (evitar subir a empresa ajena)
     if (user!.empresaId !== empresaId) {
       return ApiError.forbidden()
+    }
+
+    // `modulo` se interpola en el path del bucket — solo slugs, sin '/' ni '..'
+    if (!/^[a-z0-9_-]{1,50}$/i.test(modulo)) {
+      return ApiError.badRequest("Parámetro 'modulo' inválido")
     }
 
     // ── Validaciones server-side ─────────────────────────────────────────────
@@ -124,12 +159,13 @@ export const POST = withHandler(
       return ApiError.internal(uploadError.message)
     }
 
-    // Obtener URL pública
-    const { data: { publicUrl } } = serviceSupabase
-      .storage
-      .from('conocimiento')
-      .getPublicUrl(path)
+    // Extraer texto de PDFs/DOCX para que el agente IA pueda usar su contenido
+    const textoExtraido = await extraerTexto(buffer, ext)
 
-    return NextResponse.json({ path, publicUrl })
+    // El bucket es privado: la URL de acceso es el proxy autenticado,
+    // que verifica sesión + empresa y redirige a una signed URL
+    const proxyUrl = `/api/storage/conocimiento?path=${encodeURIComponent(path)}`
+
+    return NextResponse.json({ path, publicUrl: proxyUrl, textoExtraido })
   }
 )

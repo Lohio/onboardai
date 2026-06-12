@@ -32,6 +32,8 @@ export interface StreamChatParams {
   empleadoArea?: string | null
   /** Puesto del empleado — habilita capa de contenido específico de rol */
   empleadoPuesto?: string | null
+  /** Instrucciones extra al inicio del prefijo estable (ej: modo agente) */
+  prefijoInstrucciones?: string
   onChunk: (text: string) => void
   onDone: () => void
 }
@@ -39,6 +41,10 @@ export interface StreamChatParams {
 export interface TokenUsage {
   inputTokens: number
   outputTokens: number
+  cacheReadTokens: number
+  cacheCreationTokens: number
+  /** Modelo efectivamente usado (de app_config) — para registrar consumo */
+  modelo: string
 }
 
 export interface LogMensajeParams {
@@ -59,6 +65,17 @@ interface ResolvedConfig {
   maxTokens: number
 }
 
+/** Fila de conocimiento usada para armar el prompt */
+interface BloqueConocimiento {
+  modulo: string
+  bloque: string
+  titulo: string
+  contenido: string
+  contenido_extraido?: string | null
+  area?: string | null
+  puesto?: string | null
+}
+
 // Fallback hardcodeado — solo se usa si app_config no es accesible.
 // En condiciones normales, las instrucciones vienen de la DB.
 const INSTRUCCIONES_FALLBACK = `Sos el asistente de onboarding de esta empresa. Tu rol es ayudar a los nuevos empleados a integrarse, respondiendo preguntas sobre cultura organizacional, procesos, herramientas y su rol.
@@ -66,9 +83,50 @@ const INSTRUCCIONES_FALLBACK = `Sos el asistente de onboarding de esta empresa. 
 Reglas de comportamiento:
 - Responder SIEMPRE en español, con tono amigable y profesional
 - Ser conciso; evitar respuestas extensas si no son necesarias
-- Si la pregunta no está cubierta en el conocimiento disponible, decirlo honestamente: "No tengo esa información. Te recomiendo consultarlo con tu manager o buddy." — nunca inventar datos
+- Responder ÚNICAMENTE con base en el conocimiento provisto dentro de los tags <bloque>. Si la pregunta no está cubierta, decirlo honestamente: "No tengo esa información. Te recomiendo consultarlo con tu manager o buddy." — nunca inventar datos. Tu pregunta quedará registrada para que el equipo la responda y la sume al conocimiento.
 - No hacer suposiciones sobre información que no está en el contexto
-- Cuando sea útil, indicar el módulo o sección de donde proviene la información`
+- Cuando sea útil, citar el título del bloque de donde proviene la información`
+
+// ── Umbral del modo híbrido ──────────────────────────────────
+// Si el conocimiento estimado supera este tamaño, en vez de inyectarlo
+// completo se le da al modelo una tool de búsqueda full-text (FTS).
+const UMBRAL_TOKENS_INLINE = 30_000
+
+/** Estimación barata de tokens (~3.5 chars/token en español) */
+function estimarTokens(texto: string): number {
+  return Math.ceil(texto.length / 3.5)
+}
+
+/** Escapa comillas para atributos de los tags <bloque> */
+function escaparAttr(valor: string): string {
+  return valor.replace(/"/g, '&quot;')
+}
+
+/** Renderiza un bloque de conocimiento con metadata estructurada */
+function renderBloqueXML(b: {
+  modulo: string
+  titulo: string
+  contenido: string
+  contenido_extraido?: string | null
+  area?: string | null
+  puesto?: string | null
+}): string {
+  const attrs = [
+    `modulo="${escaparAttr(b.modulo)}"`,
+    `titulo="${escaparAttr(b.titulo)}"`,
+    b.area ? `area="${escaparAttr(b.area)}"` : null,
+    b.puesto ? `puesto="${escaparAttr(b.puesto)}"` : null,
+  ].filter(Boolean).join(' ')
+
+  const cuerpo = [
+    b.contenido.trim(),
+    b.contenido_extraido?.trim()
+      ? `[Contenido del archivo adjunto]\n${b.contenido_extraido.trim()}`
+      : null,
+  ].filter(Boolean).join('\n\n')
+
+  return `<bloque ${attrs}>\n${cuerpo}\n</bloque>`
+}
 
 // ─────────────────────────────────────────────
 // getAppConfig
@@ -117,7 +175,22 @@ async function getAppConfig(): Promise<ResolvedConfig> {
 // ─────────────────────────────────────────────
 
 interface SystemPromptResult {
+  /** @deprecated Preferir systemBlocks (habilitan prompt caching) */
   systemPrompt: string
+  /**
+   * System prompt como bloques para la API: el prefijo estable
+   * (instrucciones + conocimiento, compartido por empresa/área/puesto)
+   * lleva cache_control; el contexto del empleado va después del
+   * breakpoint para no invalidar el cache. NUNCA poner timestamps
+   * ni IDs por-request en el bloque estable.
+   */
+  systemBlocks: Anthropic.TextBlockParam[]
+  /**
+   * 'inline': el conocimiento completo va en el prompt (cacheado).
+   * 'busqueda': el conocimiento es grande — el prompt lleva solo un
+   * índice y el modelo usa la tool buscar_conocimiento (FTS).
+   */
+  modoConocimiento: 'inline' | 'busqueda'
   config: ResolvedConfig
 }
 
@@ -126,14 +199,16 @@ export async function buildSystemPromptWithConfig(
   contextoEmpleado?: string,
   empleadoArea?: string | null,
   empleadoPuesto?: string | null,
+  /** Instrucciones extra que entran al prefijo estable (ej: modo agente) */
+  prefijoInstrucciones?: string,
 ): Promise<SystemPromptResult> {
   const supabase = createClient()
 
   // Cargar conocimiento, config global y prompt de empresa en paralelo
-  const [{ data: bloques }, config, { data: empresa }] = await Promise.all([
+  const [bloquesRes, config, { data: empresa }] = await Promise.all([
     supabase
       .from('conocimiento')
-      .select('modulo, bloque, titulo, contenido, area, puesto')
+      .select('modulo, bloque, titulo, contenido, contenido_extraido, area, puesto')
       .eq('empresa_id', empresaId)
       .order('modulo', { ascending: true })
       .order('bloque', { ascending: true }),
@@ -144,6 +219,20 @@ export async function buildSystemPromptWithConfig(
       .eq('id', empresaId)
       .single(),
   ])
+
+  let bloques = bloquesRes.data as BloqueConocimiento[] | null
+  if (bloquesRes.error) {
+    // Fallback: la migración de contenido_extraido (conocimiento_fts.sql)
+    // puede no estar ejecutada todavía — reintentar sin esa columna
+    console.warn('[claude] Query de conocimiento con contenido_extraido falló, reintentando:', bloquesRes.error.message)
+    const { data: basicos } = await supabase
+      .from('conocimiento')
+      .select('modulo, bloque, titulo, contenido, area, puesto')
+      .eq('empresa_id', empresaId)
+      .order('modulo', { ascending: true })
+      .order('bloque', { ascending: true })
+    bloques = (basicos ?? []).map(b => ({ ...b, contenido_extraido: null }))
+  }
 
   const todosLosBloques = bloques ?? []
 
@@ -160,62 +249,111 @@ export async function buildSystemPromptWithConfig(
     ? todosLosBloques.filter(b => b.puesto === empleadoPuesto)
     : []
 
-  // ── Organizar bloques de empresa por módulo (lógica original) ──
-  const porModulo: Record<string, { titulo: string; contenido: string }[]> = {}
-  for (const item of empresaBloques) {
-    if (!porModulo[item.modulo]) porModulo[item.modulo] = []
-    porModulo[item.modulo].push({ titulo: item.titulo, contenido: item.contenido })
-  }
-
+  // ── Renderizar conocimiento con tags <bloque> (anti-alucinación) ──
   const seccionesEmpresa =
-    Object.keys(porModulo).length > 0
-      ? Object.entries(porModulo)
-          .map(([modulo, items]) => {
-            const cuerpo = items
-              .map(i => `### ${i.titulo}\n${i.contenido.trim()}`)
-              .join('\n\n')
-            return `## ${modulo.charAt(0).toUpperCase() + modulo.slice(1)}\n\n${cuerpo}`
-          })
-          .join('\n\n---\n\n')
+    empresaBloques.length > 0
+      ? empresaBloques.map(renderBloqueXML).join('\n\n')
       : 'No hay contenido cargado para esta empresa. Indicá al empleado que consulte con su manager o buddy.'
 
   // ── Ensamblar el prompt final ─────────────────────────────────
-  // Orden: base global → instrucciones → personalización empresa →
-  //        conocimiento empresa → capa área → capa rol → contexto empleado
-  const partes: string[] = []
+  // Orden: [prefijo extra] → base global → instrucciones → personalización
+  // empresa → conocimiento empresa → capa área → capa rol  (PREFIJO ESTABLE)
+  // → contexto empleado  (VOLÁTIL, después del breakpoint de cache)
+  const partesEstables: string[] = []
 
-  if (config.systemPromptBase.trim()) {
-    partes.push(config.systemPromptBase.trim())
+  if (prefijoInstrucciones?.trim()) {
+    partesEstables.push(prefijoInstrucciones.trim())
   }
 
-  partes.push(config.systemPromptInstrucciones.trim())
+  if (config.systemPromptBase.trim()) {
+    partesEstables.push(config.systemPromptBase.trim())
+  }
+
+  partesEstables.push(config.systemPromptInstrucciones.trim())
 
   const promptEmpresa = empresa?.prompt_personalizado?.trim()
   if (promptEmpresa) {
-    partes.push(`# Instrucciones específicas de esta empresa\n\n${promptEmpresa}`)
+    partesEstables.push(`# Instrucciones específicas de esta empresa\n\n${promptEmpresa}`)
   }
 
-  partes.push(`# Conocimiento de la empresa\n\n${seccionesEmpresa}`)
+  // ── Modo híbrido por tamaño ───────────────────────────────────
+  // Estimar el tamaño del conocimiento relevante para este empleado
+  const textoConocimiento = [
+    seccionesEmpresa,
+    ...areaBloques.map(renderBloqueXML),
+    ...rolBloques.map(renderBloqueXML),
+  ].join('\n\n')
 
-  if (areaBloques.length > 0) {
-    const cuerpo = areaBloques
-      .map(i => `### ${i.titulo}\n${i.contenido.trim()}`)
-      .join('\n\n')
-    partes.push(`# Información del área: ${empleadoArea}\n\n${cuerpo}`)
+  const modoConocimiento: 'inline' | 'busqueda' =
+    estimarTokens(textoConocimiento) > UMBRAL_TOKENS_INLINE ? 'busqueda' : 'inline'
+
+  if (modoConocimiento === 'inline') {
+    partesEstables.push(`# Conocimiento de la empresa\n\n${seccionesEmpresa}`)
+
+    if (areaBloques.length > 0) {
+      partesEstables.push(
+        `# Información del área: ${empleadoArea}\n\n${areaBloques.map(renderBloqueXML).join('\n\n')}`
+      )
+    }
+
+    if (rolBloques.length > 0) {
+      partesEstables.push(
+        `# Información del rol: ${empleadoPuesto}\n\n${rolBloques.map(renderBloqueXML).join('\n\n')}`
+      )
+    }
+  } else {
+    // Base de conocimiento grande: solo índice + tool de búsqueda.
+    // El índice da contexto global sin pagar el contenido completo.
+    const indice = todosLosBloques
+      .map(b => {
+        const capas = [b.area ? `área: ${b.area}` : null, b.puesto ? `puesto: ${b.puesto}` : null]
+          .filter(Boolean).join(', ')
+        return `- [${b.modulo}] ${b.titulo}${capas ? ` (${capas})` : ''}`
+      })
+      .join('\n')
+
+    partesEstables.push(
+      `# Conocimiento de la empresa
+
+La base de conocimiento de esta empresa es extensa, por lo que NO está incluida acá.
+Este es el índice de temas disponibles:
+
+${indice}
+
+# Cómo acceder al conocimiento
+
+ANTES de responder cualquier pregunta sobre la empresa, sus procesos, herramientas,
+beneficios, cultura o el rol del empleado, usá la herramienta buscar_conocimiento
+con términos de búsqueda relevantes. Si la primera búsqueda no trae resultados útiles,
+reintentá con sinónimos o términos más generales (máximo 2 búsquedas más).
+Respondé ÚNICAMENTE con base en los bloques recuperados — si no encontrás la
+respuesta, decilo honestamente y sugerí consultar con el manager o buddy.`
+    )
   }
 
-  if (rolBloques.length > 0) {
-    const cuerpo = rolBloques
-      .map(i => `### ${i.titulo}\n${i.contenido.trim()}`)
-      .join('\n\n')
-    partes.push(`# Información del rol: ${empleadoPuesto}\n\n${cuerpo}`)
-  }
+  const textoEstable = partesEstables.join('\n\n')
+  const textoContexto = contextoEmpleado?.trim()
+    ? `# Contexto del empleado\n\n${contextoEmpleado.trim()}`
+    : null
 
-  if (contextoEmpleado?.trim()) {
-    partes.push(`# Contexto del empleado\n\n${contextoEmpleado.trim()}`)
-  }
+  // El breakpoint va en el bloque estable: todos los empleados de la misma
+  // empresa/área/puesto comparten el prefijo cacheado (~90% más barato).
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: 'text',
+      text: textoEstable,
+      cache_control: { type: 'ephemeral' },
+    },
+    ...(textoContexto
+      ? [{ type: 'text' as const, text: textoContexto }]
+      : []),
+  ]
 
-  return { systemPrompt: partes.join('\n\n'), config }
+  const systemPrompt = textoContexto
+    ? `${textoEstable}\n\n${textoContexto}`
+    : textoEstable
+
+  return { systemPrompt, systemBlocks, modoConocimiento, config }
 }
 
 /**
@@ -233,44 +371,142 @@ export async function buildSystemPrompt(empresaId: string): Promise<string> {
 // Lanza errores para que el caller los catchee.
 // ─────────────────────────────────────────────
 
+// Tool de búsqueda FTS — solo se expone en modo 'busqueda'
+const TOOL_BUSCAR_CONOCIMIENTO: Anthropic.Tool = {
+  name: 'buscar_conocimiento',
+  description:
+    'Busca en la base de conocimiento de la empresa (cultura, procesos, ' +
+    'herramientas, beneficios, información del rol). Llamala ANTES de responder ' +
+    'cualquier pregunta sobre la empresa o el trabajo del empleado.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Términos de búsqueda en español (palabras clave, no oraciones largas)',
+      },
+    },
+    required: ['query'],
+  },
+}
+
+/** Máximo de iteraciones de tool-use por consulta (controla costo y latencia) */
+const MAX_ITERACIONES_TOOL = 3
+
+/** Ejecuta la búsqueda FTS y formatea los bloques recuperados */
+async function ejecutarBusquedaConocimiento(
+  empresaId: string,
+  query: string,
+): Promise<string> {
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase.rpc('buscar_conocimiento', {
+      p_empresa_id: empresaId,
+      p_query: query,
+      p_limit: 5,
+    })
+
+    if (error) throw new Error(error.message)
+    const filas = (data ?? []) as BloqueConocimiento[]
+    if (filas.length === 0) {
+      return 'Sin resultados para esa búsqueda. Probá con otros términos.'
+    }
+
+    return filas
+      .map(b => renderBloqueXML({
+        ...b,
+        // Acotar el texto extraído por resultado para no inflar el contexto
+        contenido_extraido: b.contenido_extraido?.slice(0, 4_000) ?? null,
+      }))
+      .join('\n\n')
+  } catch (err) {
+    console.warn('[claude] buscar_conocimiento falló:',
+      err instanceof Error ? err.message : err)
+    return 'La búsqueda no está disponible en este momento. Respondé que no tenés esa información y sugerí consultar con el manager o buddy.'
+  }
+}
+
 export async function streamChat({
   empresaId,
   contextoEmpleado,
   empleadoArea,
   empleadoPuesto,
+  prefijoInstrucciones,
   mensajes,
   onChunk,
   onDone,
 }: StreamChatParams): Promise<TokenUsage> {
-  const { systemPrompt, config } = await buildSystemPromptWithConfig(
+  const { systemBlocks, modoConocimiento, config } = await buildSystemPromptWithConfig(
     empresaId,
     contextoEmpleado,
     empleadoArea,
     empleadoPuesto,
+    prefijoInstrucciones,
   )
 
-  const stream = anthropic.messages.stream({
-    model: config.claudeModel,
-    max_tokens: config.maxTokens,
-    system: systemPrompt,
-    messages: mensajes,
-  })
-
-  // Iterar eventos del stream y notificar cada fragmento de texto
-  for await (const event of stream) {
-    if (
-      event.type === 'content_block_delta' &&
-      event.delta.type === 'text_delta'
-    ) {
-      onChunk(event.delta.text)
-    }
+  const usage: TokenUsage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheCreationTokens: 0,
+    modelo: config.claudeModel,
   }
 
-  // Capturar uso de tokens del mensaje final
-  const finalMsg = await stream.finalMessage()
-  const usage: TokenUsage = {
-    inputTokens: finalMsg.usage.input_tokens,
-    outputTokens: finalMsg.usage.output_tokens,
+  // Loop manual de tool-use: en modo 'busqueda' el modelo puede llamar a
+  // buscar_conocimiento; los resultados vuelven como tool_result y se
+  // continúa hasta que responde con texto (o se agotan las iteraciones).
+  const mensajesLoop: Anthropic.MessageParam[] = [...mensajes]
+
+  for (let iteracion = 0; iteracion <= MAX_ITERACIONES_TOOL; iteracion++) {
+    const stream = anthropic.messages.stream({
+      model: config.claudeModel,
+      max_tokens: config.maxTokens,
+      system: systemBlocks,
+      messages: mensajesLoop,
+      ...(modoConocimiento === 'busqueda' && {
+        tools: [TOOL_BUSCAR_CONOCIMIENTO],
+      }),
+    })
+
+    // Iterar eventos del stream y notificar cada fragmento de texto
+    for await (const event of stream) {
+      if (
+        event.type === 'content_block_delta' &&
+        event.delta.type === 'text_delta'
+      ) {
+        onChunk(event.delta.text)
+      }
+    }
+
+    // Acumular uso de tokens de cada iteración (incluye actividad de cache)
+    const finalMsg = await stream.finalMessage()
+    usage.inputTokens += finalMsg.usage.input_tokens
+    usage.outputTokens += finalMsg.usage.output_tokens
+    usage.cacheReadTokens += finalMsg.usage.cache_read_input_tokens ?? 0
+    usage.cacheCreationTokens += finalMsg.usage.cache_creation_input_tokens ?? 0
+
+    if (finalMsg.stop_reason !== 'tool_use' || iteracion === MAX_ITERACIONES_TOOL) {
+      break
+    }
+
+    // Ejecutar las búsquedas pedidas y continuar el loop
+    const toolUses = finalMsg.content.filter(
+      (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+    )
+
+    const resultados: Anthropic.ToolResultBlockParam[] = []
+    for (const tu of toolUses) {
+      const query = (tu.input as { query?: string }).query ?? ''
+      const resultado = await ejecutarBusquedaConocimiento(empresaId, query)
+      resultados.push({
+        type: 'tool_result',
+        tool_use_id: tu.id,
+        content: resultado,
+      })
+    }
+
+    mensajesLoop.push({ role: 'assistant', content: finalMsg.content })
+    mensajesLoop.push({ role: 'user', content: resultados })
   }
 
   onDone()

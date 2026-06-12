@@ -4,6 +4,8 @@ import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { chatSchema } from '@/lib/schemas/empleado'
 import { logStreamError } from '@/lib/api-error'
+import { verificarCuotaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
+import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 
 // ─────────────────────────────────────────────
 // POST /api/empleado/chat
@@ -34,6 +36,24 @@ export const POST = withHandler(
     }
 
     const { empresa_id: empresaId } = usuario
+
+    // ── Cuota mensual de consultas IA (por empresa, según plan) ───
+    const { data: empresa } = await supabase!
+      .from('empresas')
+      .select('plan')
+      .eq('id', empresaId)
+      .single()
+
+    const cuota = await verificarCuotaIA(supabase!, empresaId, empresa?.plan)
+    if (!cuota.permitido) {
+      // Responder como mensaje normal del asistente para no romper la UX del chat
+      return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'X-Cuota-Agotada': '1',
+        },
+      })
+    }
 
     // ── Gestión de conversación ───────────────────────────────────
     let historial: { role: 'user' | 'assistant'; content: string }[] = []
@@ -85,7 +105,6 @@ export const POST = withHandler(
 
     // ── Streaming ────────────────────────────────────────────────
     let respuestaCompleta = ''
-    let tokenUsage = { inputTokens: 0, outputTokens: 0 }
 
     // Contexto del empleado para personalizar el system prompt
     const diasOnboarding = usuario.fecha_ingreso
@@ -109,7 +128,7 @@ export const POST = withHandler(
         const encoder = new TextEncoder()
 
         try {
-          tokenUsage = await streamChat({
+          const tokenUsage = await streamChat({
             empresaId,
             contextoEmpleado,
             empleadoArea: usuario.area ?? null,
@@ -159,9 +178,30 @@ export const POST = withHandler(
               console.log('[chat:tokens]', {
                 input: tokenUsage.inputTokens,
                 output: tokenUsage.outputTokens,
+                cacheRead: tokenUsage.cacheReadTokens,
+                cacheCreation: tokenUsage.cacheCreationTokens,
               })
             }
           }
+
+          // ── Metering: registrar consumo + avisos de umbral ────
+          await registrarUsoIA({
+            supabase: supabaseRef,
+            empresaId,
+            usuarioId: userId,
+            fuente: 'chat',
+            modelo: tokenUsage.modelo,
+            inputTokens: tokenUsage.inputTokens,
+            outputTokens: tokenUsage.outputTokens,
+            cacheReadTokens: tokenUsage.cacheReadTokens,
+            cacheCreationTokens: tokenUsage.cacheCreationTokens,
+          })
+          notificarUmbralCuotaIA({
+            supabase: supabaseRef,
+            empresaId,
+            usadas: cuota.usadas + 1,
+            limite: cuota.limite,
+          })
 
 
         } catch (err) {

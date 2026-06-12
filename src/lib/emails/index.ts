@@ -61,6 +61,10 @@ async function renderTemplate(template: EmailTemplate): Promise<RenderedEmail> {
       const { render } = await import('./templates/11-prueba-expirando')
       return render(template.props)
     }
+    case 'cuota-ia': {
+      const { render } = await import('./templates/12-cuota-ia')
+      return render(template.props)
+    }
   }
 }
 
@@ -136,4 +140,5 @@ export type {
   ResumenSemanalAdminProps,
   NuevoEmpleadoAdminProps,
   PruebaExpirandoProps,
+  CuotaIAProps,
 } from './types'

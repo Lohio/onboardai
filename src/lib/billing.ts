@@ -13,6 +13,7 @@ export const PLANES: Record<PlanId, PlanConfig> = {
     empleadosIncluidos: 3,
     extraPorEmpleado: 0,
     modulos: ['M1', 'M2'],
+    consultasIA: 100,
   },
   pro: {
     id: 'pro',
@@ -21,6 +22,7 @@ export const PLANES: Record<PlanId, PlanConfig> = {
     empleadosIncluidos: 15,
     extraPorEmpleado: 3,
     modulos: ['M1', 'M2', 'M3', 'M4'],
+    consultasIA: 2000,
   },
   enterprise: {
     id: 'enterprise',
@@ -29,6 +31,7 @@ export const PLANES: Record<PlanId, PlanConfig> = {
     empleadosIncluidos: 50,
     extraPorEmpleado: 2,
     modulos: ['M1', 'M2', 'M3', 'M4'],
+    consultasIA: 10000,
   },
 }
 
@@ -53,6 +56,11 @@ export function puedeAgregarEmpleado(plan: string | null | undefined, empleadosA
   return empleadosActuales < p.empleadosIncluidos
 }
 
+/** Consultas IA incluidas por mes para el plan dado */
+export function cuotaIA(plan: string | null | undefined): number {
+  return getPlan(plan).consultasIA
+}
+
 export function calcularCostoMensual(plan: PlanId, empleadosActivos: number): number {
   const p = PLANES[plan]
   if (!p || p.precioUSD === 0) return 0
@@ -66,6 +74,7 @@ export function getPlanFeatureList(planId: PlanId): string[] {
       return [
         'Hasta 3 empleados',
         'Módulos M1 y M2',
+        '100 consultas IA por mes',
         'Dashboard admin básico',
       ]
     case 'pro':
@@ -73,6 +82,7 @@ export function getPlanFeatureList(planId: PlanId): string[] {
         'Hasta 15 empleados incluidos',
         'Todos los módulos (M1–M4)',
         'Asistente IA conversacional',
+        '2.000 consultas IA por mes',
         'Reportes y encuestas de pulso',
         'Organigrama y equipo',
         '$3 por empleado adicional',
@@ -82,6 +92,7 @@ export function getPlanFeatureList(planId: PlanId): string[] {
         '50 empleados incluidos',
         'Todos los módulos (M1–M4)',
         'Asistente IA conversacional',
+        '10.000 consultas IA por mes',
         'Reportes avanzados',
         'Soporte prioritario',
         '$2 por empleado adicional',

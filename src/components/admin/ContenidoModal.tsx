@@ -18,6 +18,7 @@ import {
   LINK_PLATAFORMAS,
   formatFileSize,
   getFileEmoji,
+  urlArchivoConocimiento,
   TIPO_LABELS,
   type LinkPlataforma,
 } from '@/lib/conocimiento'
@@ -89,6 +90,7 @@ export function ContenidoModal({
   const [uploadedFile,      setUploadedFile]      = useState<File | null>(null)
   const [uploadedPublicUrl, setUploadedPublicUrl] = useState('')
   const [uploadedPath,      setUploadedPath]      = useState('')
+  const [textoExtraido,     setTextoExtraido]     = useState<string | null>(null)
   const [uploadStatus,      setUploadStatus]      = useState<'idle' | 'uploading' | 'done' | 'error'>('idle')
   const [uploadError,       setUploadError]       = useState<string | null>(null)
   const [dragOver,          setDragOver]          = useState(false)
@@ -112,7 +114,8 @@ export function ContenidoModal({
       case 'pdf':
         if (existing.storage_path) {
           setActiveTab('upload')
-          setUploadedPublicUrl(existing.url ?? '')
+          // Resolver via proxy: las URLs públicas viejas ya no funcionan (bucket privado)
+          setUploadedPublicUrl(urlArchivoConocimiento(existing) ?? '')
           setUploadedPath(existing.storage_path)
           setUploadStatus('done')
         } else if (existing.url) {
@@ -136,7 +139,7 @@ export function ContenidoModal({
       }
       case 'archivo': {
         const meta = existing.metadata as MetadataArchivo | null
-        setUploadedPublicUrl(existing.url ?? '')
+        setUploadedPublicUrl(urlArchivoConocimiento(existing) ?? '')
         setUploadedPath(existing.storage_path ?? '')
         if (meta) setUploadStatus('done')
         break
@@ -191,7 +194,12 @@ export function ContenidoModal({
         body: formData,
       })
 
-      const data = await res.json() as { path?: string; publicUrl?: string; error?: string }
+      const data = await res.json() as {
+        path?: string
+        publicUrl?: string
+        textoExtraido?: string | null
+        error?: string
+      }
 
       if (!res.ok) {
         throw new Error(data.error ?? 'Error al subir el archivo')
@@ -199,6 +207,7 @@ export function ContenidoModal({
 
       setUploadedPath(data.path!)
       setUploadedPublicUrl(data.publicUrl!)
+      setTextoExtraido(data.textoExtraido ?? null)
       setUploadStatus('done')
     } catch (err) {
       setUploadStatus('error')
@@ -276,6 +285,8 @@ export function ContenidoModal({
             contenido: '',
             url:          activeTab === 'upload' ? uploadedPublicUrl : url,
             storage_path: activeTab === 'upload' ? uploadedPath : null,
+            // Texto extraído del PDF — nutre al agente IA
+            contenido_extraido: activeTab === 'upload' ? textoExtraido : null,
           }
           break
         case 'link': {
@@ -297,6 +308,8 @@ export function ContenidoModal({
             url:          uploadedPublicUrl,
             storage_path: uploadedPath,
             metadata:     metaArchivo as unknown as Record<string, string | number | boolean | null>,
+            // Texto extraído del archivo (DOCX) — nutre al agente IA
+            contenido_extraido: textoExtraido,
           }
           break
         }
