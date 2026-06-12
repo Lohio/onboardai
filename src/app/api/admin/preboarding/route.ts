@@ -74,9 +74,10 @@ export const POST = withHandler(
       buddyNombre = buddy?.nombre ?? null
     }
 
-    // Construir URL de login (usar dominio de la request en prod, localhost en dev)
-    const origin = req.headers.get('origin') ?? 'http://localhost:3000'
-    const loginUrl = `${origin}/auth/login`
+    // Construir URL de login desde la config — nunca desde el header Origin,
+    // que es forjable y permitiría inyectar un link de phishing en el email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const loginUrl = `${appUrl}/auth/login`
 
     // Enviar email de bienvenida vía sistema centralizado
     const { error: emailError } = await sendEmail(empleado.email, {

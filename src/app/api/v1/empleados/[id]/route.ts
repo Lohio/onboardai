@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
 import { makeServiceClient } from '@/lib/api/serviceClient'
 import { optionsResponse } from '@/lib/api/cors'
@@ -11,7 +12,7 @@ import { ApiError } from '@/lib/errors'
 
 // GET /api/v1/empleados/[id]
 export const GET = withHandler(
-  { auth: 'apiKey' },
+  { auth: 'apiKey', rateLimit: RATE_LIMITS.apiV1Read },
   async ({ params, apiKeyRecord }) => {
     // Verificar scope requerido
     if (!hasScope(apiKeyRecord!, 'empleados:read')) {

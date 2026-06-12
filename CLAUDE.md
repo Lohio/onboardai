@@ -263,11 +263,18 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 ### Bucket: `conocimiento`
 - **Creado manualmente** en el dashboard de Supabase → Storage → New Bucket
 - Nombre: `conocimiento`
-- **Público: true** (permite URLs públicas directas)
-- Política de acceso: lectura pública, escritura solo vía API con service role key
+- **Público: false** (privado — el conocimiento institucional no debe ser accesible por URL)
+- Lectura vía proxy autenticado: `GET /api/storage/conocimiento?path=...` verifica sesión +
+  que el path pertenezca a la empresa del usuario, y redirige a una signed URL de 5 min
+- Helper para el frontend: `urlArchivoConocimiento(bloque)` en `src/lib/conocimiento.ts`
+  (resuelve `storage_path` → proxy; también convierte URLs públicas viejas guardadas en DB)
+- Escritura solo vía API con service role key
 - Path de archivos: `{empresa_id}/{modulo}/{uuid}.{ext}`
 - Tipos permitidos: imagen (5MB), pdf (20MB), archivo genérico (50MB)
 - API de upload: `POST /api/admin/conocimiento/upload` — requiere `SUPABASE_SERVICE_ROLE_KEY`
+
+### Bucket: `avatars`
+- Público (fotos de perfil, organigrama y logos de empresa — bajo riesgo)
 
 ## Obsidian Skills
 

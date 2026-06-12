@@ -15,7 +15,12 @@ function getServiceSupabase() {
 /** Verifica la firma HMAC-SHA256 del webhook de MercadoPago */
 async function verificarFirmaMP(req: NextRequest, dataId: string): Promise<boolean> {
   const secret = process.env.MP_WEBHOOK_SECRET
-  if (!secret) return true // sin secret configurado, pasar (log advertencia)
+  if (!secret) {
+    // Fail closed: sin secret configurado no se puede verificar autenticidad —
+    // rechazar para impedir webhooks forjados que activen suscripciones
+    console.error('[mp-webhook] MP_WEBHOOK_SECRET no configurado — webhook rechazado')
+    return false
+  }
 
   const xSignature = req.headers.get('x-signature')
   const xRequestId = req.headers.get('x-request-id') ?? ''
@@ -88,7 +93,8 @@ export async function POST(req: NextRequest) {
         .eq('id', empresaId)
     }
 
-    await supabase.from('pagos').insert({
+    // Upsert idempotente: MP reentrega webhooks — no duplicar el pago
+    await supabase.from('pagos').upsert({
       empresa_id: empresaId,
       proveedor: 'mercadopago',
       proveedor_pago_id: String(payment.id),
@@ -97,7 +103,7 @@ export async function POST(req: NextRequest) {
       estado,
       plan,
       descripcion: `Pago MercadoPago — plan ${plan}`,
-    })
+    }, { onConflict: 'proveedor,proveedor_pago_id', ignoreDuplicates: true })
 
     return NextResponse.json({ received: true })
   } catch (err) {

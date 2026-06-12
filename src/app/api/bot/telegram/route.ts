@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
@@ -25,8 +26,12 @@ export const POST = withHandler(
       return NextResponse.json({ error: 'Telegram no configurado' }, { status: 503 })
     }
 
+    // Comparación en tiempo constante (consistente con Teams/MP/cron)
     const headerSecret = req.headers.get('x-telegram-bot-api-secret-token') ?? ''
-    if (headerSecret !== secret) {
+    const coincide =
+      headerSecret.length === secret.length &&
+      crypto.timingSafeEqual(Buffer.from(headerSecret), Buffer.from(secret))
+    if (!coincide) {
       return NextResponse.json({ error: 'Firma inválida' }, { status: 401 })
     }
 

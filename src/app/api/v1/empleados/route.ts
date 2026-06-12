@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
 import { makeServiceClient } from '@/lib/api/serviceClient'
 import { optionsResponse } from '@/lib/api/cors'
@@ -13,7 +14,7 @@ import { crearEmpleadoSchema } from '@/lib/schemas/admin'
 
 // GET /api/v1/empleados
 export const GET = withHandler(
-  { auth: 'apiKey' },
+  { auth: 'apiKey', rateLimit: RATE_LIMITS.apiV1Read },
   async ({ req, apiKeyRecord }) => {
     // Verificar scope requerido
     if (!hasScope(apiKeyRecord!, 'empleados:read')) {
@@ -65,7 +66,7 @@ export const GET = withHandler(
 
 // POST /api/v1/empleados
 export const POST = withHandler(
-  { auth: 'apiKey', schema: crearEmpleadoSchema },
+  { auth: 'apiKey', schema: crearEmpleadoSchema, rateLimit: RATE_LIMITS.apiV1Write },
   async ({ body, apiKeyRecord }) => {
     // Verificar scope requerido
     if (!hasScope(apiKeyRecord!, 'empleados:write')) {

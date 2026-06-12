@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', empresaId)
 
-        // Registrar pago
-        await supabase.from('pagos').insert({
+        // Registrar pago — upsert idempotente (Stripe reentrega webhooks)
+        await supabase.from('pagos').upsert({
           empresa_id: empresaId,
           proveedor: 'stripe',
           proveedor_pago_id: session.payment_intent as string,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
           estado: 'completado',
           plan,
           descripcion: `Checkout Stripe — plan ${plan}`,
-        })
+        }, { onConflict: 'proveedor,proveedor_pago_id', ignoreDuplicates: true })
         break
       }
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
             .update({ suscripcion_estado: 'activa' })
             .eq('id', empresa.id)
 
-          await supabase.from('pagos').insert({
+          await supabase.from('pagos').upsert({
             empresa_id: empresa.id,
             proveedor: 'stripe',
             proveedor_pago_id: invoice.id,
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
             estado: 'completado',
             plan: empresa.plan,
             descripcion: 'Renovación mensual Stripe',
-          })
+          }, { onConflict: 'proveedor,proveedor_pago_id', ignoreDuplicates: true })
         }
         break
       }

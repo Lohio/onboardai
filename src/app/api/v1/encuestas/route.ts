@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
+import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
 import { makeServiceClient } from '@/lib/api/serviceClient'
 import { optionsResponse } from '@/lib/api/cors'
@@ -15,7 +16,7 @@ const DIAS_VALIDOS = [7, 30, 60] as const
 
 // GET /api/v1/encuestas
 export const GET = withHandler(
-  { auth: 'apiKey' },
+  { auth: 'apiKey', rateLimit: RATE_LIMITS.apiV1Read },
   async ({ req, apiKeyRecord }) => {
     // Verificar scope requerido
     if (!hasScope(apiKeyRecord!, 'encuestas:read')) {

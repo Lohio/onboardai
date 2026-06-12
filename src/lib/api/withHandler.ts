@@ -77,7 +77,7 @@ export function withHandler<TBody = unknown>(
 
         if (authError || !authUser) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized(undefined, requestId)
         }
 
         // Obtener empresa_id y rol desde la tabla usuarios
@@ -89,7 +89,7 @@ export function withHandler<TBody = unknown>(
 
         if (perfilError || !perfil) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized(undefined, requestId)
         }
 
         userId = authUser.id
@@ -129,7 +129,7 @@ export function withHandler<TBody = unknown>(
         const expectedSecret = process.env.CRON_SECRET
         if (!expectedSecret) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized(undefined, requestId)
         }
         const expected = `Bearer ${expectedSecret}`
         const match =
@@ -137,7 +137,7 @@ export function withHandler<TBody = unknown>(
           crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
         if (!match) {
           status = 401
-          return ApiError.unauthorized(requestId)
+          return ApiError.unauthorized(undefined, requestId)
         }
       }
       // 'webhook' y 'none': sin verificación en el wrapper

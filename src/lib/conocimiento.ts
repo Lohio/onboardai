@@ -54,6 +54,31 @@ export function getFilenameFromPath(path: string): string {
   return path.split('/').pop() ?? path
 }
 
+// ── URL de acceso a archivos del bucket 'conocimiento' ──────
+// El bucket es privado: los archivos se sirven via el proxy
+// /api/storage/conocimiento, que verifica sesión + empresa y
+// redirige a una signed URL. Soporta bloques viejos que solo
+// guardaron la URL pública (extrae el path de esa URL).
+
+const PUBLIC_URL_PATTERN = /\/storage\/v1\/object\/public\/conocimiento\/(.+)$/
+
+export function urlArchivoConocimiento(bloque: {
+  url?: string | null
+  storage_path?: string | null
+}): string | null {
+  if (bloque.storage_path) {
+    return `/api/storage/conocimiento?path=${encodeURIComponent(bloque.storage_path)}`
+  }
+  if (bloque.url) {
+    const match = bloque.url.match(PUBLIC_URL_PATTERN)
+    if (match) {
+      return `/api/storage/conocimiento?path=${encodeURIComponent(match[1])}`
+    }
+    return bloque.url // URL externa (video, link) — se usa tal cual
+  }
+  return null
+}
+
 // ── Estado del bloque según tipo ────────────────────────────
 
 type EstadoBloque = 'vacio' | 'parcial' | 'completo'

@@ -97,6 +97,10 @@ export const RATE_LIMITS = {
   // Admin
   crearEmpleado: { max: 20, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
   reporte:       { max: 10, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
+  passwords:     { max: 15, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
+  // API pública v1 (keyType 'empresa': la cuota es compartida por todas las keys de la empresa)
+  apiV1Read:     { max: 300, windowMs: 60 * 60 * 1000, keyType: 'empresa' } as RateLimitOptions,
+  apiV1Write:    { max: 60,  windowMs: 60 * 60 * 1000, keyType: 'empresa' } as RateLimitOptions,
   upload:        { max: 30, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
   // Empleado
   chat:         { max: 50,  windowMs: 24 * 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,

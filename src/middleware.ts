@@ -87,6 +87,24 @@ function esRolValido(valor: string): valor is UserRole {
   return (ROLES_VALIDOS as string[]).includes(valor)
 }
 
+/**
+ * Fail closed: sin rol verificado se redirige a login con error,
+ * limpiando las cookies de caché. Si ya estamos en /auth/* se deja
+ * pasar (rutas públicas) para no generar un loop de redirects.
+ */
+function redirectLoginError(request: NextRequest, error: string): NextResponse {
+  if (request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.next({ request })
+  }
+  const url = new URL('/auth/login', request.url)
+  url.searchParams.set('error', error)
+  const response = NextResponse.redirect(url)
+  for (const name of [COOKIE_ROL, COOKIE_SETUP, COOKIE_PREBOARDING]) {
+    response.cookies.set(name, '', { maxAge: 0, path: '/' })
+  }
+  return response
+}
+
 // ─────────────────────────────────────────────────────────────
 // Middleware principal
 // ─────────────────────────────────────────────────────────────
@@ -154,9 +172,9 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (error) {
-        // Fail open: si falla la query dejamos pasar para no romper la app
+        // Fail closed: sin rol verificado no se puede autorizar el acceso
         console.error('[middleware] Error al obtener rol desde Supabase:', error)
-        return supabaseResponse
+        return redirectLoginError(request, 'rol_error')
       }
 
       // Usuario autenticado en Auth pero sin fila en tabla usuarios
@@ -167,9 +185,9 @@ export async function middleware(request: NextRequest) {
       }
 
       if (!esRolValido(perfil.rol)) {
-        // Fail open ante un valor inesperado en la base de datos
+        // Fail closed ante un valor inesperado en la base de datos
         console.error('[middleware] Rol inválido recibido de Supabase:', perfil.rol)
-        return supabaseResponse
+        return redirectLoginError(request, 'rol_invalido')
       }
 
       rol = perfil.rol
@@ -197,9 +215,9 @@ export async function middleware(request: NextRequest) {
         path: '/',
       })
     } catch (err) {
-      // Fail open ante errores de red u otros inesperados
+      // Fail closed ante errores de red u otros inesperados
       console.error('[middleware] Error inesperado al obtener rol:', err)
-      return supabaseResponse
+      return redirectLoginError(request, 'rol_error')
     }
   }
 
