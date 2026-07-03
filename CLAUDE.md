@@ -216,6 +216,16 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 // NO: throw postgrestError  ← instanceof Error falla, mensaje genérico
 ```
 
+### Migración a Server Components
+Patrón objetivo para páginas con carga inicial de datos. Referencia: `/admin` (dashboard) y `/empleado/perfil`, ya migradas; el resto se migra gradualmente.
+- **`page.tsx` = Server Component** (sin `'use client'`): obtiene la sesión con `createServerSupabaseClient()` (manejar `user` null con `redirect('/auth/login')` aunque el middleware ya proteja la ruta), hace las queries iniciales en paralelo (`Promise.all`) y renderiza `<XxxClient datosIniciales={...} />`
+- **Client Component** en `src/components/<área>/<página>/XxxClient.tsx` (`'use client'`): TODO el JSX/estado/interactividad; recibe los datos iniciales por props tipadas e inicializa el `useState` con ellos — sin `useEffect` de carga inicial
+- **Lógica de fetch compartida** en `src/lib/` (ej: `dashboardAdmin.ts`, `perfilEmpleado.ts`): función `cargarXxx(supabase: SupabaseClient, ...)` que usan tanto el server (carga inicial) como el client (recargas por realtime / retry, con `createClient()` dentro del callback como siempre)
+- **`loading.tsx`** junto al `page.tsx` con el skeleton de la página (fallback de Suspense del segmento)
+- **Errores server-side**: try/catch en el page → pasar `errorInicial`/datos vacíos por props; el client muestra el mismo `ErrorState` con retry client-side
+- La interactividad posterior (mutaciones, realtime, `useLanguage`, framer-motion/`AnimatePresence`) queda SIEMPRE en el client component
+- Datos sensibles (passwords cifradas) se descifran solo server-side: en el page con `safeDecrypt()`, en el client vía endpoint dedicado (`/api/empleado/perfil/passwords`)
+
 ### Otros patrones
 - Toaster ÚNICO en `src/app/layout.tsx` — no duplicar en páginas individuales
 - `useCallback` + `ErrorState` para todas las cargas con retry visible al usuario
