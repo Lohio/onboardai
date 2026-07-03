@@ -19,6 +19,7 @@ import { PLANES, calcularCostoMensual, getPlanFeatureList, cuotaIA } from '@/lib
 import { createClient } from '@/lib/supabase'
 import { useContext } from 'react'
 import { ThemeContext } from '@/components/ThemeProvider'
+import { useLanguage } from '@/components/LanguageProvider'
 import type { PlanId, ProveedorPago } from '@/types'
 
 // ─── Estado de suscripción desde API ─────────────────────────────────────────
@@ -166,6 +167,7 @@ function UsoIACard({
   loading: boolean
   plan: PlanId
 }) {
+  const { t } = useLanguage()
   const limite = cuotaIA(plan)
   const consultas = uso?.consultas ?? 0
   const pct = limite > 0 ? Math.min(100, Math.round((consultas / limite) * 100)) : 0
@@ -182,7 +184,7 @@ function UsoIACard({
     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-white/70">
         <Bot className="w-4 h-4 text-[#0D9488]" />
-        Uso del asistente IA
+        {t('adminSusc.usoIA')}
       </h2>
 
       {loading ? (
@@ -193,9 +195,9 @@ function UsoIACard({
         /* Empty state: sin uso este mes */
         <div className="flex flex-col items-center gap-2 py-6 text-center">
           <Bot className="w-7 h-7 text-white/10" />
-          <p className="text-sm text-white/40">Tu equipo todavía no usó el asistente este mes</p>
+          <p className="text-sm text-white/40">{t('adminSusc.sinUso')}</p>
           <p className="text-xs text-white/25">
-            Tenés {limite.toLocaleString('es-AR')} consultas incluidas en tu plan
+            {t('adminSusc.consultasIncluidasPre') + ' ' + limite.toLocaleString('es-AR') + ' ' + t('adminSusc.consultasIncluidasPost')}
           </p>
         </div>
       ) : (
@@ -203,7 +205,7 @@ function UsoIACard({
           {/* Barra de progreso de consultas */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-[11px] text-white/40">
-              <span>Consultas este mes</span>
+              <span>{t('adminSusc.consultasMes')}</span>
               <span className="font-mono">
                 {consultas.toLocaleString('es-AR')} / {limite.toLocaleString('es-AR')}
               </span>
@@ -218,7 +220,7 @@ function UsoIACard({
 
           {/* Tokens del mes */}
           <p className="text-[11px] text-white/35">
-            Tokens procesados este mes:{' '}
+            {t('adminSusc.tokensMes')}{' '}
             <span className="font-mono text-white/55">{tokensMes.toLocaleString('es-AR')}</span>
           </p>
 
@@ -233,7 +235,7 @@ function UsoIACard({
               <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${pct >= 90 ? 'text-red-400' : 'text-amber-400'}`} />
               <div className="flex-1 space-y-1.5">
                 <p className={`text-xs ${pct >= 90 ? 'text-red-300/80' : 'text-amber-300/80'}`}>
-                  Usaste el {pct}% de las consultas IA incluidas en tu plan este mes.
+                  {t('adminSusc.usastePre') + ' ' + pct + t('adminSusc.usastePost')}
                 </p>
                 <button
                   type="button"
@@ -241,7 +243,7 @@ function UsoIACard({
                   className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors duration-150
                     ${pct >= 90 ? 'text-red-300 hover:text-red-200' : 'text-amber-300 hover:text-amber-200'}`}
                 >
-                  Mejorar plan
+                  {t('adminSusc.mejorarPlan')}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -262,6 +264,7 @@ function ProveedorSelector({
   proveedor: ProveedorPago
   onChange: (p: ProveedorPago) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="flex gap-2">
       {(['stripe', 'mercadopago'] as ProveedorPago[]).map(p => (
@@ -275,7 +278,7 @@ function ProveedorSelector({
               : 'text-white/40 border-white/10 hover:text-white/70 hover:border-white/20'
             }`}
         >
-          {p === 'stripe' ? 'Tarjeta / Internacional' : 'MercadoPago (LATAM)'}
+          {p === 'stripe' ? t('adminSusc.provTarjeta') : t('adminSusc.provMP')}
         </button>
       ))}
     </div>
@@ -299,6 +302,7 @@ function PlanCard({
   loading: boolean
   isLight: boolean
 }) {
+  const { t } = useLanguage()
   const plan = PLANES[planId] ?? PLANES.trial
   const cfg = getPlanCfg(planId, isLight)
   const features = getPlanFeatureList(planId)
@@ -317,7 +321,7 @@ function PlanCard({
       {/* Badge plan actual */}
       {esPlanActual && (
         <span className={`absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
-          Plan actual
+          {t('adminSusc.planActual')}
         </span>
       )}
 
@@ -329,8 +333,8 @@ function PlanCard({
         <div>
           <h3 className={`text-sm font-bold ${cfg.title}`}>{plan.nombre}</h3>
           <p className={`text-xs ${cfg.price}`}>
-            {plan.precioUSD === 0 ? 'Gratis' : `$${plan.precioUSD} USD/mes`}
-            {plan.extraPorEmpleado > 0 && ` + $${plan.extraPorEmpleado}/empleado extra`}
+            {plan.precioUSD === 0 ? t('adminSusc.gratis') : `$${plan.precioUSD} ` + t('adminSusc.usdMes')}
+            {plan.extraPorEmpleado > 0 && ` + $${plan.extraPorEmpleado}` + t('adminSusc.extraEmpleado')}
           </p>
         </div>
       </div>
@@ -339,10 +343,10 @@ function PlanCard({
       {planId !== 'trial' && (
         <div className={`px-3 py-2 rounded-xl border ${cfg.costBox}`}>
           <p className={`text-[11px] ${cfg.price}`}>
-            Con {empleadosActivos} empleados activos
+            {t('adminSusc.conPre') + ' ' + empleadosActivos + ' ' + t('adminSusc.conPost')}
           </p>
           <p className={`text-lg font-bold ${cfg.costValue}`}>
-            ${costo} <span className={`text-xs font-normal ${cfg.costUnit}`}>USD/mes</span>
+            ${costo} <span className={`text-xs font-normal ${cfg.costUnit}`}>{t('adminSusc.usdMes')}</span>
           </p>
         </div>
       )}
@@ -370,7 +374,7 @@ function PlanCard({
             <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
           ) : (
             <>
-              Activar {plan.nombre}
+              {t('adminSusc.activar') + ' ' + plan.nombre}
               <ChevronRight className="w-4 h-4" />
             </>
           )}
@@ -384,15 +388,17 @@ function PlanCard({
 
 function CheckoutFeedback() {
   const searchParams = useSearchParams()
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (searchParams.get('success') === '1') {
-      toast.success('¡Suscripción activada! Bienvenido al plan Pro.')
+      toast.success(t('adminSusc.toastActivada'))
     } else if (searchParams.get('canceled') === '1') {
-      toast('Pago cancelado.')
+      toast(t('adminSusc.toastCancelado'))
     } else if (searchParams.get('pending') === '1') {
-      toast('Pago pendiente de acreditación.')
+      toast(t('adminSusc.toastPendiente'))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   return null
@@ -401,6 +407,7 @@ function CheckoutFeedback() {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function SuscripcionPage() {
+  const { t } = useLanguage()
   const { currentTheme } = useContext(ThemeContext)
   const isLight = currentTheme === 'theme-light' || currentTheme === 'theme-gray'
 
@@ -420,10 +427,11 @@ export default function SuscripcionPage() {
       setStatus(data)
     } catch (err) {
       console.error(err)
-      toast.error('No se pudo cargar la suscripción')
+      toast.error(t('adminSusc.errorCargar'))
     } finally {
       setLoadingStatus(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Carga no bloqueante del uso mensual de IA — si la tabla no existe aún, se muestra 0
@@ -479,9 +487,10 @@ export default function SuscripcionPage() {
       window.location.href = data.url
     } catch (err) {
       console.error(err)
-      toast.error(err instanceof Error ? err.message : 'Error al iniciar pago')
+      toast.error(err instanceof Error ? err.message : t('adminSusc.errorPago'))
       setLoadingCheckout(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proveedor])
 
   const handlePortal = useCallback(async () => {
@@ -493,10 +502,11 @@ export default function SuscripcionPage() {
       window.location.href = data.url
     } catch (err) {
       console.error(err)
-      toast.error('No se pudo abrir el portal de facturación')
+      toast.error(t('adminSusc.errorPortal'))
     } finally {
       setLoadingPortal(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loadingStatus) {
@@ -519,20 +529,20 @@ export default function SuscripcionPage() {
 
       {/* ── Header ── */}
       <div>
-        <h1 className="text-xl font-bold text-white/90">Suscripción</h1>
-        <p className="text-sm text-white/45 mt-0.5">Gestioná tu plan y facturación</p>
+        <h1 className="text-xl font-bold text-white/90">{t('adminSusc.titulo')}</h1>
+        <p className="text-sm text-white/45 mt-0.5">{t('adminSusc.subtitulo')}</p>
       </div>
 
       {/* ── Estado actual ── */}
       <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-white/70">Estado actual</h2>
+        <h2 className="text-sm font-semibold text-white/70">{t('adminSusc.estadoActual')}</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Plan', value: planActual.nombre, badge: getPlanCfg(status.plan, isLight).badge },
-            { label: 'Empleados activos', value: `${status.empleados_activos}`, badge: null },
-            { label: 'Estado', value: status.suscripcion_estado, badge: null },
-            { label: 'Activo desde', value: formatFecha(status.suscripcion_inicio), badge: null },
+            { label: t('adminSusc.plan'), value: planActual.nombre, badge: getPlanCfg(status.plan, isLight).badge },
+            { label: t('adminSusc.empleadosActivos'), value: `${status.empleados_activos}`, badge: null },
+            { label: t('adminSusc.estado'), value: status.suscripcion_estado, badge: null },
+            { label: t('adminSusc.activoDesde'), value: formatFecha(status.suscripcion_inicio), badge: null },
           ].map(({ label, value, badge }) => (
             <div key={label} className="flex flex-col gap-1">
               <p className="text-[11px] text-white/35">{label}</p>
@@ -552,9 +562,9 @@ export default function SuscripcionPage() {
           <div className="flex justify-between text-[11px] text-white/40">
             <span className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" />
-              Empleados en onboarding
+              {t('adminSusc.empleadosOnboarding')}
             </span>
-            <span>{status.empleados_activos} / {planActual.empleadosIncluidos} incluidos</span>
+            <span>{status.empleados_activos} / {planActual.empleadosIncluidos} {t('adminSusc.incluidos')}</span>
           </div>
           <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
             <div
@@ -574,7 +584,7 @@ export default function SuscripcionPage() {
               transition-colors duration-150 disabled:opacity-50"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            {loadingPortal ? 'Abriendo portal...' : 'Gestionar facturación en Stripe →'}
+            {loadingPortal ? t('adminSusc.abriendoPortal') : t('adminSusc.gestionarStripe')}
           </button>
         )}
       </div>
@@ -586,7 +596,7 @@ export default function SuscripcionPage() {
       {status.plan === 'trial' && (
         <div id="planes" className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-sm font-semibold text-white/70">Elegí tu plan</h2>
+            <h2 className="text-sm font-semibold text-white/70">{t('adminSusc.elegiPlan')}</h2>
             <ProveedorSelector proveedor={proveedor} onChange={setProveedor} />
           </div>
 
@@ -596,7 +606,7 @@ export default function SuscripcionPage() {
               bg-amber-500/10 border border-amber-500/20">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-300/80">
-                MercadoPago procesa pagos únicos. Para renovación automática contactá a{' '}
+                {t('adminSusc.avisoMP')}{' '}
                 <a href="mailto:hola@heero.la" className="underline">hola@heero.la</a>.
               </p>
             </div>
@@ -621,7 +631,7 @@ export default function SuscripcionPage() {
       {/* Si ya tiene plan pago, mostrar solo el plan actual + opción de cambiar */}
       {status.plan !== 'trial' && (
         <div id="planes" className="space-y-4">
-          <h2 className="text-sm font-semibold text-white/70">Tu plan</h2>
+          <h2 className="text-sm font-semibold text-white/70">{t('adminSusc.tuPlan')}</h2>
           <div className="max-w-sm">
             <PlanCard
               planId={status.plan}
@@ -633,7 +643,7 @@ export default function SuscripcionPage() {
             />
           </div>
           <p className="text-xs text-white/35">
-            Para cambiar o cancelar tu plan, usá el portal de facturación de Stripe arriba.
+            {t('adminSusc.cambiarPlanNota')}
           </p>
         </div>
       )}

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { MiniMarkdownPreview } from '@/components/shared/MiniMarkdownPreview'
 import { Portal } from '@/components/shared/Portal'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/components/LanguageProvider'
 import {
   parseVideoUrl,
   ACCEPT_BY_TIPO,
@@ -70,6 +71,7 @@ export function ContenidoModal({
   onClose,
   onGuardado,
 }: ContenidoModalProps) {
+  const { t } = useLanguage()
 
   // ── Tipo seleccionado ───────────────────────
   const [tipo, setTipo] = useState<TipoContenido | null>(existing?.tipo ?? null)
@@ -174,7 +176,7 @@ export function ContenidoModal({
 
     const maxSize = MAX_SIZE_BY_TIPO[tipo] ?? MAX_SIZE_BY_TIPO.archivo
     if (file.size > maxSize) {
-      setUploadError(`El archivo supera el máximo de ${formatFileSize(maxSize)}`)
+      setUploadError(t('adminCont.upload.max') + formatFileSize(maxSize))
       return
     }
 
@@ -202,7 +204,7 @@ export function ContenidoModal({
       }
 
       if (!res.ok) {
-        throw new Error(data.error ?? 'Error al subir el archivo')
+        throw new Error(data.error ?? t('adminCont.upload.error'))
       }
 
       setUploadedPath(data.path!)
@@ -211,9 +213,9 @@ export function ContenidoModal({
       setUploadStatus('done')
     } catch (err) {
       setUploadStatus('error')
-      setUploadError(err instanceof Error ? err.message : 'Error al subir el archivo')
+      setUploadError(err instanceof Error ? err.message : t('adminCont.upload.error'))
     }
-  }, [tipo, empresaId, modulo])
+  }, [tipo, empresaId, modulo, t])
 
   // ── Drag & Drop handlers ─────────────────────
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -378,10 +380,16 @@ export function ContenidoModal({
             {/* ── Header con breadcrumb ───────────────── */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
               <div className="flex items-center gap-2 text-[10px] text-white/30 uppercase tracking-widest">
-                <span>{MODULO_LABELS[modulo] ?? modulo}</span>
+                <span>
+                  {t('adminCono.mod.' + modulo) !== 'adminCono.mod.' + modulo
+                    ? t('adminCono.mod.' + modulo)
+                    : MODULO_LABELS[modulo] ?? modulo}
+                </span>
                 <span>›</span>
                 <span className="text-white/70 normal-case text-sm font-medium tracking-normal">
-                  {label}
+                  {t('adminCono.bloque.' + bloqueKey) !== 'adminCono.bloque.' + bloqueKey
+                    ? t('adminCono.bloque.' + bloqueKey)
+                    : label}
                 </span>
               </div>
               <button
@@ -406,7 +414,7 @@ export function ContenidoModal({
                   <input
                     value={titulo}
                     onChange={e => setTitulo(e.target.value)}
-                    placeholder="Título de la sección"
+                    placeholder={t('adminCont.tituloPlaceholder')}
                     className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
                       px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
                       transition-colors placeholder:text-white/20"
@@ -434,7 +442,7 @@ export function ContenidoModal({
                   disabled={guardando}
                   className="text-sm text-white/40 hover:text-white/70 px-4 py-2 transition-colors"
                 >
-                  Cancelar
+                  {t('adminCont.cancelar')}
                 </button>
                 <Button
                   variant="primary"
@@ -444,9 +452,9 @@ export function ContenidoModal({
                   onClick={guardar}
                 >
                   {guardadoFeedback ? (
-                    <><Check className="w-3.5 h-3.5 text-teal-300" /> Guardado</>
+                    <><Check className="w-3.5 h-3.5 text-teal-300" /> {t('adminCont.guardado')}</>
                   ) : (
-                    'Guardar'
+                    t('adminCont.guardar')
                   )}
                 </Button>
               </div>
@@ -471,9 +479,10 @@ function SelectorTipo({
   tipoActual: TipoContenido | null
   onSelect: (t: TipoContenido) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="grid grid-cols-3 gap-2">
-      {TIPO_OPCIONES.map(({ tipo, descripcion, Icon }) => {
+      {TIPO_OPCIONES.map(({ tipo, Icon }) => {
         const activo = tipoActual === tipo
         return (
           <button
@@ -503,9 +512,11 @@ function SelectorTipo({
                 'text-xs font-medium transition-colors',
                 activo ? 'text-white' : 'text-white/70 group-hover:text-white'
               )}>
-                {TIPO_LABELS[tipo]}
+                {t('adminCont.tipo.' + tipo) !== 'adminCont.tipo.' + tipo
+                  ? t('adminCont.tipo.' + tipo)
+                  : TIPO_LABELS[tipo]}
               </p>
-              <p className="text-[10px] text-white/30 mt-0.5 leading-tight">{descripcion}</p>
+              <p className="text-[10px] text-white/30 mt-0.5 leading-tight">{t('adminCont.tipoDesc.' + tipo)}</p>
             </div>
           </button>
         )
@@ -517,6 +528,7 @@ function SelectorTipo({
 // ── Botón decorativo: agregar otro bloque ───────────────────
 
 function BtnAgregarBloque() {
+  const { t } = useLanguage()
   return (
     <div className="flex items-center gap-3 mt-3 p-3
       rounded-xl border border-dashed border-white/[0.08]
@@ -527,10 +539,10 @@ function BtnAgregarBloque() {
         <Plus className="w-3.5 h-3.5 text-[#38BDF8]" />
       </div>
       <span className="text-xs text-white/35 group-hover:text-white/60">
-        Agregar otro bloque de contenido
+        {t('adminCont.agregarOtro')}
       </span>
       <div className="flex gap-1.5 ml-auto">
-        {['🖼️ Imagen', '🔗 Link', '🎬 Video'].map(chip => (
+        {['🖼️ ' + t('adminCont.tipo.imagen'), '🔗 ' + t('adminCont.tipo.link'), '🎬 ' + t('adminCont.tipo.video')].map(chip => (
           <span
             key={chip}
             className="text-[10px] px-2 py-1 rounded-md
@@ -554,6 +566,7 @@ function FormTexto({
   contenido: string
   setContenido: (v: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
       <textarea
@@ -562,11 +575,11 @@ function FormTexto({
         className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-xl
           px-3 py-2.5 text-white/80 outline-none focus:border-[#0EA5E9]/40
           resize-none font-mono transition-colors placeholder:text-white/20"
-        placeholder={'# Título\n\nEscribí el contenido acá...\n\n**negrita** *itálica*\n- lista'}
+        placeholder={t('adminCont.textoPlaceholder')}
         style={{ minHeight: '280px' }}
       />
       <div className="hidden sm:block overflow-y-auto">
-        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2">Preview</p>
+        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2">{t('adminCont.preview')}</p>
         <MiniMarkdownPreview text={contenido} />
       </div>
     </div>
@@ -601,10 +614,12 @@ function Dropzone({
   fileInputRef,
   handleDrop,
   handleFileChange,
-  label = 'Arrastrá el archivo acá o hacé click para seleccionar',
+  label,
   hint,
 }: DropzoneProps) {
+  const { t } = useLanguage()
   const accept = ACCEPT_BY_TIPO[tipo] ?? ''
+  const labelFinal = label ?? t('adminCont.drop.default')
 
   return (
     <div>
@@ -630,14 +645,14 @@ function Dropzone({
         {uploadStatus === 'idle' && (
           <div className="flex flex-col items-center gap-3">
             <Upload className="w-8 h-8 text-white/20" />
-            <p className="text-sm text-white/40">{label}</p>
+            <p className="text-sm text-white/40">{labelFinal}</p>
             {hint && <p className="text-xs text-white/25">{hint}</p>}
           </div>
         )}
         {uploadStatus === 'uploading' && (
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-[#0EA5E9]/20 border-t-[#0EA5E9] rounded-full animate-spin" />
-            <p className="text-sm text-white/40">Subiendo{uploadedFile ? ` "${uploadedFile.name}"` : ''}...</p>
+            <p className="text-sm text-white/40">{t('adminCont.drop.subiendo')}{uploadedFile ? ` "${uploadedFile.name}"` : ''}...</p>
           </div>
         )}
         {uploadStatus === 'done' && uploadedPublicUrl && (
@@ -648,16 +663,16 @@ function Dropzone({
             <p className="text-sm text-white/60">
               {uploadedFile ? (
                 <>{getFileEmoji(uploadedFile.name)} {uploadedFile.name} — {formatFileSize(uploadedFile.size)}</>
-              ) : 'Archivo subido correctamente'}
+              ) : t('adminCont.drop.subido')}
             </p>
-            <p className="text-xs text-white/30">Hacé click para cambiar el archivo</p>
+            <p className="text-xs text-white/30">{t('adminCont.drop.cambiar')}</p>
           </div>
         )}
         {uploadStatus === 'error' && (
           <div className="flex flex-col items-center gap-3">
             <AlertCircle className="w-8 h-8 text-red-400" />
-            <p className="text-sm text-red-400">{uploadError ?? 'Error al subir el archivo'}</p>
-            <p className="text-xs text-white/30">Hacé click para intentar de nuevo</p>
+            <p className="text-sm text-red-400">{uploadError ?? t('adminCont.upload.error')}</p>
+            <p className="text-xs text-white/30">{t('adminCont.drop.reintentar')}</p>
           </div>
         )}
       </div>
@@ -674,6 +689,7 @@ function TabsUploadUrl({
   activeTab: 'upload' | 'url'
   setActiveTab: (v: 'upload' | 'url') => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="flex gap-1 p-1 bg-white/[0.03] rounded-lg border border-white/[0.06] w-fit mb-4">
       {(['upload', 'url'] as const).map(tab => (
@@ -687,7 +703,7 @@ function TabsUploadUrl({
               : 'text-white/35 hover:text-white/60'
           )}
         >
-          {tab === 'upload' ? 'Subir archivo' : 'URL externa'}
+          {tab === 'upload' ? t('adminCont.tab.upload') : t('adminCont.tab.url')}
         </button>
       ))}
     </div>
@@ -704,6 +720,7 @@ interface FormImagenProps extends DropzoneProps {
 }
 
 function FormImagen({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: FormImagenProps) {
+  const { t } = useLanguage()
   const [previewUrl, setPreviewUrl] = useState(url)
 
   useEffect(() => {
@@ -719,8 +736,8 @@ function FormImagen({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: 
         <>
           <Dropzone
             {...dropzoneProps}
-            label="Arrastrá la imagen o hacé click para seleccionar"
-            hint="JPG, PNG, WebP, GIF · Máximo 5MB"
+            label={t('adminCont.drop.imagen')}
+            hint={t('adminCont.drop.imagenHint')}
           />
           {dropzoneProps.uploadedPublicUrl && (
             <div className="mt-3 rounded-lg overflow-hidden border border-white/[0.08]">
@@ -768,22 +785,23 @@ function FormVideo({
   setUrl: (v: string) => void
   embedUrl: string
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-4">
       <div>
         <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1.5">
-          URL del video
+          {t('adminCont.video.url')}
         </label>
         <input
           type="url"
           value={url}
           onChange={e => setUrl(e.target.value)}
-          placeholder="https://youtube.com/watch?v=... o https://vimeo.com/..."
+          placeholder={t('adminCont.video.placeholder')}
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
             px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
             transition-colors placeholder:text-white/20"
         />
-        <p className="text-[10px] text-white/25 mt-1.5">Soporta links de YouTube y Vimeo</p>
+        <p className="text-[10px] text-white/25 mt-1.5">{t('adminCont.video.soporta')}</p>
       </div>
 
       {embedUrl ? (
@@ -793,7 +811,7 @@ function FormVideo({
         >
           <iframe
             src={embedUrl}
-            title="Preview del video"
+            title={t('adminCont.video.previewTitle')}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="absolute inset-0 w-full h-full"
@@ -801,7 +819,7 @@ function FormVideo({
         </div>
       ) : url.trim() ? (
         <div className="h-24 flex items-center justify-center rounded-xl border border-dashed border-white/[0.08]">
-          <p className="text-xs text-white/30">URL de YouTube o Vimeo no reconocida</p>
+          <p className="text-xs text-white/30">{t('adminCont.video.noReconocida')}</p>
         </div>
       ) : null}
     </div>
@@ -818,6 +836,7 @@ interface FormPdfProps extends DropzoneProps {
 }
 
 function FormPdf({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: FormPdfProps) {
+  const { t } = useLanguage()
   const esGoogleDrive = url.includes('drive.google.com') || url.includes('docs.google.com')
 
   return (
@@ -827,8 +846,8 @@ function FormPdf({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: For
       {activeTab === 'upload' ? (
         <Dropzone
           {...dropzoneProps}
-          label="Arrastrá el PDF o hacé click para seleccionar"
-          hint="Solo PDF · Máximo 20MB"
+          label={t('adminCont.drop.pdf')}
+          hint={t('adminCont.drop.pdfHint')}
         />
       ) : (
         <div className="space-y-3">
@@ -836,7 +855,7 @@ function FormPdf({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: For
             type="url"
             value={url}
             onChange={e => setUrl(e.target.value)}
-            placeholder="https://docs.google.com/... o URL directa al PDF"
+            placeholder={t('adminCont.pdf.placeholder')}
             className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
               px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
               transition-colors placeholder:text-white/20"
@@ -845,7 +864,7 @@ function FormPdf({ activeTab, setActiveTab, url, setUrl, ...dropzoneProps }: For
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/[0.06] border border-amber-500/20">
               <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-400/80">
-                Asegurate que el archivo sea público o accesible por link en Google Drive
+                {t('adminCont.pdf.driveAviso')}
               </p>
             </div>
           )}
@@ -872,6 +891,7 @@ function FormLink({
   plataforma: LinkPlataforma
   setPlataforma: (v: LinkPlataforma) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-4">
       <div>
@@ -891,13 +911,13 @@ function FormLink({
 
       <div>
         <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1.5">
-          Descripción <span className="text-white/20 normal-case tracking-normal">(opcional)</span>
+          {t('adminCont.link.descripcion')} <span className="text-white/20 normal-case tracking-normal">{t('adminCont.opcional')}</span>
         </label>
         <input
           type="text"
           value={descripcion}
           onChange={e => setDescripcion(e.target.value)}
-          placeholder="¿Qué encontrarán en este link?"
+          placeholder={t('adminCont.link.placeholder')}
           className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
             px-3 py-2.5 text-white outline-none focus:border-[#0EA5E9]/40
             transition-colors placeholder:text-white/20"
@@ -906,7 +926,7 @@ function FormLink({
 
       <div>
         <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1.5">
-          Plataforma <span className="text-white/20 normal-case tracking-normal">(opcional)</span>
+          {t('adminCont.link.plataforma')} <span className="text-white/20 normal-case tracking-normal">{t('adminCont.opcional')}</span>
         </label>
         <select
           value={plataforma}
@@ -928,11 +948,12 @@ function FormLink({
 // ── PASO B: Formulario ARCHIVO ──────────────────────────────
 
 function FormArchivo(dropzoneProps: DropzoneProps) {
+  const { t } = useLanguage()
   return (
     <Dropzone
       {...dropzoneProps}
-      label="Arrastrá el archivo o hacé click para seleccionar"
-      hint="Word, Excel, PowerPoint, ZIP, CSV · Máximo 50MB"
+      label={t('adminCont.drop.archivo')}
+      hint={t('adminCont.drop.archivoHint')}
     />
   )
 }

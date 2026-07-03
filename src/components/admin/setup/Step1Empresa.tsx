@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Building2, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { SetupData } from '@/app/admin/setup/page'
@@ -49,6 +50,7 @@ interface Step1Props {
 }
 
 export function Step1Empresa({ setupData, onNext }: Step1Props) {
+  const { t } = useLanguage()
   const [nombre, setNombre] = useState(setupData.empresaNombre)
   const [industria, setIndustria] = useState('')
   const [tamano, setTamano] = useState('')
@@ -68,18 +70,19 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.error('El archivo debe ser una imagen')
+      toast.error(t('adminSetup.errArchivoImagen'))
       return
     }
     setLogoFile(file)
     const reader = new FileReader()
     reader.onload = ev => setLogoPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSubmit = useCallback(async () => {
     if (!nombre.trim()) {
-      toast.error('El nombre de la empresa es obligatorio')
+      toast.error(t('adminSetup.errNombreObligatorio'))
       return
     }
 
@@ -120,10 +123,11 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
 
       onNext()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al guardar')
+      toast.error(err instanceof Error ? err.message : t('adminSetup.errGuardar'))
     } finally {
       setSaving(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nombre, industria, tamano, logoFile, setupData.empresaId, onNext])
 
   return (
@@ -135,9 +139,9 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
           shadow-[0_0_32px_rgba(14,165,233,0.2)]">
           <Building2 className="w-8 h-8 text-[#38BDF8]" />
         </div>
-        <h2 className="text-xl font-semibold text-white mb-1">Tu empresa</h2>
+        <h2 className="text-xl font-semibold text-white mb-1">{t('adminSetup.s1Titulo')}</h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Completá los datos básicos de tu organización
+          {t('adminSetup.s1Subtitulo')}
         </p>
       </div>
 
@@ -145,7 +149,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
         {/* Logo */}
         <div>
           <label className="block text-[11px] font-medium text-white/45 mb-3 tracking-widest uppercase">
-            Logo (opcional)
+            {t('adminSetup.s1Logo')}
           </label>
           <div className="flex items-center gap-4">
             {/* Preview */}
@@ -168,7 +172,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
                 inputCls,
                 'flex items-center text-white/35 cursor-pointer h-10'
               )}>
-                {logoFile ? logoFile.name : 'Subir imagen...'}
+                {logoFile ? logoFile.name : t('adminSetup.s1SubirImagen')}
               </div>
               <input
                 type="file"
@@ -186,7 +190,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
             htmlFor="s1-nombre"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Nombre de la empresa
+            {t('adminSetup.s1Nombre')}
           </label>
           <input
             id="s1-nombre"
@@ -204,7 +208,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
             htmlFor="s1-industria"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Industria
+            {t('adminSetup.s1Industria')}
           </label>
           <div className="relative">
             <select
@@ -213,7 +217,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
               onChange={e => setIndustria(e.target.value)}
               className={cn(selectCls, !industria && 'text-white/30')}
             >
-              <option value="" disabled>Seleccioná una industria</option>
+              <option value="" disabled>{t('adminSetup.s1SelIndustria')}</option>
               {INDUSTRIAS.map(i => (
                 <option key={i} value={i} className="bg-[#111110]">{i}</option>
               ))}
@@ -228,7 +232,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
             htmlFor="s1-tamano"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Cantidad de empleados
+            {t('adminSetup.s1Tamano')}
           </label>
           <div className="relative">
             <select
@@ -237,7 +241,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
               onChange={e => setTamano(e.target.value)}
               className={cn(selectCls, !tamano && 'text-white/30')}
             >
-              <option value="" disabled>Seleccioná un rango</option>
+              <option value="" disabled>{t('adminSetup.s1SelRango')}</option>
               {TAMANOS.map(t => (
                 <option key={t} value={t} className="bg-[#111110]">{t}</option>
               ))}
@@ -256,7 +260,7 @@ export function Step1Empresa({ setupData, onNext }: Step1Props) {
           onClick={handleSubmit}
           className="w-full"
         >
-          {saving ? 'Guardando...' : 'Continuar'}
+          {saving ? t('adminSetup.guardando') : t('adminSetup.continuar')}
         </Button>
       </div>
     </div>

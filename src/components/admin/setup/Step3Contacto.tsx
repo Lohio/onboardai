@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { MessageSquare, Check, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { HERRAMIENTA_LABELS } from '@/lib/contacto'
@@ -14,12 +15,13 @@ import type { SetupData } from '@/app/admin/setup/page'
 // Opciones estándar
 // ─────────────────────────────────────────────
 
-const OPCIONES_ESTANDAR: { value: string; desc: string }[] = [
-  { value: 'email',    desc: 'Abre el cliente de correo' },
-  { value: 'teams',    desc: 'Abre un chat en Microsoft Teams' },
-  { value: 'slack',    desc: 'Copia el email para buscar en Slack' },
-  { value: 'whatsapp', desc: 'Copia el email para coordinar por WhatsApp' },
-  { value: 'meet',     desc: 'Envía un email para coordinar reunión' },
+// `descKey` es la clave i18n de la descripción — se traduce al renderizar
+const OPCIONES_ESTANDAR: { value: string; descKey: string }[] = [
+  { value: 'email',    descKey: 'adminSetup.s3DescEmail' },
+  { value: 'teams',    descKey: 'adminSetup.s3DescTeams' },
+  { value: 'slack',    descKey: 'adminSetup.s3DescSlack' },
+  { value: 'whatsapp', descKey: 'adminSetup.s3DescWhatsapp' },
+  { value: 'meet',     descKey: 'adminSetup.s3DescMeet' },
 ]
 
 // ─────────────────────────────────────────────
@@ -33,6 +35,7 @@ interface Step3Props {
 }
 
 export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
+  const { t } = useLanguage()
   // Herramientas estándar seleccionadas
   const [seleccionadas, setSeleccionadas] = useState<string[]>(['email'])
   // Card "Otra"
@@ -77,10 +80,11 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
       if (error) throw new Error(error.message)
       onNext()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al guardar')
+      toast.error(err instanceof Error ? err.message : t('adminSetup.errGuardar'))
     } finally {
       setSaving(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrayFinal, setupData.empresaId, onNext])
 
   return (
@@ -92,10 +96,9 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
           shadow-[0_0_32px_rgba(14,165,233,0.2)]">
           <MessageSquare className="w-8 h-8 text-[#38BDF8]" />
         </div>
-        <h2 className="text-xl font-semibold text-white mb-1">Herramientas de contacto</h2>
+        <h2 className="text-xl font-semibold text-white mb-1">{t('adminSetup.s3Titulo')}</h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Elegí cómo van a poder contactar a sus compañeros los empleados desde Heero.
-          Podés seleccionar más de una.
+          {t('adminSetup.s3Subtitulo')}
         </p>
       </div>
 
@@ -134,7 +137,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
                 )}>
                   {HERRAMIENTA_LABELS[opcion.value]}
                 </p>
-                <p className="text-xs text-white/35 mt-0.5">{opcion.desc}</p>
+                <p className="text-xs text-white/35 mt-0.5">{t(opcion.descKey)}</p>
               </div>
 
               {/* Indicador checkbox */}
@@ -177,9 +180,9 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
               'text-sm font-medium',
               otraSeleccionada ? 'text-white' : 'text-white/70'
             )}>
-              Otra
+              {t('adminSetup.s3Otra')}
             </p>
-            <p className="text-xs text-white/35 mt-0.5">Especificá el nombre de otra herramienta</p>
+            <p className="text-xs text-white/35 mt-0.5">{t('adminSetup.s3OtraDesc')}</p>
           </div>
 
           <div className={cn(
@@ -200,7 +203,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
               type="text"
               value={otraTexto}
               onChange={e => setOtraTexto(e.target.value)}
-              placeholder="Nombre de la herramienta (ej: Discord, Telegram...)"
+              placeholder={t('adminSetup.s3OtraPh')}
               className="w-full px-4 py-2.5 rounded-lg text-sm
                 bg-white/[0.04] border border-white/[0.10]
                 text-white placeholder:text-white/25
@@ -222,7 +225,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
           onClick={handleContinuar}
           className="flex-1"
         >
-          {saving ? 'Guardando...' : 'Continuar'}
+          {saving ? t('adminSetup.guardando') : t('adminSetup.continuar')}
         </Button>
         <Button
           variant="ghost"
@@ -231,7 +234,7 @@ export function Step3Contacto({ setupData, onNext, onSkip }: Step3Props) {
           disabled={saving}
           className="flex-1 sm:flex-none"
         >
-          Omitir por ahora
+          {t('adminSetup.omitir')}
         </Button>
       </div>
     </div>

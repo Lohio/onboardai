@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import type { BadgeVariant } from '@/components/ui/Badge'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos locales
@@ -129,11 +130,12 @@ function SkeletonColumna() {
 // ─────────────────────────────────────────────
 
 function EmptyFranja({ label }: { label: string }) {
+  const { t } = useLanguage()
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-2">
       <Users className="w-7 h-7 text-white/10" />
       <p className="text-xs text-white/25 text-center">
-        Sin empleados en franja {label}
+        {t('adminRep.emptyFranja1') + label + t('adminRep.emptyFranja2')}
       </p>
     </div>
   )
@@ -144,21 +146,22 @@ function EmptyFranja({ label }: { label: string }) {
 // ─────────────────────────────────────────────
 
 function BadgeEstado({ emp }: { emp: EmpleadoReporte }) {
+  const { t } = useLanguage()
   // Para graduados: lógica propia
   if (emp.franja === 'graduados') {
     return emp.progreso >= 90
-      ? <Badge variant="success">Completado</Badge>
-      : <Badge variant="warning">Pendiente</Badge>
+      ? <Badge variant="success">{t('adminRep.completado')}</Badge>
+      : <Badge variant="warning">{t('adminRep.pendiente')}</Badge>
   }
 
   // Para el resto: estancado > en meta > en progreso
   if (emp.estancado) {
-    return <Badge variant="error">Estancado</Badge>
+    return <Badge variant="error">{t('adminRep.estancado')}</Badge>
   }
   if (emp.enMeta) {
-    return <Badge variant="success">En meta</Badge>
+    return <Badge variant="success">{t('adminRep.enMeta')}</Badge>
   }
-  return <Badge variant="warning">En progreso</Badge>
+  return <Badge variant="warning">{t('adminRep.enProgreso')}</Badge>
 }
 
 // ─────────────────────────────────────────────
@@ -172,6 +175,7 @@ function EmpleadoReporteCard({
   emp: EmpleadoReporte
   onClick: () => void
 }) {
+  const { t } = useLanguage()
   const initials = getInitials(emp.nombre)
 
   // Color de la barra de progreso según si está en meta
@@ -218,7 +222,7 @@ function EmpleadoReporteCard({
         {/* Barra de progreso */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[11px]">
-            <span className="text-white/40">Progreso</span>
+            <span className="text-white/40">{t('adminRep.progreso')}</span>
             <span className="font-mono text-white/60">{emp.progreso}%</span>
           </div>
           {/* Barra manual para poder controlar el color dinámicamente */}
@@ -232,14 +236,14 @@ function EmpleadoReporteCard({
           </div>
           {/* Meta esperada (línea de referencia visual en texto) */}
           <p className="text-[10px] text-white/25">
-            Meta: {emp.progresoEsperado}% para esta franja
+            {t('adminRep.metaCard1') + emp.progresoEsperado + t('adminRep.metaCard2')}
           </p>
         </div>
 
         {/* Footer: día + badge de estado */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-white/35 font-mono">
-            Día {emp.diasOnboarding}
+            {t('adminRep.dia')} {emp.diasOnboarding}
           </span>
           <BadgeEstado emp={emp} />
         </div>
@@ -269,6 +273,7 @@ function FranjaColumna({
   onNavigate,
   iconColor,
 }: FranjaColumnaProps) {
+  const { t } = useLanguage()
   const enMeta    = empleados.filter(e => e.enMeta && !e.estancado).length
   const estancados = empleados.filter(e => e.estancado).length
 
@@ -282,8 +287,8 @@ function FranjaColumna({
             <h2 className="text-sm font-semibold text-white/80">{label}</h2>
           </div>
           <p className="text-xs text-white/35 mt-0.5">
-            {empleados.length} empleado{empleados.length !== 1 ? 's' : ''}
-            {' · '}meta {meta}%
+            {empleados.length} {empleados.length !== 1 ? t('adminRep.empleados') : t('adminRep.empleado')}
+            {' · '}{t('adminRep.metaWord')} {meta}%
           </p>
         </div>
 
@@ -293,13 +298,13 @@ function FranjaColumna({
             {enMeta > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-teal-400">
                 <CheckCircle2 className="w-3 h-3" />
-                {enMeta} en meta
+                {enMeta} {t('adminRep.enMetaLower')}
               </span>
             )}
             {estancados > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-red-400">
                 <AlertTriangle className="w-3 h-3" />
-                {estancados} estancado{estancados !== 1 ? 's' : ''}
+                {estancados} {estancados !== 1 ? t('adminRep.estancadosLower') : t('adminRep.estancadoLower')}
               </span>
             )}
           </div>
@@ -337,6 +342,7 @@ function FranjaColumna({
 
 export default function ReportesPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -493,8 +499,8 @@ export default function ReportesPage() {
       {/* ── Header ── */}
       <motion.div variants={itemVariants} className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-lg font-semibold text-white/90">Reportes</h1>
-          <p className="text-sm text-white/40 mt-0.5">Progreso 30 / 60 / 90 días</p>
+          <h1 className="text-lg font-semibold text-white/90">{t('adminRep.titulo')}</h1>
+          <p className="text-sm text-white/40 mt-0.5">{t('adminRep.subtitulo')}</p>
         </div>
 
         {/* Métricas rápidas en el header */}
@@ -502,18 +508,18 @@ export default function ReportesPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs text-white/40">
               <Users className="w-3.5 h-3.5" />
-              <span>{totalEmpleados} total</span>
+              <span>{totalEmpleados} {t('adminRep.total')}</span>
             </div>
             {enMetaTotal > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-teal-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{enMetaTotal} en meta</span>
+                <span>{enMetaTotal} {t('adminRep.enMetaLower')}</span>
               </div>
             )}
             {estancadosTotal > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-red-400">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>{estancadosTotal} estancado{estancadosTotal !== 1 ? 's' : ''}</span>
+                <span>{estancadosTotal} {estancadosTotal !== 1 ? t('adminRep.estancadosLower') : t('adminRep.estancadoLower')}</span>
               </div>
             )}
           </div>
@@ -528,7 +534,7 @@ export default function ReportesPage() {
         <motion.div variants={itemVariants}>
           <FranjaColumna
             franjaKey="30d"
-            label="30 días"
+            label={t('adminRep.franja.30d')}
             meta={25}
             empleados={por30d}
             onNavigate={id => router.push(`/admin/empleados/${id}`)}
@@ -539,7 +545,7 @@ export default function ReportesPage() {
         <motion.div variants={itemVariants}>
           <FranjaColumna
             franjaKey="60d"
-            label="60 días"
+            label={t('adminRep.franja.60d')}
             meta={60}
             empleados={por60d}
             onNavigate={id => router.push(`/admin/empleados/${id}`)}
@@ -550,7 +556,7 @@ export default function ReportesPage() {
         <motion.div variants={itemVariants}>
           <FranjaColumna
             franjaKey="90d"
-            label="90 días"
+            label={t('adminRep.franja.90d')}
             meta={90}
             empleados={por90d}
             onNavigate={id => router.push(`/admin/empleados/${id}`)}
@@ -567,11 +573,11 @@ export default function ReportesPage() {
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                <h2 className="text-sm font-semibold text-white/80">Graduados</h2>
-                <span className="text-xs text-white/35">· +90 días</span>
+                <h2 className="text-sm font-semibold text-white/80">{t('adminRep.graduados')}</h2>
+                <span className="text-xs text-white/35">· {t('adminRep.mas90')}</span>
               </div>
               <span className="text-xs text-white/35">
-                {porGraduados.length} empleado{porGraduados.length !== 1 ? 's' : ''}
+                {porGraduados.length} {porGraduados.length !== 1 ? t('adminRep.empleados') : t('adminRep.empleado')}
               </span>
             </div>
 
@@ -605,9 +611,9 @@ export default function ReportesPage() {
               <MessageSquare className="w-5 h-5 text-[#38BDF8]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white/80">Encuestas de pulso</p>
+              <p className="text-sm font-semibold text-white/80">{t('adminRep.encuestas')}</p>
               <p className="text-xs text-white/35 mt-0.5">
-                Feedback automático en días 7, 30 y 60 del onboarding
+                {t('adminRep.encuestasDesc')}
               </p>
             </div>
             <ArrowRight className="w-4 h-4 text-white/25 flex-shrink-0" />
@@ -623,9 +629,9 @@ export default function ReportesPage() {
         >
           <Users className="w-10 h-10 text-white/10" />
           <div className="text-center">
-            <p className="text-sm font-medium text-white/40">Sin empleados registrados</p>
+            <p className="text-sm font-medium text-white/40">{t('adminRep.emptyGlobal')}</p>
             <p className="text-xs text-white/25 mt-1">
-              Los reportes se generarán automáticamente a medida que se agreguen empleados
+              {t('adminRep.emptyGlobalDesc')}
             </p>
           </div>
         </motion.div>

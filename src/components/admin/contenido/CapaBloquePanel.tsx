@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/Badge'
 import { BloqueContenidoForm } from '@/components/admin/BloqueContenidoForm'
 import type { BloqueContenido } from '@/components/admin/BloqueContenidoForm'
 import { containerVariants, itemVariants, EmptyState } from './helpers'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Lista de bloques reutilizable
@@ -41,6 +42,7 @@ function BloquesList({
   onActualizado: (b: BloqueContenido) => void
   onEliminar: (b: BloqueContenido) => void
 }) {
+  const { t } = useLanguage()
   const [formulario, setFormulario] = useState<{ bloque?: BloqueContenido } | null>(null)
 
   return (
@@ -94,7 +96,7 @@ function BloquesList({
                   onClick={() => setFormulario({ bloque: bl })}
                   className="p-1.5 rounded-lg text-white/30 hover:text-[#38BDF8]
                     hover:bg-[#0EA5E9]/10 transition-colors duration-150"
-                  aria-label="Editar bloque"
+                  aria-label={t('adminCont.editarBloque')}
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
@@ -102,7 +104,7 @@ function BloquesList({
                   onClick={() => onEliminar(bl)}
                   className="p-1.5 rounded-lg text-white/30 hover:text-red-400
                     hover:bg-red-500/10 transition-colors duration-150"
-                  aria-label="Eliminar bloque"
+                  aria-label={t('adminCont.eliminarBloque')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -136,6 +138,7 @@ export function CapaBloquePanel({
   onBloqueActualizado: (b: BloqueContenido) => void
   onBloqueEliminar: (b: BloqueContenido) => void
 }) {
+  const { t } = useLanguage()
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
   const [mostrarNuevo, setMostrarNuevo] = useState(false)
   const [valorNuevo, setValorNuevo] = useState('')
@@ -159,7 +162,7 @@ export function CapaBloquePanel({
       )
     : []
 
-  const etiqueta = tipo === 'area' ? 'área' : 'rol'
+  const etiqueta = tipo === 'area' ? t('adminCont.etiqueta.area') : t('adminCont.etiqueta.rol')
   const modulo   = tipo === 'area' ? 'area' : 'puesto'
 
   const handleCrearNuevo = () => {
@@ -224,7 +227,7 @@ export function CapaBloquePanel({
               value={valorNuevo}
               onChange={e => setValorNuevo(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCrearNuevo(); if (e.key === 'Escape') setMostrarNuevo(false) }}
-              placeholder={`Nombre del ${etiqueta}...`}
+              placeholder={t('adminCont.nombre.' + tipo)}
               autoFocus
               className="w-40 px-2.5 py-1.5 rounded-lg text-xs bg-white/[0.05] border border-[#0EA5E9]/30
                 text-white/85 placeholder-white/25 outline-none focus:border-[#0EA5E9]/60"
@@ -244,7 +247,7 @@ export function CapaBloquePanel({
               hover:border-white/[0.20] transition-colors duration-150"
           >
             <Plus className="w-3 h-3" />
-            Nuevo {etiqueta}
+            {t('adminCont.nuevoVal.' + tipo)}
           </button>
         )}
       </div>
@@ -269,13 +272,13 @@ export function CapaBloquePanel({
                 <div>
                   <h2 className="text-sm font-semibold text-white/85">{seleccionado}</h2>
                   <p className="text-xs text-white/35 mt-0.5">
-                    Contenido específico para este {etiqueta}
+                    {t('adminCont.especifico.' + tipo)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={bloquesFiltrados.length > 0 ? 'success' : 'default'}>
-                  {bloquesFiltrados.length} bloque{bloquesFiltrados.length !== 1 ? 's' : ''}
+                  {bloquesFiltrados.length} {bloquesFiltrados.length !== 1 ? t('adminCont.bloques') : t('adminCont.bloque')}
                 </Badge>
                 <button
                   onClick={() => setMostrarForm(v => !v)}
@@ -284,7 +287,7 @@ export function CapaBloquePanel({
                   style={{ color: 'white' }}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Agregar
+                  {t('adminCont.agregar')}
                 </button>
               </div>
             </div>
@@ -340,7 +343,7 @@ export function CapaBloquePanel({
         >
           <ChevronRight className="w-5 h-5 text-white/15" />
           <p className="text-sm text-white/30">
-            Seleccioná un {etiqueta} para ver o agregar contenido
+            {t('adminCont.selecciona.' + tipo)}
           </p>
         </motion.div>
       )}
@@ -355,8 +358,8 @@ export function CapaBloquePanel({
             {tipo === 'area' ? <FolderOpen className="w-5 h-5 text-white/20" /> : <Briefcase className="w-5 h-5 text-white/20" />}
           </div>
           <p className="text-sm text-white/40 text-center">
-            No hay {etiqueta}s definidos todavía.<br />
-            <span className="text-white/25">Creá uno con el botón de arriba.</span>
+            {t('adminCont.noHay.' + tipo)}<br />
+            <span className="text-white/25">{t('adminCont.creaUno')}</span>
           </p>
         </motion.div>
       )}

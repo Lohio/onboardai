@@ -16,7 +16,7 @@ export const LANG_FLAGS: Record<Lang, string> = {
 
 export const LANGS: Lang[] = ['es', 'en', 'fr', 'pt']
 
-type TranslationMap = Record<string, string>
+export type TranslationMap = Record<string, string>
 
 const ES: TranslationMap = {
   // Nav admin
@@ -758,9 +758,16 @@ const PT: TranslationMap = {
   'org.vacio.desc':       'Gere automaticamente a partir dos seus funcionários',
 }
 
+// Diccionarios modulares por dominio (un archivo por área para
+// mantener este archivo manejable). Los keys de los módulos pisan
+// a los del core si se repiten — evitar colisiones de prefijo.
+import { ADMIN_CORE } from './i18n-adminCore'
+import { ADMIN_GESTION } from './i18n-adminGestion'
+import { ADMIN_CONFIG_DEV } from './i18n-adminConfigDev'
+
 export const TRANSLATIONS: Record<Lang, TranslationMap> = {
-  es: ES,
-  en: EN,
-  fr: FR,
-  pt: PT,
+  es: { ...ES, ...ADMIN_CORE.es, ...ADMIN_GESTION.es, ...ADMIN_CONFIG_DEV.es },
+  en: { ...EN, ...ADMIN_CORE.en, ...ADMIN_GESTION.en, ...ADMIN_CONFIG_DEV.en },
+  fr: { ...FR, ...ADMIN_CORE.fr, ...ADMIN_GESTION.fr, ...ADMIN_CONFIG_DEV.fr },
+  pt: { ...PT, ...ADMIN_CORE.pt, ...ADMIN_GESTION.pt, ...ADMIN_CONFIG_DEV.pt },
 }

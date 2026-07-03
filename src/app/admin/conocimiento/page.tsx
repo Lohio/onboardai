@@ -6,6 +6,7 @@ import { BookOpen, AlertTriangle, Plus, Edit3, X, Check, FileText, Image, Play, 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Portal } from '@/components/shared/Portal'
 import { ContenidoModal } from '@/components/admin/ContenidoModal'
 import { estadoBloque, infoBloque } from '@/lib/conocimiento'
@@ -102,13 +103,13 @@ const cardVariants = {
 // Helpers
 // ─────────────────────────────────────────────
 
-function tiempoRelativo(dateStr: string): string {
+function tiempoRelativo(dateStr: string, t: (key: string) => string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime()
   const minutos = Math.floor(diffMs / 60000)
-  if (minutos < 60) return `hace ${minutos} min`
+  if (minutos < 60) return t('adminCono.tiempo.prefijo') + minutos + t('adminCono.tiempo.min')
   const horas = Math.floor(minutos / 60)
-  if (horas < 24) return `hace ${horas}h`
-  return `hace ${Math.floor(horas / 24)}d`
+  if (horas < 24) return t('adminCono.tiempo.prefijo') + horas + t('adminCono.tiempo.h')
+  return t('adminCono.tiempo.prefijo') + Math.floor(horas / 24) + t('adminCono.tiempo.d')
 }
 
 // ─────────────────────────────────────────────
@@ -140,6 +141,7 @@ function TipoIcon({ tipo }: { tipo: TipoContenido }) {
 // ─────────────────────────────────────────────
 
 export default function ConocimientoPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
@@ -318,10 +320,10 @@ export default function ConocimientoPage() {
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
               <h2 className="text-sm font-medium text-white/80">
-                Alertas de conocimiento faltante
+                {t('adminCono.alertas.titulo')}
               </h2>
               <span className="ml-auto text-[11px] font-mono text-amber-400/70 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                {alertas.length} sin resolver
+                {alertas.length} {t('adminCono.alertas.sinResolver')}
               </span>
             </div>
 
@@ -340,7 +342,7 @@ export default function ConocimientoPage() {
                       &ldquo;{alerta.pregunta}&rdquo;
                     </p>
                     <p className="text-[11px] text-white/35 mt-1">
-                      {alerta.usuarios?.[0]?.nombre ?? 'Empleado'} · {tiempoRelativo(alerta.created_at)}
+                      {alerta.usuarios?.[0]?.nombre ?? t('adminCono.empleado')} · {tiempoRelativo(alerta.created_at, t)}
                     </p>
                   </div>
                   <button
@@ -353,7 +355,7 @@ export default function ConocimientoPage() {
                       border border-amber-500/25 hover:border-amber-400/40
                       px-2.5 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap"
                   >
-                    Responder
+                    {t('adminCono.responder')}
                   </button>
                 </motion.div>
               ))}
@@ -367,7 +369,7 @@ export default function ConocimientoPage() {
             <motion.div key={modulo.key} variants={cardVariants} className="glass-card rounded-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-white/35">{modulo.icon}</span>
-                <h2 className="text-sm font-medium text-white/80">{modulo.label}</h2>
+                <h2 className="text-sm font-medium text-white/80">{t('adminCono.mod.' + modulo.key)}</h2>
               </div>
 
               <div className="space-y-1.5">
@@ -384,7 +386,7 @@ export default function ConocimientoPage() {
                       <EstadoDot estado={estado} />
                       <span className="flex-1 text-sm text-white/65 truncate flex items-center gap-1.5">
                         {contenido && <TipoIcon tipo={contenido.tipo} />}
-                        {bloque.label}
+                        {t('adminCono.bloque.' + bloque.key)}
                       </span>
                       {contenido && (
                         <span className="text-[10px] text-white/25 font-mono mr-2 truncate max-w-[80px]">
@@ -402,9 +404,9 @@ export default function ConocimientoPage() {
                         )}
                       >
                         {estado === 'vacio' ? (
-                          <><Plus className="w-3 h-3" /> Agregar</>
+                          <><Plus className="w-3 h-3" /> {t('adminCono.agregar')}</>
                         ) : (
-                          <><Edit3 className="w-3 h-3" /> Editar</>
+                          <><Edit3 className="w-3 h-3" /> {t('adminCono.editar')}</>
                         )}
                       </button>
                     </div>
@@ -420,7 +422,7 @@ export default function ConocimientoPage() {
                     className="flex items-center justify-between w-full text-sm text-indigo-400/80
                       hover:text-indigo-300 transition-colors group"
                   >
-                    <span className="font-medium">Editar organigrama visual</span>
+                    <span className="font-medium">{t('adminCono.editarOrganigrama')}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                 </div>
@@ -480,13 +482,13 @@ export default function ConocimientoPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="text-[10px] text-amber-400/70 uppercase tracking-widest mb-1">
-                        Pregunta sin respuesta
+                        {t('adminCono.preguntaSinRespuesta')}
                       </p>
                       <p className="text-sm text-white/80 leading-snug">
                         &ldquo;{alertaActiva.pregunta}&rdquo;
                       </p>
                       <p className="text-[11px] text-white/30 mt-1">
-                        {alertaActiva.usuarios?.[0]?.nombre ?? 'Empleado'} · {tiempoRelativo(alertaActiva.created_at)}
+                        {alertaActiva.usuarios?.[0]?.nombre ?? t('adminCono.empleado')} · {tiempoRelativo(alertaActiva.created_at, t)}
                       </p>
                     </div>
                     <button
@@ -503,7 +505,7 @@ export default function ConocimientoPage() {
                   {/* Selector de bloque */}
                   <div>
                     <label className="text-[10px] text-white/30 uppercase tracking-widest block mb-1.5">
-                      ¿A qué sección pertenece esta respuesta?
+                      {t('adminCono.seccionPregunta')}
                     </label>
                     <select
                       value={alertaBloqueKey}
@@ -512,11 +514,11 @@ export default function ConocimientoPage() {
                         text-white outline-none focus:border-[#0EA5E9]/40 transition-colors"
                     >
                       <option value="" disabled className="bg-[#111110]">
-                        Seleccioná una sección...
+                        {t('adminCono.seleccionaSeccion')}
                       </option>
                       {TODOS_LOS_BLOQUES.map(b => (
                         <option key={`${b.modulo}-${b.bloque}`} value={`${b.modulo}-${b.bloque}`} className="bg-[#111110]">
-                          {b.label}
+                          {t('adminCono.mod.' + b.modulo) + ' — ' + t('adminCono.bloque.' + b.bloque)}
                         </option>
                       ))}
                     </select>
@@ -525,7 +527,7 @@ export default function ConocimientoPage() {
                   {/* Textarea */}
                   <div className="flex-1 flex flex-col gap-1.5">
                     <label className="text-[10px] text-white/30 uppercase tracking-widest">
-                      Contenido a agregar (Markdown)
+                      {t('adminCono.contenidoAgregar')}
                     </label>
                     <textarea
                       value={alertaContenido}
@@ -533,14 +535,14 @@ export default function ConocimientoPage() {
                       className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg
                         px-3 py-2 text-white/80 outline-none focus:border-[#0EA5E9]/40
                         resize-none font-mono transition-colors placeholder:text-white/20"
-                      placeholder="Escribí la respuesta aquí..."
+                      placeholder={t('adminCono.respuestaPlaceholder')}
                       rows={6}
                     />
                     <p className="text-[10px] text-white/25">
                       {alertaBloqueKey && conocimientoMap[alertaBloqueKey]
-                        ? 'Este contenido se agregará al final de la sección existente.'
+                        ? t('adminCono.agregaraFinal')
                         : alertaBloqueKey
-                        ? 'Se creará una nueva sección con este contenido.'
+                        ? t('adminCono.crearaNueva')
                         : ''}
                     </p>
                   </div>
@@ -552,7 +554,7 @@ export default function ConocimientoPage() {
                     onClick={() => !guardando && setAlertaActiva(null)}
                     className="text-sm text-white/40 hover:text-white/70 px-4 py-2 transition-colors"
                   >
-                    Cancelar
+                    {t('adminCono.cancelar')}
                   </button>
                   <button
                     onClick={guardarRespuestaAlerta}
@@ -564,9 +566,9 @@ export default function ConocimientoPage() {
                     )}
                   >
                     {guardando ? (
-                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" /> Guardando...</>
+                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" /> {t('adminCono.guardando')}</>
                     ) : (
-                      'Agregar al conocimiento'
+                      t('adminCono.agregarConocimiento')
                     )}
                   </button>
                 </div>

@@ -12,6 +12,7 @@ import {
   urlArchivoConocimiento,
   TIPO_LABELS,
 } from '@/lib/conocimiento'
+import { useLanguage } from '@/components/LanguageProvider'
 import type { ContenidoBloque, MetadataLink, MetadataArchivo } from '@/types'
 
 interface ContenidoPreviewProps {
@@ -19,6 +20,7 @@ interface ContenidoPreviewProps {
 }
 
 export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
+  const { t } = useLanguage()
   switch (bloque.tipo) {
 
     // ── TEXTO ─────────────────────────────────────────────────
@@ -76,7 +78,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-white/80 font-medium truncate">{pdfNombre}</p>
-            <p className="text-xs text-white/35 mt-0.5">Documento PDF</p>
+            <p className="text-xs text-white/35 mt-0.5">{t('adminCont.tipoDesc.pdf')}</p>
           </div>
           <a
             href={pdfSrc}
@@ -87,7 +89,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
               px-2.5 py-1.5 rounded-md transition-colors duration-150 flex-shrink-0"
           >
             <ExternalLink className="w-3 h-3" />
-            Ver
+            {t('adminCont.ver')}
           </a>
         </div>
       )
@@ -137,7 +139,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
       if (!archivoSrc) return <EmptyPreview tipo="archivo" />
       const meta = bloque.metadata as MetadataArchivo | null
       const nombre = meta?.nombre
-        ?? (bloque.storage_path ? getFilenameFromPath(bloque.storage_path) : 'Archivo')
+        ?? (bloque.storage_path ? getFilenameFromPath(bloque.storage_path) : t('adminCont.tipo.archivo'))
       const tamano = meta?.tamano ? formatFileSize(meta.tamano) : null
       const emoji  = getFileEmoji(nombre)
       return (
@@ -160,7 +162,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
                 px-2.5 py-1.5 rounded-md transition-colors duration-150 flex-shrink-0"
             >
               <Download className="w-3 h-3" />
-              Descargar
+              {t('adminCont.descargar')}
             </a>
           )}
         </div>
@@ -175,10 +177,14 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
 // ── Empty state genérico ────────────────────────────────────
 
 function EmptyPreview({ tipo }: { tipo: string }) {
+  const { t } = useLanguage()
+  const tipoLabel = t('adminCont.tipo.' + tipo) !== 'adminCont.tipo.' + tipo
+    ? t('adminCont.tipo.' + tipo)
+    : TIPO_LABELS[tipo as keyof typeof TIPO_LABELS] ?? tipo
   return (
     <div className="flex items-center justify-center h-20 rounded-lg bg-white/[0.02] border border-dashed border-white/[0.08]">
       <p className="text-xs text-white/25">
-        Sin {TIPO_LABELS[tipo as keyof typeof TIPO_LABELS] ?? tipo} cargado
+        {t('adminCont.sinCargado1') + tipoLabel + t('adminCont.sinCargado2')}
       </p>
     </div>
   )

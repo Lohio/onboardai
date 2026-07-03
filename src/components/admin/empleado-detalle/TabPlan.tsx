@@ -7,6 +7,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { PlanItem, PlanFase, PlanTipo } from '@/types'
 import { FASES_CONFIG, COLOR_EXTRAS } from '@/lib/plan'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // Estado del formulario de alta de ítem del plan
 export interface PlanFormState {
@@ -41,6 +42,7 @@ export function TabPlan({
   handleDeletePlanItem,
   handleAddPlanItem,
 }: TabPlanProps) {
+  const { t } = useLanguage()
   return (
     <>
       {/* Fases pills */}
@@ -77,12 +79,12 @@ export function TabPlan({
         {/* Ítems agrupados por tipo */}
         {(['objetivo', 'checkin', 'logro'] as PlanTipo[]).map(tipo => {
           const items = planItems.filter(p => p.fase === planFase && p.tipo === tipo)
-          const tipoLabel = tipo === 'objetivo' ? 'Objetivos' : tipo === 'checkin' ? 'Check-ins' : 'Logros'
+          const tipoLabel = tipo === 'objetivo' ? t('adminEmp.plan.objectives') : tipo === 'checkin' ? t('adminEmp.plan.checkins') : t('adminEmp.plan.achievements')
           return (
             <div key={tipo} className="mb-5">
               <h3 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-2">{tipoLabel}</h3>
               {items.length === 0 ? (
-                <p className="text-xs text-white/20 py-2">Sin ítems aún</p>
+                <p className="text-xs text-white/20 py-2">{t('adminEmp.plan.noItems')}</p>
               ) : (
                 <div className="space-y-2">
                   {items.map(item => (
@@ -139,12 +141,12 @@ export function TabPlan({
 
       {/* Formulario agregar ítem */}
       <div className="glass-card rounded-xl p-5">
-        <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">Agregar ítem</h2>
+        <h2 className="text-[11px] font-medium text-white/35 uppercase tracking-widest mb-4">{t('adminEmp.plan.addItem')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <input
             value={planForm.titulo}
             onChange={e => setPlanForm(f => ({ ...f, titulo: e.target.value }))}
-            placeholder="Título del ítem"
+            placeholder={t('adminEmp.plan.itemTitlePh')}
             className="col-span-2 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#3B4FD8]/50"
           />
           <select
@@ -152,9 +154,9 @@ export function TabPlan({
             onChange={e => setPlanForm(f => ({ ...f, tipo: e.target.value as PlanTipo }))}
             className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white/70 focus:outline-none focus:border-[#3B4FD8]/50"
           >
-            <option value="objetivo">Objetivo</option>
-            <option value="checkin">Check-in</option>
-            <option value="logro">Logro</option>
+            <option value="objetivo">{t('adminEmp.plan.objective')}</option>
+            <option value="checkin">{t('adminEmp.plan.checkin')}</option>
+            <option value="logro">{t('adminEmp.plan.achievement')}</option>
           </select>
           <input
             type="date"
@@ -165,7 +167,7 @@ export function TabPlan({
           <input
             value={planForm.descripcion}
             onChange={e => setPlanForm(f => ({ ...f, descripcion: e.target.value }))}
-            placeholder="Descripción (opcional)"
+            placeholder={t('adminEmp.plan.itemDescPh')}
             className="col-span-2 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#3B4FD8]/50"
           />
         </div>
@@ -179,7 +181,7 @@ export function TabPlan({
           ) : (
             <span className="text-base leading-none">+</span>
           )}
-          Agregar a Fase {planFase}
+          {t('adminEmp.plan.addToPhase')} {planFase}
         </button>
       </div>
     </>

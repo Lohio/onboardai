@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
@@ -106,6 +107,13 @@ Reglas de comportamiento:
 const DEFAULTS_MAP: ConfigMap = Object.fromEntries(
   CONFIGS.map(c => [c.clave, c.valorDefault])
 )
+
+/** Claves i18n para los labels visibles de las opciones del modelo (el value se guarda en DB tal cual) */
+const OPCION_LABEL_KEYS: Record<string, string> = {
+  'claude-opus-4-6': 'dev.optOpus',
+  'claude-sonnet-4-6': 'dev.optSonnet',
+  'claude-haiku-4-5': 'dev.optHaiku',
+}
 
 // ─────────────────────────────────────────────
 // Variantes de animación
@@ -213,9 +221,10 @@ function SkeletonConfig() {
 // ─────────────────────────────────────────────
 
 function TablaNoEncontrada({ onReintentar }: { onReintentar: () => void }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-lg font-semibold text-white/90">Configuración</h1>
+      <h1 className="text-lg font-semibold text-white/90">{t('dev.cfgTituloCorto')}</h1>
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -224,11 +233,11 @@ function TablaNoEncontrada({ onReintentar }: { onReintentar: () => void }) {
         <div className="flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
           <h2 className="text-sm font-semibold text-white/80">
-            Tabla <code className="text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded text-xs font-mono">app_config</code> no encontrada
+            {t('dev.tablaNoEncontradaPre')} <code className="text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded text-xs font-mono">app_config</code> {t('dev.tablaNoEncontradaPost')}
           </h2>
         </div>
         <p className="text-sm text-white/45 leading-relaxed">
-          Ejecutá el siguiente SQL en el Editor de Supabase para crearla con los valores por defecto:
+          {t('dev.ejecutaSQL')}
         </p>
         <pre className="text-xs text-teal-300/80 bg-white/[0.03] border border-white/[0.06]
           rounded-lg p-4 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
@@ -260,7 +269,7 @@ CREATE POLICY "app_config_dev_update" ON app_config
   FOR UPDATE USING (get_my_rol() = 'dev') WITH CHECK (get_my_rol() = 'dev');`}
         </pre>
         <Button variant="secondary" size="sm" onClick={onReintentar}>
-          Reintentar conexión
+          {t('dev.reintentarConexion')}
         </Button>
       </motion.div>
     </div>
@@ -280,6 +289,7 @@ function ConfigCard({
   valor: string
   onChange: (v: string) => void
 }) {
+  const { t } = useLanguage()
   const icono = (() => {
     if (def.clave === 'claude_model' || def.clave === 'max_tokens') return <Bot className="w-3.5 h-3.5 text-amber-400/70" />
     if (def.clave === 'system_prompt_base') return <FileText className="w-3.5 h-3.5 text-amber-400/70" />
@@ -318,7 +328,7 @@ function ConfigCard({
               >
                 {def.opciones.map(op => (
                   <option key={op.value} value={op.value} className="bg-[#111110]">
-                    {op.label}
+                    {OPCION_LABEL_KEYS[op.value] ? t(OPCION_LABEL_KEYS[op.value]) : op.label}
                   </option>
                 ))}
               </select>
@@ -346,7 +356,7 @@ function ConfigCard({
                 value={valor}
                 onChange={e => onChange(e.target.value)}
                 rows={8}
-                placeholder="Instrucciones globales para el asistente IA de todas las empresas. Se antepone al prompt de cada empresa."
+                placeholder={t('dev.promptPh')}
                 className="w-full px-3 py-2.5 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
                   text-white/85 placeholder:text-white/20 outline-none resize-y min-h-[140px] font-mono
                   focus:bg-white/[0.06] focus:border-amber-500/60 transition-colors duration-150 leading-relaxed"
@@ -360,7 +370,7 @@ function ConfigCard({
                   onChange={v => onChange(v ? 'true' : 'false')}
                 />
                 <span className="text-xs text-white/40">
-                  {valor === 'true' ? 'Activado' : 'Desactivado'}
+                  {valor === 'true' ? t('dev.activado') : t('dev.desactivado')}
                 </span>
               </div>
             )}
@@ -377,6 +387,7 @@ function ConfigCard({
 
 export default function ConfigPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
@@ -487,7 +498,7 @@ export default function ConfigPage() {
 
       // Doble check de permisos en cliente
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { toast.error('Sin sesión'); return }
+      if (!user) { toast.error(t('dev.sinSesion')); return }
 
       const { data: perfil } = await supabase
         .from('usuarios')
@@ -496,7 +507,7 @@ export default function ConfigPage() {
         .single()
 
       if (!perfil || perfil.rol !== 'dev') {
-        toast.error('Sin permisos para modificar la configuración')
+        toast.error(t('dev.sinPermisos'))
         return
       }
 
@@ -515,17 +526,17 @@ export default function ConfigPage() {
         .upsert(payload, { onConflict: 'clave' })
 
       if (error) {
-        toast.error('Error al guardar: ' + error.message)
+        toast.error(t('dev.errorGuardarCfg') + error.message)
         return
       }
 
       // Actualizar estado "original" para resetear el badge de cambios
       setOriginal({ ...config })
       setUltimoGuardado(ahora)
-      toast.success('Configuración guardada correctamente')
+      toast.success(t('dev.cfgGuardada'))
     } catch (err) {
       console.error('Error inesperado al guardar:', err)
-      toast.error('No se pudo guardar la configuración')
+      toast.error(t('dev.cfgNoGuardada'))
     } finally {
       setGuardando(false)
     }
@@ -558,15 +569,15 @@ export default function ConfigPage() {
       {/* Encabezado */}
       <motion.div variants={cardVariants} className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-white/90">Configuración de la app</h1>
+          <h1 className="text-lg font-semibold text-white/90">{t('dev.cfgTitulo')}</h1>
           <div className="flex items-center gap-2 mt-1">
             {ultimoGuardado ? (
               <span className="flex items-center gap-1.5 text-xs text-white/35">
                 <Clock className="w-3 h-3" />
-                Último guardado: {formatFecha(ultimoGuardado)}
+                {t('dev.ultimoGuardado')} {formatFecha(ultimoGuardado)}
               </span>
             ) : (
-              <span className="text-xs text-white/25">Sin cambios guardados aún</span>
+              <span className="text-xs text-white/25">{t('dev.sinCambios')}</span>
             )}
           </div>
         </div>
@@ -581,7 +592,7 @@ export default function ConfigPage() {
                 exit={{ opacity: 0, scale: 0.8, x: 8 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 28 }}
               >
-                <Badge variant="warning">Sin guardar</Badge>
+                <Badge variant="warning">{t('dev.sinGuardar')}</Badge>
               </motion.div>
             )}
           </AnimatePresence>
@@ -597,7 +608,7 @@ export default function ConfigPage() {
                 className="flex items-center gap-1.5 text-xs text-teal-400"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Al día
+                {t('dev.alDia')}
               </motion.div>
             )}
           </AnimatePresence>
@@ -610,7 +621,7 @@ export default function ConfigPage() {
             onClick={handleGuardar}
           >
             <Save className="w-3.5 h-3.5" />
-            Guardar cambios
+            {t('dev.guardarCambios')}
           </Button>
         </div>
       </motion.div>
@@ -633,10 +644,7 @@ export default function ConfigPage() {
       >
         <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-amber-300/50 leading-relaxed">
-          Estas configuraciones afectan a todas las empresas en la plataforma.
-          Los cambios tienen efecto inmediato en el próximo request de chat.
-          Solo usuarios con rol <code className="font-mono text-amber-300/70">dev</code> pueden
-          modificar esta sección (RLS en base de datos garantiza esto también).
+          {t('dev.cfgFooter1')} <code className="font-mono text-amber-300/70">dev</code> {t('dev.cfgFooter2')}
         </p>
       </motion.div>
     </motion.div>

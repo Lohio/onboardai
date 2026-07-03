@@ -9,6 +9,7 @@ import { construirArbol, generarNodosDesdeUsuarios } from '@/lib/organigrama'
 import OrgChart from '@/components/shared/OrgChart'
 import { Portal } from '@/components/shared/Portal'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { useLanguage } from '@/components/LanguageProvider'
 import { cn } from '@/lib/utils'
 import type { OrgNodo } from '@/types'
 
@@ -94,6 +95,7 @@ function ModalBase({ titulo, onClose, children }: { titulo: string; onClose: () 
 // ── Página ─────────────────────────────────────────────────────────────────
 
 export default function OrganigramaAdminPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [empresaId, setEmpresaId] = useState<string | null>(null)
@@ -185,7 +187,7 @@ export default function OrganigramaAdminPage() {
         await cargarNodos(empId)
       } catch (err) {
         console.error('Error cargando organigrama:', err)
-        setError(err instanceof Error ? err.message : 'Error al cargar el organigrama')
+        setError(err instanceof Error ? err.message : t('adminOrg.loadError'))
       } finally {
         setLoading(false)
       }
@@ -283,7 +285,7 @@ export default function OrganigramaAdminPage() {
       if (tipoPersona === 'existente') {
         const u = usuariosTodos.find((u) => u.id === usuarioIdSel)
         if (!u) {
-          setModalError('Seleccioná un empleado válido.')
+          setModalError(t('adminOrg.invalidEmployee'))
           return
         }
         payload = {
@@ -299,7 +301,7 @@ export default function OrganigramaAdminPage() {
         }
       } else {
         if (!nombreExt.trim()) {
-          setModalError('El nombre es obligatorio.')
+          setModalError(t('adminOrg.nameRequired'))
           return
         }
         payload = {
@@ -350,7 +352,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error agregando nodo:', err)
-      setModalError(err instanceof Error ? err.message : 'Error al agregar persona. Revisá la consola.')
+      setModalError(err instanceof Error ? err.message : t('adminOrg.addError'))
     } finally {
       setGuardando(false)
     }
@@ -386,7 +388,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error editando nodo:', err)
-      setModalError(err instanceof Error ? err.message : 'Error al guardar cambios.')
+      setModalError(err instanceof Error ? err.message : t('adminOrg.saveError'))
     } finally {
       setGuardando(false)
     }
@@ -420,7 +422,7 @@ export default function OrganigramaAdminPage() {
       cerrarModal()
     } catch (err) {
       console.error('Error eliminando nodo:', err)
-      setModalError(err instanceof Error ? err.message : 'Error al eliminar persona.')
+      setModalError(err instanceof Error ? err.message : t('adminOrg.deleteError'))
     } finally {
       setGuardando(false)
     }
@@ -525,16 +527,16 @@ export default function OrganigramaAdminPage() {
             className="flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            Volver a Conocimiento
+            {t('adminOrg.backToKnowledge')}
           </Link>
 
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-semibold text-white/90 truncate">
-              Organigrama{empresaNombre ? ` de ${empresaNombre}` : ''}
+              {t('adminOrg.title')}{empresaNombre ? ` ${t('adminOrg.of')} ${empresaNombre}` : ''}
             </h1>
             {modoFuente === 'automatico' && (
               <p className="text-[11px] text-amber-400/70 mt-0.5">
-                Vista previa generada automáticamente — guardá para personalizar
+                {t('adminOrg.autoPreview')}
               </p>
             )}
           </div>
@@ -547,12 +549,12 @@ export default function OrganigramaAdminPage() {
                 text-white/70 hover:text-white/90 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Agregar persona</span>
+              <span className="hidden sm:inline">{t('adminOrg.addPerson')}</span>
             </button>
 
             <button
               onClick={() => setModoModal('regenerar')}
-              title="Regenerar desde empleados"
+              title={t('adminOrg.regenTitle')}
               className="flex items-center gap-1.5 text-sm font-medium p-2 rounded-lg
                 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08]
                 text-white/70 hover:text-white/90 transition-colors"
@@ -572,7 +574,7 @@ export default function OrganigramaAdminPage() {
               )}
             >
               {guardando ? <Spinner /> : <Save className="w-4 h-4" />}
-              Guardar
+              {t('adminEmp.acc.save')}
             </button>
           </div>
         </div>
@@ -586,17 +588,17 @@ export default function OrganigramaAdminPage() {
             </div>
             <div>
               <p className="text-sm text-white/60 font-medium">
-                Tu organigrama se generará automáticamente desde tus empleados
+                {t('adminOrg.emptyTitle')}
               </p>
               <p className="text-[12px] text-white/30 mt-1">
-                Primero agregá empleados desde el panel de Empleados, o creá personas manualmente.
+                {t('adminOrg.emptySub')}
               </p>
             </div>
             <button
               onClick={() => setModoModal('agregar')}
               className={btnPrimario}
             >
-              <Plus className="w-4 h-4" /> Agregar persona manualmente
+              <Plus className="w-4 h-4" /> {t('adminOrg.addManually')}
             </button>
           </div>
         ) : (
@@ -618,34 +620,34 @@ export default function OrganigramaAdminPage() {
         <AnimatePresence>
           {/* ── Agregar persona ── */}
           {modoModal === 'agregar' && (
-            <ModalBase titulo="Agregar persona" onClose={cerrarModal}>
+            <ModalBase titulo={t('adminOrg.addPerson')} onClose={cerrarModal}>
               {/* Toggle tipo */}
               <div className="flex gap-2 mb-4">
-                {(['existente', 'externo'] as const).map((t) => (
+                {(['existente', 'externo'] as const).map((tp) => (
                   <button
-                    key={t}
-                    onClick={() => setTipoPersona(t)}
+                    key={tp}
+                    onClick={() => setTipoPersona(tp)}
                     className={cn(
                       'flex-1 text-sm py-2 rounded-lg border transition-colors',
-                      tipoPersona === t
+                      tipoPersona === tp
                         ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
                         : 'bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white/70'
                     )}
                   >
-                    {t === 'existente' ? 'Empleado existente' : 'Persona externa'}
+                    {tp === 'existente' ? t('adminOrg.existingEmployee') : t('adminOrg.externalPerson')}
                   </button>
                 ))}
               </div>
 
               {tipoPersona === 'existente' ? (
-                <Campo label="Empleado">
+                <Campo label={t('adminEmp.modal.roleEmpleado')}>
                   <select
                     value={usuarioIdSel}
                     onChange={(e) => setUsuarioIdSel(e.target.value)}
                     className={inputCls}
                   >
                     <option value="" className="bg-[#111]">
-                      Seleccioná un empleado...
+                      {t('adminOrg.selectEmployee')}
                     </option>
                     {usuariosLibres.map((u) => (
                       <option key={u.id} value={u.id} className="bg-[#111]">
@@ -656,49 +658,49 @@ export default function OrganigramaAdminPage() {
                   </select>
                   {usuariosLibres.length === 0 && (
                     <p className="text-[11px] text-white/30 mt-1">
-                      Todos los empleados ya están en el organigrama.
+                      {t('adminOrg.allInOrg')}
                     </p>
                   )}
                 </Campo>
               ) : (
                 <div className="space-y-3">
-                  <Campo label="Nombre completo">
+                  <Campo label={t('adminEmp.modal.fullName')}>
                     <input
                       value={nombreExt}
                       onChange={(e) => setNombreExt(e.target.value)}
                       className={inputCls}
-                      placeholder="Ej: María García"
+                      placeholder={t('adminOrg.namePh')}
                     />
                   </Campo>
                   <div className="grid grid-cols-2 gap-3">
-                    <Campo label="Puesto">
+                    <Campo label={t('adminEmp.modal.position')}>
                       <input
                         value={puestoExt}
                         onChange={(e) => setPuestoExt(e.target.value)}
                         className={inputCls}
-                        placeholder="Ej: CEO"
+                        placeholder={t('adminOrg.positionPh')}
                       />
                     </Campo>
-                    <Campo label="Área">
+                    <Campo label={t('adminEmp.modal.area')}>
                       <input
                         value={areaExt}
                         onChange={(e) => setAreaExt(e.target.value)}
                         className={inputCls}
-                        placeholder="Ej: Dirección"
+                        placeholder={t('adminOrg.areaPh')}
                       />
                     </Campo>
                   </div>
                 </div>
               )}
 
-              <Campo label="Reporta a" className="mt-3">
+              <Campo label={t('adminOrg.reportsTo')} className="mt-3">
                 <select
                   value={parentIdSel}
                   onChange={(e) => setParentIdSel(e.target.value)}
                   className={inputCls}
                 >
                   <option value="" className="bg-[#111]">
-                    Nadie — nodo raíz
+                    {t('adminOrg.rootNode')}
                   </option>
                   {nodos.map((n) => (
                     <option key={n.id} value={n.id} className="bg-[#111]">
@@ -709,7 +711,7 @@ export default function OrganigramaAdminPage() {
                 </select>
               </Campo>
 
-              <Campo label="Foto (opcional)" className="mt-3">
+              <Campo label={t('adminOrg.photoOptional')} className="mt-3">
                 <input
                   type="file"
                   accept="image/*"
@@ -730,7 +732,7 @@ export default function OrganigramaAdminPage() {
               )}
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
-                  Cancelar
+                  {t('adminCore.cancel')}
                 </button>
                 <button
                   onClick={agregarNodo}
@@ -742,7 +744,7 @@ export default function OrganigramaAdminPage() {
                   className={cn(btnPrimario, 'disabled:opacity-50 disabled:cursor-not-allowed')}
                 >
                   {guardando && <Spinner />}
-                  Agregar
+                  {t('adminEmp.modal.add')}
                 </button>
               </div>
             </ModalBase>
@@ -750,9 +752,9 @@ export default function OrganigramaAdminPage() {
 
           {/* ── Editar nodo ── */}
           {modoModal === 'editar' && nodoSeleccionado && (
-            <ModalBase titulo="Editar persona" onClose={cerrarModal}>
+            <ModalBase titulo={t('adminOrg.editPerson')} onClose={cerrarModal}>
               <div className="space-y-3">
-                <Campo label="Nombre">
+                <Campo label={t('adminEmp.edit.name')}>
                   <input
                     value={editNombre}
                     onChange={(e) => setEditNombre(e.target.value)}
@@ -760,26 +762,26 @@ export default function OrganigramaAdminPage() {
                   />
                 </Campo>
                 <div className="grid grid-cols-2 gap-3">
-                  <Campo label="Puesto">
+                  <Campo label={t('adminEmp.modal.position')}>
                     <input
                       value={editPuesto}
                       onChange={(e) => setEditPuesto(e.target.value)}
                       className={inputCls}
-                      placeholder="Ej: CTO"
+                      placeholder={t('adminOrg.editPositionPh')}
                     />
                   </Campo>
-                  <Campo label="Área">
+                  <Campo label={t('adminEmp.modal.area')}>
                     <input
                       value={editArea}
                       onChange={(e) => setEditArea(e.target.value)}
                       className={inputCls}
-                      placeholder="Ej: Tecnología"
+                      placeholder={t('adminOrg.editAreaPh')}
                     />
                   </Campo>
                 </div>
                 {nodoSeleccionado.usuario_id && (
                   <p className="text-[11px] text-white/30">
-                    Los cambios de puesto y área se sincronizarán al perfil del empleado.
+                    {t('adminOrg.syncNote')}
                   </p>
                 )}
               </div>
@@ -791,7 +793,7 @@ export default function OrganigramaAdminPage() {
               )}
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
-                  Cancelar
+                  {t('adminCore.cancel')}
                 </button>
                 <button
                   onClick={guardarEdicion}
@@ -799,7 +801,7 @@ export default function OrganigramaAdminPage() {
                   className={cn(btnPrimario, 'disabled:opacity-50')}
                 >
                   {guardando && <Spinner />}
-                  Guardar cambios
+                  {t('adminOrg.saveChanges')}
                 </button>
               </div>
             </ModalBase>
@@ -807,23 +809,23 @@ export default function OrganigramaAdminPage() {
 
           {/* ── Eliminar nodo ── */}
           {modoModal === 'eliminar' && nodoSeleccionado && (
-            <ModalBase titulo="Eliminar persona" onClose={cerrarModal}>
+            <ModalBase titulo={t('adminOrg.deletePerson')} onClose={cerrarModal}>
               <div className="flex items-start gap-3 p-4 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
                 <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-white/80">
-                    ¿Eliminar a{' '}
+                    {t('adminOrg.deleteAsk')}{' '}
                     <span className="font-medium text-white">{nodoSeleccionado.nombre}</span>?
                   </p>
                   <p className="text-[12px] text-white/40 mt-1">
-                    Sus reportes directos pasarán al nivel superior.
+                    {t('adminOrg.deleteNote')}
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
-                  Cancelar
+                  {t('adminCore.cancel')}
                 </button>
                 <button
                   onClick={eliminarNodo}
@@ -832,7 +834,7 @@ export default function OrganigramaAdminPage() {
                     bg-rose-600 hover:bg-rose-500 text-white transition-colors disabled:opacity-50"
                 >
                   {guardando && <Spinner />}
-                  Eliminar
+                  {t('adminEmp.acc.delete')}
                 </button>
               </div>
             </ModalBase>
@@ -840,23 +842,22 @@ export default function OrganigramaAdminPage() {
 
           {/* ── Regenerar ── */}
           {modoModal === 'regenerar' && (
-            <ModalBase titulo="Regenerar organigrama" onClose={cerrarModal}>
+            <ModalBase titulo={t('adminOrg.regenModalTitle')} onClose={cerrarModal}>
               <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/[0.06] border border-amber-500/20">
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-white/80">
-                    Se eliminará la estructura actual y se regenerará automáticamente desde los
-                    empleados.
+                    {t('adminOrg.regenWarning')}
                   </p>
                   <p className="text-[12px] text-white/40 mt-1">
-                    Las jerarquías se tomarán del campo Manager de cada empleado.
+                    {t('adminOrg.regenNote')}
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
                 <button onClick={cerrarModal} className={btnSecundario}>
-                  Cancelar
+                  {t('adminCore.cancel')}
                 </button>
                 <button
                   onClick={regenerar}
@@ -865,7 +866,7 @@ export default function OrganigramaAdminPage() {
                     bg-amber-600 hover:bg-amber-500 text-white transition-colors disabled:opacity-50"
                 >
                   {guardando && <Spinner />}
-                  Regenerar
+                  {t('adminOrg.regenBtn')}
                 </button>
               </div>
             </ModalBase>

@@ -7,6 +7,7 @@
 import { motion } from 'framer-motion'
 import { FileText, Building2, FolderOpen, Briefcase, UserCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { useLanguage } from '@/components/LanguageProvider'
 import type { CapaDef } from './types'
 
 // ─────────────────────────────────────────────
@@ -57,6 +58,7 @@ export function SkeletonBloques() {
 // ─────────────────────────────────────────────
 
 export function EmptyState({ label, onAgregar }: { label: string; onAgregar: () => void }) {
+  const { t } = useLanguage()
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -67,13 +69,13 @@ export function EmptyState({ label, onAgregar }: { label: string; onAgregar: () 
         <FileText className="w-5 h-5 text-white/20" />
       </div>
       <div className="text-center">
-        <p className="text-sm text-white/50 font-medium">Sin bloques de contenido</p>
+        <p className="text-sm text-white/50 font-medium">{t('adminCont.empty.titulo')}</p>
         <p className="text-xs text-white/30 mt-0.5">
-          Agregá conocimiento sobre {label.toLowerCase()} para nutrir al asistente IA
+          {t('adminCont.empty.desc1') + label.toLowerCase() + t('adminCont.empty.desc2')}
         </p>
       </div>
       <Button variant="secondary" size="sm" onClick={onAgregar}>
-        Comenzar
+        {t('adminCont.empty.comenzar')}
       </Button>
     </motion.div>
   )

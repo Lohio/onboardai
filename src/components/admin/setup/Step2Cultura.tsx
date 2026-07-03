@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Lightbulb } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import type { SetupData } from '@/app/admin/setup/page'
 
@@ -11,24 +12,26 @@ import type { SetupData } from '@/app/admin/setup/page'
 // Campos de cultura
 // ─────────────────────────────────────────────
 
+// `titulo` se guarda en DB (tabla conocimiento) — no se traduce.
+// `labelKey`/`placeholderKey` son claves i18n que se traducen al renderizar.
 const CAMPOS = [
   {
     key: 'historia',
-    label: 'Historia y misión',
+    labelKey: 'adminSetup.s2HistoriaLabel',
     titulo: 'Historia de la empresa',
-    placeholder: '¿Cuándo y cómo nació la empresa?\n¿Cuál es su propósito?',
+    placeholderKey: 'adminSetup.s2HistoriaPh',
   },
   {
     key: 'valores',
-    label: 'Valores y cultura',
+    labelKey: 'adminSetup.s2ValoresLabel',
     titulo: 'Valores y cultura',
-    placeholder: '¿Qué valores guían el trabajo?\n¿Cómo es el ambiente laboral?',
+    placeholderKey: 'adminSetup.s2ValoresPh',
   },
   {
     key: 'como_trabajamos',
-    label: 'Cómo trabajamos',
+    labelKey: 'adminSetup.s2ComoLabel',
     titulo: 'Cómo trabajamos',
-    placeholder: '¿Cuál es la modalidad? ¿Cómo se organizan los equipos?\n¿Qué herramientas usan?',
+    placeholderKey: 'adminSetup.s2ComoPh',
   },
 ] as const
 
@@ -51,6 +54,7 @@ interface Step2Props {
 }
 
 export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
+  const { t } = useLanguage()
   const [valores, setValores] = useState<Record<string, string>>({
     historia: '', valores: '', como_trabajamos: '',
   })
@@ -93,10 +97,11 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
 
       onNext()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al guardar')
+      toast.error(err instanceof Error ? err.message : t('adminSetup.errGuardar'))
     } finally {
       setSaving(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valores, setupData.empresaId, onNext])
 
   return (
@@ -108,10 +113,9 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
           shadow-[0_0_32px_rgba(13,148,136,0.2)]">
           <Lightbulb className="w-8 h-8 text-teal-400" />
         </div>
-        <h2 className="text-xl font-semibold text-white mb-1">Cultura e identidad</h2>
+        <h2 className="text-xl font-semibold text-white mb-1">{t('adminSetup.s2Titulo')}</h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Este contenido es lo que el asistente IA usará para responder
-          preguntas de tus empleados.
+          {t('adminSetup.s2Subtitulo')}
         </p>
       </div>
 
@@ -119,12 +123,12 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
         {CAMPOS.map(campo => (
           <div key={campo.key}>
             <label className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase">
-              {campo.label}
+              {t(campo.labelKey)}
             </label>
             <textarea
               value={valores[campo.key]}
               onChange={e => setValores(prev => ({ ...prev, [campo.key]: e.target.value }))}
-              placeholder={campo.placeholder}
+              placeholder={t(campo.placeholderKey)}
               className={textareaCls}
               rows={4}
             />
@@ -141,7 +145,7 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
           onClick={handleContinuar}
           className="flex-1"
         >
-          {saving ? 'Guardando...' : 'Continuar'}
+          {saving ? t('adminSetup.guardando') : t('adminSetup.continuar')}
         </Button>
         <Button
           variant="ghost"
@@ -150,7 +154,7 @@ export function Step2Cultura({ setupData, onNext, onSkip }: Step2Props) {
           disabled={saving}
           className="flex-1 sm:flex-none"
         >
-          Omitir por ahora
+          {t('adminSetup.omitir')}
         </Button>
       </div>
     </div>

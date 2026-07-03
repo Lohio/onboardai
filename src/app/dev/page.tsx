@@ -12,6 +12,7 @@ import {
   RefreshCw, TrendingUp, Bot,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Badge } from '@/components/ui/Badge'
 import type { UserRole } from '@/types'
 
@@ -135,6 +136,7 @@ function MetricCard({
 
 export default function DevDashboard() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const [errores, setErrores] = useState<ErrorLog[]>([])
@@ -288,9 +290,9 @@ export default function DevDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-white">Dev Dashboard</h1>
+          <h1 className="text-lg font-semibold text-white">{t('dev.dashTitulo')}</h1>
           <p className="text-xs text-white/30 mt-0.5">
-            Actualizado {ultimoRefresh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+            {t('dev.actualizado')} {ultimoRefresh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
         <button
@@ -299,7 +301,7 @@ export default function DevDashboard() {
             transition-colors duration-150 p-2 rounded-lg hover:bg-amber-500/[0.08]"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refrescar
+          {t('dev.refrescar')}
         </button>
       </div>
 
@@ -307,31 +309,31 @@ export default function DevDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           index={0}
-          label="Empresas"
+          label={t('dev.empresas')}
           value={m.totalEmpresas}
           icon={<Building2 className="w-4 h-4" />}
-          sub="Registradas en el sistema"
+          sub={t('dev.empresasSub')}
         />
         <MetricCard
           index={1}
-          label="Usuarios totales"
+          label={t('dev.usuariosTotales')}
           value={m.totalUsuarios}
           icon={<Users className="w-4 h-4" />}
           sub={`${m.usuariosPorRol['empleado'] ?? 0} emp · ${m.usuariosPorRol['admin'] ?? 0} admin · ${m.usuariosPorRol['dev'] ?? 0} dev`}
         />
         <MetricCard
           index={2}
-          label="Respuestas IA (24h)"
+          label={t('dev.respuestasIA24h')}
           value={m.mensajesIA24h}
           icon={<Bot className="w-4 h-4" />}
-          sub="Mensajes del asistente"
+          sub={t('dev.respuestasIA24hSub')}
         />
         <MetricCard
           index={3}
-          label="Conversaciones IA"
+          label={t('dev.conversacionesIA')}
           value={m.conversacionesTotales}
           icon={<MessageSquare className="w-4 h-4" />}
-          sub="Total histórico"
+          sub={t('dev.totalHistorico')}
         />
       </div>
 
@@ -347,11 +349,11 @@ export default function DevDashboard() {
         >
           <div className="flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-amber-400/70" />
-            <h2 className="text-sm font-semibold text-white/70">Usuarios por rol</h2>
+            <h2 className="text-sm font-semibold text-white/70">{t('dev.usuariosPorRol')}</h2>
           </div>
 
           {m.totalUsuarios === 0 ? (
-            <p className="text-xs text-white/30 py-4 text-center">Sin usuarios registrados</p>
+            <p className="text-xs text-white/30 py-4 text-center">{t('dev.sinUsuarios')}</p>
           ) : (
             <div className="space-y-3">
               {(['empleado', 'admin', 'dev'] as const).map(rol => {
@@ -390,15 +392,15 @@ export default function DevDashboard() {
         >
           <div className="flex items-center gap-2">
             <Layers className="w-3.5 h-3.5 text-amber-400/70" />
-            <h2 className="text-sm font-semibold text-white/70">Errores recientes</h2>
+            <h2 className="text-sm font-semibold text-white/70">{t('dev.erroresRecientes')}</h2>
             <Badge variant="warning" className="ml-auto">error_logs</Badge>
           </div>
 
           {errores.length === 0 ? (
             <div className="py-4 text-center">
-              <p className="text-xs text-white/30">Sin errores registrados</p>
+              <p className="text-xs text-white/30">{t('dev.sinErrores')}</p>
               <p className="text-[11px] text-white/20 mt-1">
-                Tabla error_logs no encontrada o vacía
+                {t('dev.tablaErrores')}
               </p>
             </div>
           ) : (
@@ -430,9 +432,9 @@ export default function DevDashboard() {
       >
         <div className="flex items-center gap-2">
           <Bot className="w-3.5 h-3.5 text-teal-400/70" />
-          <h2 className="text-sm font-semibold text-white/70">Actividad IA (7 días)</h2>
+          <h2 className="text-sm font-semibold text-white/70">{t('dev.actividadIA')}</h2>
           <span className="ml-auto text-[10px] text-white/25 tabular-nums">
-            respuestas del asistente
+            {t('dev.respuestasAsistente')}
           </span>
         </div>
 
@@ -477,7 +479,7 @@ export default function DevDashboard() {
         >
           <div className="flex items-center gap-2">
             <Building2 className="w-3.5 h-3.5 text-teal-400/70" />
-            <h2 className="text-sm font-semibold text-white/70">Distribución por plan</h2>
+            <h2 className="text-sm font-semibold text-white/70">{t('dev.distribucionPlan')}</h2>
           </div>
 
           <ResponsiveContainer width="100%" height={160}>
@@ -514,21 +516,21 @@ export default function DevDashboard() {
         >
           <div className="flex items-center gap-2">
             <Users className="w-3.5 h-3.5 text-teal-400/70" />
-            <h2 className="text-sm font-semibold text-white/70">Usuarios por rol</h2>
+            <h2 className="text-sm font-semibold text-white/70">{t('dev.usuariosPorRol')}</h2>
             <span className="ml-auto text-[10px] text-white/25 tabular-nums">
-              {m.totalUsuarios} total
+              {m.totalUsuarios} {t('dev.total')}
             </span>
           </div>
 
           {m.totalUsuarios === 0 ? (
-            <p className="text-xs text-white/30 py-4 text-center">Sin usuarios registrados</p>
+            <p className="text-xs text-white/30 py-4 text-center">{t('dev.sinUsuarios')}</p>
           ) : (
             <div className="space-y-3">
               {(
                 [
-                  { rol: 'empleado', label: 'Empleados', color: '#0EA5E9' },
-                  { rol: 'admin', label: 'Admins', color: '#0D9488' },
-                  { rol: 'dev', label: 'Devs', color: '#F59E0B' },
+                  { rol: 'empleado', label: t('dev.empleados'), color: '#0EA5E9' },
+                  { rol: 'admin', label: t('dev.admins'), color: '#0D9488' },
+                  { rol: 'dev', label: t('dev.devs'), color: '#F59E0B' },
                 ] as const
               ).map(({ rol, label, color }) => {
                 const count = m.usuariosPorRol[rol] ?? 0

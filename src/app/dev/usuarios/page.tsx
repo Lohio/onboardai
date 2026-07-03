@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import type { UserRole } from '@/types'
@@ -55,6 +56,7 @@ interface UsuarioFilaProps {
 }
 
 function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: UsuarioFilaProps) {
+  const { t } = useLanguage()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [savingRol, setSavingRol] = useState(false)
@@ -71,10 +73,10 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
         .update({ rol: nuevoRol })
         .eq('id', usuario.id)
       if (error) { toast.error(error.message); return }
-      toast.success(`Rol cambiado a ${nuevoRol}`)
+      toast.success(t('dev.rolCambiado') + ' ' + nuevoRol)
       onUpdated(usuario.id, { rol: nuevoRol as UserRole })
     } catch {
-      toast.error('Error al cambiar rol')
+      toast.error(t('dev.errorCambiarRol'))
     } finally {
       setSavingRol(false)
     }
@@ -90,13 +92,13 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
         .eq('id', usuario.id)
       if (error) { toast.error(error.message); return }
       const emp = empresas.find(e => e.id === nuevoEmpresaId)
-      toast.success(`Empresa cambiada a ${emp?.nombre ?? 'Sin empresa'}`)
+      toast.success(t('dev.empresaCambiada') + ' ' + (emp?.nombre ?? t('dev.sinEmpresa')))
       onUpdated(usuario.id, {
         empresa_id: nuevoEmpresaId || null,
         empresa_nombre: emp?.nombre ?? null,
       })
     } catch {
-      toast.error('Error al cambiar empresa')
+      toast.error(t('dev.errorCambiarEmpresa'))
     } finally {
       setSavingEmpresa(false)
     }
@@ -108,14 +110,14 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
       const res = await fetch(`/api/admin/empleados/${usuario.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const d = await res.json() as { error?: string }
-        toast.error(d.error ?? 'Error al eliminar')
+        toast.error(d.error ?? t('dev.errorEliminar'))
         setConfirmDelete(false)
         return
       }
-      toast.success(`${usuario.nombre} eliminado`)
+      toast.success(usuario.nombre + ' ' + t('dev.eliminado'))
       onDeleted(usuario.id)
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('dev.errorConexion'))
     } finally {
       setDeleting(false)
     }
@@ -155,11 +157,11 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
             onChange={e => handleRolChange(e.target.value)}
             disabled={esMismoCuenta || savingRol}
             className={selectCls + (esMismoCuenta ? ' opacity-50 cursor-not-allowed' : '')}
-            title={esMismoCuenta ? 'No podés cambiar tu propio rol' : 'Cambiar rol'}
+            title={esMismoCuenta ? t('dev.noCambiarPropioRol') : t('dev.cambiarRol')}
           >
-            <option value="empleado" className="bg-[#111110]">Empleado</option>
-            <option value="admin" className="bg-[#111110]">Admin</option>
-            <option value="dev" className="bg-[#111110]">Dev</option>
+            <option value="empleado" className="bg-[#111110]">{t('dev.rolEmpleado')}</option>
+            <option value="admin" className="bg-[#111110]">{t('dev.rolAdmin')}</option>
+            <option value="dev" className="bg-[#111110]">{t('dev.rolDev')}</option>
           </select>
         </div>
 
@@ -171,9 +173,9 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
             onChange={e => handleEmpresaChange(e.target.value)}
             disabled={savingEmpresa}
             className={selectCls}
-            title="Cambiar empresa"
+            title={t('dev.cambiarEmpresa')}
           >
-            <option value="" className="bg-[#111110]">Sin empresa</option>
+            <option value="" className="bg-[#111110]">{t('dev.sinEmpresa')}</option>
             {empresas.map(e => (
               <option key={e.id} value={e.id} className="bg-[#111110]">{e.nombre}</option>
             ))}
@@ -208,10 +210,10 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
           >
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
             <p className="text-xs text-white/70 flex-1">
-              ¿Eliminar <span className="font-semibold">{usuario.nombre}</span>?
+              {t('dev.confirmEliminar')} <span className="font-semibold">{usuario.nombre}</span>?
             </p>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>No</Button>
-            <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>Sí</Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>{t('dev.no')}</Button>
+            <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>{t('dev.si')}</Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -225,6 +227,7 @@ function UsuarioFila({ usuario, empresas, currentDevId, onUpdated, onDeleted }: 
 
 export default function UsuariosPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([])
   const [empresas, setEmpresas] = useState<EmpresaOption[]>([])
@@ -268,10 +271,11 @@ export default function UsuariosPage() {
       setEmpresas((empData ?? []) as EmpresaOption[])
     } catch (err) {
       console.error('Error cargando usuarios:', err)
-      toast.error('Error al cargar usuarios')
+      toast.error(t('dev.errorCargarUsuarios'))
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
@@ -304,14 +308,14 @@ export default function UsuariosPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-lg font-semibold text-white">Usuarios</h1>
+          <h1 className="text-lg font-semibold text-white">{t('dev.usuariosTitulo')}</h1>
           <p className="text-sm text-white/40 mt-0.5">
-            {loading ? '—' : `${usuarios.length} usuarios · ${usuariosFiltrados.length} visibles`}
+            {loading ? '—' : `${usuarios.length} ` + t('dev.usuariosCount') + ` · ${usuariosFiltrados.length} ` + t('dev.visibles')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-amber-400/60" />
-          <span className="text-xs text-amber-400/60">Todos los usuarios del sistema</span>
+          <span className="text-xs text-amber-400/60">{t('dev.todosUsuarios')}</span>
         </div>
       </div>
 
@@ -323,7 +327,7 @@ export default function UsuariosPage() {
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o email..."
+            placeholder={t('dev.buscarPh')}
             className="w-full h-9 pl-9 pr-3 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
               text-white/85 placeholder:text-white/20 outline-none
               focus:border-amber-500/60 focus:bg-white/[0.06] transition-colors duration-150"
@@ -334,10 +338,10 @@ export default function UsuariosPage() {
           onChange={e => setFiltroRol(e.target.value as '' | UserRole)}
           className={selectCls}
         >
-          <option value="" className="bg-[#111110]">Todos los roles</option>
-          <option value="empleado" className="bg-[#111110]">Empleado</option>
-          <option value="admin" className="bg-[#111110]">Admin</option>
-          <option value="dev" className="bg-[#111110]">Dev</option>
+          <option value="" className="bg-[#111110]">{t('dev.todosRoles')}</option>
+          <option value="empleado" className="bg-[#111110]">{t('dev.rolEmpleado')}</option>
+          <option value="admin" className="bg-[#111110]">{t('dev.rolAdmin')}</option>
+          <option value="dev" className="bg-[#111110]">{t('dev.rolDev')}</option>
         </select>
         {empresas.length > 0 && (
           <select
@@ -345,7 +349,7 @@ export default function UsuariosPage() {
             onChange={e => setFiltroEmpresa(e.target.value)}
             className={selectCls}
           >
-            <option value="" className="bg-[#111110]">Todas las empresas</option>
+            <option value="" className="bg-[#111110]">{t('dev.todasEmpresas')}</option>
             {empresas.map(e => (
               <option key={e.id} value={e.id} className="bg-[#111110]">{e.nombre}</option>
             ))}
@@ -364,7 +368,7 @@ export default function UsuariosPage() {
         <div className="text-center py-16">
           <Building2 className="w-8 h-8 text-white/15 mx-auto mb-3" />
           <p className="text-sm text-white/40">
-            {busqueda ? `Sin resultados para "${busqueda}"` : 'Sin usuarios'}
+            {busqueda ? t('dev.sinResultados') + ` "${busqueda}"` : t('dev.sinUsuariosCorto')}
           </p>
         </div>
       ) : (

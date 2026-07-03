@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -200,6 +201,7 @@ interface UsuarioFilaProps {
 }
 
 function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProps) {
+  const { t } = useLanguage()
   const [confirmando, setConfirmando] = useState(false)
   const [eliminando, setEliminando] = useState(false)
 
@@ -212,10 +214,10 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
         toast.error(error.message)
         return
       }
-      toast.success('Usuario eliminado')
+      toast.success(t('dev.usuarioEliminado'))
       onDeleted(usuario.id)
     } catch {
-      toast.error('Error inesperado al eliminar usuario')
+      toast.error(t('dev.errorEliminarUsuario'))
     } finally {
       setEliminando(false)
       setConfirmando(false)
@@ -256,7 +258,7 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
       {/* Días */}
       <div className="hidden sm:flex flex-col items-center flex-shrink-0 w-16 text-center">
         <span className="text-base font-semibold text-white/70 tabular-nums">{dias}</span>
-        <span className="text-[10px] text-white/30">días</span>
+        <span className="text-[10px] text-white/30">{t('dev.diasMin')}</span>
       </div>
 
       {/* Progreso */}
@@ -270,7 +272,7 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
           <button
             onClick={() => setConfirmando(true)}
             className="p-1.5 text-white/25 hover:text-red-400 transition-colors rounded-md hover:bg-red-500/[0.06]"
-            title="Eliminar usuario"
+            title={t('dev.eliminarUsuario')}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -284,14 +286,14 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
               className="flex items-center gap-1.5"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-              <span className="text-[11px] text-white/50 hidden sm:block">¿Eliminar?</span>
+              <span className="text-[11px] text-white/50 hidden sm:block">{t('dev.confirmEliminarQ')}</span>
               <button
                 onClick={handleEliminar}
                 disabled={eliminando}
                 className="px-2 py-1 text-[11px] font-medium rounded bg-red-500/20 text-red-300
                   border border-red-500/25 hover:bg-red-500/30 transition-colors disabled:opacity-50"
               >
-                {eliminando ? '...' : 'Sí'}
+                {eliminando ? '...' : t('dev.si')}
               </button>
               <button
                 onClick={() => setConfirmando(false)}
@@ -314,6 +316,7 @@ function UsuarioFilaRow({ usuario, progresoBloques, onDeleted }: UsuarioFilaProp
 export default function EmpresaDetallePage() {
   const params = useParams()
   const router = useRouter()
+  const { t } = useLanguage()
   const empresaId = params.id as string
 
   const [loading, setLoading] = useState(true)
@@ -446,7 +449,7 @@ export default function EmpresaDetallePage() {
 
   if (error || !empresa) return (
     <ErrorState
-      mensaje={error ?? 'Empresa no encontrada'}
+      mensaje={error ?? t('dev.empresaNoEncontrada')}
       onRetry={cargarDatos}
     />
   )
@@ -466,7 +469,7 @@ export default function EmpresaDetallePage() {
             transition-colors group"
         >
           <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-          Volver a empresas
+          {t('dev.volverEmpresas')}
         </Link>
 
         <div className="flex items-start gap-3 flex-wrap">
@@ -489,7 +492,7 @@ export default function EmpresaDetallePage() {
               )}
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                Creada {formatFecha(empresa.created_at)}
+                {t('dev.creada')} {formatFecha(empresa.created_at)}
               </span>
             </div>
           </div>
@@ -502,25 +505,25 @@ export default function EmpresaDetallePage() {
         className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
         <MetricCard
-          label="Empleados"
+          label={t('dev.empleados')}
           value={totalEmpleados}
           icon={<Users className="w-4 h-4 text-teal-400" />}
           accent="bg-[#0D9488]/15 border border-[#0D9488]/20"
         />
         <MetricCard
-          label="Admins"
+          label={t('dev.admins')}
           value={totalAdmins}
           icon={<ShieldCheck className="w-4 h-4 text-indigo-400" />}
           accent="bg-[#3B4FD8]/15 border border-[#3B4FD8]/20"
         />
         <MetricCard
-          label="Mensajes IA"
+          label={t('dev.mensajesIA')}
           value={mensajesCount}
           icon={<MessageSquare className="w-4 h-4 text-[#38BDF8]" />}
           accent="bg-[#0EA5E9]/12 border border-[#0EA5E9]/20"
         />
         <MetricCard
-          label="Progreso promedio"
+          label={t('dev.progresoPromedio')}
           value={`${progresoPromedio}%`}
           icon={<TrendingUp className="w-4 h-4 text-amber-400" />}
           accent="bg-amber-500/12 border border-amber-500/20"
@@ -531,21 +534,21 @@ export default function EmpresaDetallePage() {
       <motion.div variants={cardVariants} className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white/70">
           <Bot className="w-4 h-4 text-[#0D9488]" />
-          Consumo IA
+          {t('dev.consumoIA')}
         </h2>
 
         {usoMensual.length === 0 ? (
           <div className="glass-card rounded-xl py-10 flex flex-col items-center gap-2">
             <Bot className="w-7 h-7 text-white/10" />
-            <p className="text-sm text-white/35">Sin consumo IA registrado para esta empresa</p>
+            <p className="text-sm text-white/35">{t('dev.sinConsumoIA')}</p>
           </div>
         ) : (
           <div className="glass-card rounded-xl overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[11px] text-white/30 border-b border-white/[0.06]">
-                  <th className="text-left font-medium px-4 py-2.5">Mes</th>
-                  <th className="text-right font-medium px-4 py-2.5">Consultas</th>
+                  <th className="text-left font-medium px-4 py-2.5">{t('dev.mes')}</th>
+                  <th className="text-right font-medium px-4 py-2.5">{t('dev.consultas')}</th>
                   <th className="text-right font-medium px-4 py-2.5">Input tokens</th>
                   <th className="text-right font-medium px-4 py-2.5">Output tokens</th>
                   <th className="text-right font-medium px-4 py-2.5">Cache read</th>
@@ -569,13 +572,13 @@ export default function EmpresaDetallePage() {
         {/* Desglose por fuente del mes actual */}
         {usoFuentes.length > 0 && (
           <div className="glass-card rounded-xl p-4 space-y-2.5">
-            <p className="text-[11px] text-white/30 font-medium">Desglose por fuente — mes actual</p>
+            <p className="text-[11px] text-white/30 font-medium">{t('dev.desgloseFuente')}</p>
             <div className="space-y-1.5">
               {usoFuentes.map(f => (
                 <div key={f.fuente} className="flex items-center justify-between gap-3 text-xs">
                   <Badge variant="info">{f.fuente}</Badge>
                   <div className="flex items-center gap-4 font-mono">
-                    <span className="text-white/60">{formatNum(f.llamadas)} llamadas</span>
+                    <span className="text-white/60">{formatNum(f.llamadas)} {t('dev.llamadas')}</span>
                     <span className="text-white/35 w-28 text-right">{formatNum(f.tokens)} tokens</span>
                   </div>
                 </div>
@@ -589,19 +592,19 @@ export default function EmpresaDetallePage() {
       <motion.div variants={cardVariants} className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white/70">
-            Usuarios <span className="text-white/30 font-normal">({usuarios.length})</span>
+            {t('dev.usuariosTitulo')} <span className="text-white/30 font-normal">({usuarios.length})</span>
           </h2>
           {/* Leyenda columnas */}
           <div className="hidden md:flex items-center gap-6 text-[11px] text-white/25 pr-8">
-            <span className="w-16 text-center">Días</span>
-            <span className="w-28 text-center">Progreso</span>
+            <span className="w-16 text-center">{t('dev.dias')}</span>
+            <span className="w-28 text-center">{t('dev.progreso')}</span>
           </div>
         </div>
 
         {usuarios.length === 0 ? (
           <div className="glass-card rounded-xl py-14 flex flex-col items-center gap-3">
             <Users className="w-8 h-8 text-white/10" />
-            <p className="text-sm text-white/35">Sin usuarios en esta empresa</p>
+            <p className="text-sm text-white/35">{t('dev.sinUsuariosEmpresa')}</p>
           </div>
         ) : (
           <motion.div

@@ -11,8 +11,10 @@ import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import type { EmpleadoConNotas } from './types'
 import { containerVariants, itemVariants, SkeletonBloques } from './helpers'
+import { useLanguage } from '@/components/LanguageProvider'
 
 export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
+  const { t } = useLanguage()
   const [empleados, setEmpleados]   = useState<EmpleadoConNotas[]>([])
   const [loading, setLoading]       = useState(true)
   const [notas, setNotas]           = useState<Record<string, string>>({})
@@ -54,7 +56,7 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
       .eq('id', id)
 
     if (error) {
-      toast.error('No se pudo guardar las notas')
+      toast.error(t('adminCont.toast.errorNotas'))
     } else {
       setGuardado(prev => ({ ...prev, [id]: true }))
       setTimeout(() => setGuardado(prev => ({ ...prev, [id]: false })), 2500)
@@ -68,7 +70,7 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <UserCheck className="w-8 h-8 text-white/15" />
-        <p className="text-sm text-white/35">Sin empleados en esta empresa todavía.</p>
+        <p className="text-sm text-white/35">{t('adminCont.sinEmpleados')}</p>
       </div>
     )
   }
@@ -103,7 +105,7 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white/80 truncate">{emp.nombre}</p>
                 <p className="text-xs text-white/35 truncate">
-                  {[emp.puesto, emp.area].filter(Boolean).join(' · ') || 'Sin puesto/área asignado'}
+                  {[emp.puesto, emp.area].filter(Boolean).join(' · ') || t('adminCont.sinPuestoArea')}
                 </p>
               </div>
             </div>
@@ -111,13 +113,13 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
             {/* Textarea de notas */}
             <div className="space-y-1.5">
               <label className="text-xs text-white/35">
-                Notas para CopilBot
+                {t('adminCont.notasCopilbot')}
               </label>
               <textarea
                 value={notas[emp.id] ?? ''}
                 onChange={e => setNotas(prev => ({ ...prev, [emp.id]: e.target.value }))}
                 rows={3}
-                placeholder="Ej: Tiene experiencia en Python. Prefiere comunicación directa. Viene de una startup."
+                placeholder={t('adminCont.notasPlaceholder')}
                 className="w-full bg-white/[0.03] border border-white/[0.07] rounded-lg
                   px-3 py-2 text-xs text-white/75 placeholder-white/20
                   outline-none focus:border-[#0EA5E9]/40 focus:bg-white/[0.05]
@@ -143,12 +145,12 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
                     {guardado[emp.id] ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        Guardado
+                        {t('adminCont.guardado')}
                       </>
                     ) : (
                       <>
                         <Lock className="w-3.5 h-3.5" />
-                        Guardar
+                        {t('adminCont.guardar')}
                       </>
                     )}
                   </button>

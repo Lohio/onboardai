@@ -6,6 +6,7 @@ import { X, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
 import { Portal } from '@/components/shared/Portal'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -61,6 +62,7 @@ function FieldError({ children }: { children: string }) {
 // ─────────────────────────────────────────────
 
 export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
+  const { t } = useLanguage()
   const [form, setForm] = useState<FormData>({
     nombre: '',
     email: '',
@@ -81,11 +83,11 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!form.nombre.trim()) errs.nombre = 'Requerido'
-    if (!form.email.trim()) errs.email = 'Requerido'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Email inválido'
-    if (!form.password) errs.password = 'Requerido'
-    else if (form.password.length < 8) errs.password = 'Mínimo 8 caracteres'
+    if (!form.nombre.trim()) errs.nombre = t('adminCore.required')
+    if (!form.email.trim()) errs.email = t('adminCore.required')
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t('adminEmp.modal.invalidEmail')
+    if (!form.password) errs.password = t('adminCore.required')
+    else if (form.password.length < 8) errs.password = t('adminEmp.modal.minChars')
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -110,13 +112,13 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
       })
       const data = await res.json() as { usuario?: EmpleadoCreado; error?: string }
       if (!res.ok) {
-        toast.error(data.error ?? 'Error al crear empleado')
+        toast.error(data.error ?? t('adminEmp.modal.createError'))
         return
       }
-      toast.success(`Empleado ${form.nombre} creado`)
+      toast.success(`${t('adminEmp.modal.creadoPre')} ${form.nombre} ${t('adminEmp.modal.creadoPost')}`)
       onCreated(data.usuario!)
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('adminCore.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -149,7 +151,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-            <h2 className="text-sm font-semibold text-white">Nuevo colaborador</h2>
+            <h2 className="text-sm font-semibold text-white">{t('adminEmp.modal.title')}</h2>
             <button
               onClick={onClose}
               className="text-white/30 hover:text-white/70 transition-colors duration-150 p-1 -mr-1"
@@ -165,14 +167,14 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
               {/* Nombre */}
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">
-                  Nombre completo <span className="text-red-400">*</span>
+                  {t('adminEmp.modal.fullName')} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={e => set('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
-                  placeholder="Ana García"
+                  placeholder={t('adminEmp.modal.namePh')}
                   autoFocus
                 />
                 {errors.nombre && <FieldError>{errors.nombre}</FieldError>}
@@ -182,7 +184,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5">
-                    Email <span className="text-red-400">*</span>
+                    {t('adminEmp.modal.email')} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="email"
@@ -196,7 +198,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
 
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5">
-                    Contraseña <span className="text-red-400">*</span>
+                    {t('adminEmp.modal.password')} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -212,7 +214,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
                         type="button"
                         onClick={() => set('password', generarPassword())}
                         className="p-1.5 text-white/25 hover:text-white/60 transition-colors"
-                        title="Generar nueva contraseña"
+                        title={t('adminEmp.modal.genPassword')}
                       >
                         <RefreshCw className="w-3 h-3" />
                       </button>
@@ -232,23 +234,23 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
               {/* Puesto + Área */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5">Puesto</label>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5">{t('adminEmp.modal.position')}</label>
                   <input
                     type="text"
                     value={form.puesto}
                     onChange={e => set('puesto', e.target.value)}
                     className={inputCls(false)}
-                    placeholder="Desarrolladora Frontend"
+                    placeholder={t('adminEmp.modal.positionPh')}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5">Área</label>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5">{t('adminEmp.modal.area')}</label>
                   <input
                     type="text"
                     value={form.area}
                     onChange={e => set('area', e.target.value)}
                     className={inputCls(false)}
-                    placeholder="Producto"
+                    placeholder={t('adminEmp.modal.areaPh')}
                   />
                 </div>
               </div>
@@ -256,7 +258,7 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
               {/* Fecha ingreso + Rol */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5">Fecha de ingreso</label>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5">{t('adminEmp.modal.startDate')}</label>
                   <input
                     type="date"
                     value={form.fecha_ingreso}
@@ -265,14 +267,14 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5">Rol</label>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5">{t('adminEmp.modal.role')}</label>
                   <select
                     value={form.rol}
                     onChange={e => set('rol', e.target.value)}
                     className={inputCls(false) + ' appearance-none cursor-pointer'}
                   >
-                    <option value="empleado" className="bg-[#111110]">Empleado</option>
-                    <option value="admin" className="bg-[#111110]">Admin</option>
+                    <option value="empleado" className="bg-[#111110]">{t('adminEmp.modal.roleEmpleado')}</option>
+                    <option value="admin" className="bg-[#111110]">{t('adminEmp.modal.roleAdmin')}</option>
                   </select>
                 </div>
               </div>
@@ -281,10 +283,10 @@ export function EmpleadoModal({ onClose, onCreated }: EmpleadoModalProps) {
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.06]">
               <Button variant="ghost" size="sm" type="button" onClick={onClose}>
-                Cancelar
+                {t('adminCore.cancel')}
               </Button>
               <Button variant="primary" size="sm" loading={loading} type="submit">
-                Agregar
+                {t('adminEmp.modal.add')}
               </Button>
             </div>
           </form>

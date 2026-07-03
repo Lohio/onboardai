@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase'
 import { Portal } from '@/components/shared/Portal'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -29,23 +30,23 @@ interface ResetProgresoModalProps {
 
 const MODULO_CONFIG: Record<
   Exclude<ModuloReset, 'todos'>,
-  { label: string; descripcion: string; icon: React.ReactNode; color: string }
+  { labelKey: string; descKey: string; icon: React.ReactNode; color: string }
 > = {
   cultura: {
-    label: 'M2 — Cultura',
-    descripcion: 'Se eliminan todos los bloques completados del módulo de cultura e identidad.',
+    labelKey: 'adminEmp.reset.cultura.label',
+    descKey: 'adminEmp.reset.cultura.desc',
     icon: <BookOpen className="w-4 h-4" />,
     color: 'text-[#38BDF8]',
   },
   rol: {
-    label: 'M3 — Rol y herramientas',
-    descripcion: 'Se eliminan el progreso de tareas y bloques del módulo de rol.',
+    labelKey: 'adminEmp.reset.rol.label',
+    descKey: 'adminEmp.reset.rol.desc',
     icon: <Wrench className="w-4 h-4" />,
     color: 'text-teal-400',
   },
   asistente: {
-    label: 'M4 — Asistente IA',
-    descripcion: 'Se eliminan todas las conversaciones con el asistente.',
+    labelKey: 'adminEmp.reset.asistente.label',
+    descKey: 'adminEmp.reset.asistente.desc',
     icon: <MessageSquare className="w-4 h-4" />,
     color: 'text-amber-400',
   },
@@ -62,6 +63,7 @@ export function ResetProgresoModal({
   onClose,
   onReset,
 }: ResetProgresoModalProps) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
 
   // Módulos que se van a resetear según la selección
@@ -75,7 +77,7 @@ export function ResetProgresoModal({
 
       // Doble check: verificar que el usuario actual tiene permisos
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { toast.error('Sin sesión'); return }
+      if (!user) { toast.error(t('adminCore.noSession')); return }
 
       const { data: adminData } = await supabase
         .from('usuarios')
@@ -84,7 +86,7 @@ export function ResetProgresoModal({
         .single()
 
       if (!adminData || !['admin', 'dev'].includes(adminData.rol)) {
-        toast.error('Sin permisos para esta acción')
+        toast.error(t('adminCore.noPermission'))
         return
       }
 
@@ -129,16 +131,16 @@ export function ResetProgresoModal({
       }
 
       if (errores.length > 0) {
-        toast.error(`Error reseteando: ${errores.join(', ')}`)
+        toast.error(`${t('adminEmp.reset.errorReset')}: ${errores.join(', ')}`)
       } else {
         const label = modulo === 'todos'
-          ? 'Todo el progreso reseteado'
-          : `Módulo ${MODULO_CONFIG[modulo].label} reseteado`
+          ? t('adminEmp.reset.allDone')
+          : `${t('adminEmp.reset.donePre')} ${t(MODULO_CONFIG[modulo].labelKey)} ${t('adminEmp.reset.donePost')}`
         toast.success(label)
         onReset()
       }
     } catch {
-      toast.error('Error inesperado')
+      toast.error(t('adminCore.unexpectedError'))
     } finally {
       setLoading(false)
       onClose()
@@ -175,7 +177,7 @@ export function ResetProgresoModal({
                 flex items-center justify-center">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
               </div>
-              <h2 className="text-sm font-semibold text-white">Resetear progreso</h2>
+              <h2 className="text-sm font-semibold text-white">{t('adminEmp.reset.title')}</h2>
             </div>
             <button
               onClick={onClose}
@@ -188,15 +190,15 @@ export function ResetProgresoModal({
           {/* Contenido */}
           <div className="px-6 py-5 space-y-4">
             <p className="text-sm text-white/60">
-              Vas a resetear el progreso de{' '}
-              <span className="text-white/85 font-medium">{empleadoNombre}</span>.
-              Esta acción no se puede deshacer.
+              {t('adminEmp.reset.bodyPre')}{' '}
+              <span className="text-white/85 font-medium">{empleadoNombre}</span>.{' '}
+              {t('adminEmp.reset.irreversible')}
             </p>
 
             {/* Módulos afectados */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-white/35 uppercase tracking-wider">
-                Módulos que se van a resetear
+                {t('adminEmp.reset.affected')}
               </p>
               <div className="space-y-2">
                 {modulosAfectados.map(mod => {
@@ -208,8 +210,8 @@ export function ResetProgresoModal({
                     >
                       <span className={cfg.color + ' mt-0.5 flex-shrink-0'}>{cfg.icon}</span>
                       <div>
-                        <p className="text-xs font-medium text-white/70">{cfg.label}</p>
-                        <p className="text-[11px] text-white/35 mt-0.5">{cfg.descripcion}</p>
+                        <p className="text-xs font-medium text-white/70">{t(cfg.labelKey)}</p>
+                        <p className="text-[11px] text-white/35 mt-0.5">{t(cfg.descKey)}</p>
                       </div>
                     </div>
                   )
@@ -221,10 +223,10 @@ export function ResetProgresoModal({
           {/* Footer */}
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.06]">
             <Button variant="ghost" size="sm" type="button" onClick={onClose}>
-              Cancelar
+              {t('adminCore.cancel')}
             </Button>
             <Button variant="danger" size="sm" loading={loading} onClick={handleReset}>
-              Sí, resetear
+              {t('adminEmp.reset.confirm')}
             </Button>
           </div>
         </motion.div>

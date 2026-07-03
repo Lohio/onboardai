@@ -10,6 +10,7 @@ import {
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
@@ -80,6 +81,7 @@ interface EmpresaDrawerProps {
 }
 
 function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDrawerProps) {
+  const { t } = useLanguage()
   const [form, setForm] = useState<EmpresaForm>(
     initial ?? { nombre: '', slug: '', plan: 'free' }
   )
@@ -100,7 +102,7 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
 
   function validate(): boolean {
     const errs: Partial<EmpresaForm> = {}
-    if (!form.nombre.trim()) errs.nombre = 'Requerido'
+    if (!form.nombre.trim()) errs.nombre = t('dev.requerido')
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -119,20 +121,20 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
       if (mode === 'create') {
         const { error } = await supabase.from('empresas').insert(payload)
         if (error) { toast.error(error.message); return }
-        toast.success('Empresa creada')
+        toast.success(t('dev.empresaCreada'))
       } else {
         const { error } = await supabase
           .from('empresas')
           .update(payload)
           .eq('id', empresaId!)
         if (error) { toast.error(error.message); return }
-        toast.success('Empresa actualizada')
+        toast.success(t('dev.empresaActualizada'))
       }
 
       onSaved()
       onClose()
     } catch {
-      toast.error('Error inesperado')
+      toast.error(t('dev.errorInesperado'))
     } finally {
       setLoading(false)
     }
@@ -162,7 +164,7 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
           <h2 className="text-sm font-semibold text-white">
-            {mode === 'create' ? 'Nueva empresa' : 'Editar empresa'}
+            {mode === 'create' ? t('dev.nuevaEmpresa') : t('dev.editarEmpresa')}
           </h2>
           <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors p-1">
             <X className="w-4 h-4" />
@@ -173,7 +175,7 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
           <div>
             <label className="block text-xs font-medium text-white/45 mb-1.5">
-              Nombre <span className="text-red-400">*</span>
+              {t('dev.nombre')} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -200,7 +202,7 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/45 mb-1.5">Plan</label>
+            <label className="block text-xs font-medium text-white/45 mb-1.5">{t('dev.plan')}</label>
             <select
               value={form.plan}
               onChange={e => set('plan', e.target.value)}
@@ -216,10 +218,10 @@ function EmpresaDrawer({ mode, initial, onClose, onSaved, empresaId }: EmpresaDr
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-white/[0.06]">
-          <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>{t('dev.cancelar')}</Button>
           <Button variant="primary" size="sm" loading={loading} onClick={handleSave}>
             <Check className="w-3.5 h-3.5" />
-            {mode === 'create' ? 'Crear' : 'Guardar'}
+            {mode === 'create' ? t('dev.crear') : t('dev.guardar')}
           </Button>
         </div>
       </motion.aside>
@@ -240,6 +242,7 @@ interface EmpresaCardProps {
 }
 
 function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: EmpresaCardProps) {
+  const { t } = useLanguage()
   const [expanded, setExpanded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -257,10 +260,10 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
       const supabase = createClient()
       const { error } = await supabase.from('empresas').delete().eq('id', empresa.id)
       if (error) { toast.error(error.message); return }
-      toast.success('Empresa eliminada')
+      toast.success(t('dev.empresaEliminada'))
       onDeleted(empresa.id)
     } catch {
-      toast.error('Error inesperado')
+      toast.error(t('dev.errorInesperado'))
     } finally {
       setDeleting(false)
       setConfirmDelete(false)
@@ -275,7 +278,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
       .update({ rol: 'admin', empresa_id: empresa.id })
       .eq('id', selectedUserId)
     if (error) { toast.error(error.message); return }
-    toast.success('Admin asignado')
+    toast.success(t('dev.adminAsignado'))
     setAssigningAdmin(false)
     setSelectedUserId('')
     onReload()
@@ -307,7 +310,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
           )}
           <div className="flex items-center gap-3 mt-2 text-xs text-white/35">
             <span className="flex items-center gap-1">
-              <Users className="w-3 h-3" />{empresa.userCount} usuarios
+              <Users className="w-3 h-3" />{empresa.userCount} {t('dev.usuariosCount')}
             </span>
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
@@ -321,28 +324,28 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
           <Link
             href={`/dev/empresas/${empresa.id}`}
             className="p-1.5 text-white/30 hover:text-indigo-400 transition-colors rounded-md hover:bg-indigo-500/[0.08]"
-            title="Ver detalle"
+            title={t('dev.verDetalle')}
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
           <button
             onClick={() => setExpanded(p => !p)}
             className="p-1.5 text-white/30 hover:text-white/70 transition-colors rounded-md hover:bg-white/[0.04]"
-            title="Ver admins"
+            title={t('dev.verAdmins')}
           >
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={() => onEdit(empresa)}
             className="p-1.5 text-white/30 hover:text-[#38BDF8] transition-colors rounded-md hover:bg-white/[0.04]"
-            title="Editar"
+            title={t('dev.editar')}
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setConfirmDelete(true)}
             className="p-1.5 text-white/30 hover:text-red-400 transition-colors rounded-md hover:bg-red-500/[0.06]"
-            title="Eliminar"
+            title={t('dev.eliminar')}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -360,10 +363,10 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
             className="overflow-hidden"
           >
             <div className="px-5 pb-4 space-y-3 border-t border-white/[0.05] pt-3">
-              <p className="text-xs font-medium text-white/35 uppercase tracking-wider">Admins</p>
+              <p className="text-xs font-medium text-white/35 uppercase tracking-wider">{t('dev.admins')}</p>
 
               {empresa.admins.length === 0 ? (
-                <p className="text-xs text-white/25">Sin admins asignados</p>
+                <p className="text-xs text-white/25">{t('dev.sinAdmins')}</p>
               ) : (
                 <div className="space-y-1.5">
                   {empresa.admins.map(a => (
@@ -387,7 +390,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
                   onClick={() => setAssigningAdmin(true)}
                   className="text-xs text-amber-400/60 hover:text-amber-400 transition-colors flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Asignar admin
+                  <Plus className="w-3 h-3" /> {t('dev.asignarAdmin')}
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -397,7 +400,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
                     className="flex-1 h-8 px-2 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
                       text-white/70 appearance-none outline-none focus:border-amber-500/60"
                   >
-                    <option value="" className="bg-[#111110]">Seleccionar usuario...</option>
+                    <option value="" className="bg-[#111110]">{t('dev.selUsuario')}</option>
                     {candidatos.map(u => (
                       <option key={u.id} value={u.id} className="bg-[#111110]">
                         {u.nombre} ({u.email})
@@ -431,12 +434,12 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
           >
             <AlertTriangle className="w-5 h-5 text-red-400" />
             <p className="text-xs text-center text-white/70">
-              ¿Eliminar <span className="font-semibold text-white/90">{empresa.nombre}</span>?<br />
-              <span className="text-white/40">Se eliminará la empresa pero no los usuarios.</span>
+              {t('dev.confirmEliminar')} <span className="font-semibold text-white/90">{empresa.nombre}</span>?<br />
+              <span className="text-white/40">{t('dev.eliminarNota')}</span>
             </p>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
-              <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>Eliminar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>{t('dev.cancelar')}</Button>
+              <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>{t('dev.eliminar')}</Button>
             </div>
           </motion.div>
         )}
@@ -451,6 +454,7 @@ function EmpresaCard({ empresa, allUsers, onEdit, onDeleted, onReload }: Empresa
 
 export default function EmpresasPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [allUsers, setAllUsers] = useState<{ id: string; nombre: string; email: string; empresa_id: string }[]>([])
@@ -487,10 +491,11 @@ export default function EmpresasPage() {
       setAllUsers(usrs.map(u => ({ id: u.id, nombre: u.nombre, email: u.email, empresa_id: u.empresa_id })))
     } catch (err) {
       console.error('Error cargando empresas:', err)
-      toast.error('Error al cargar empresas')
+      toast.error(t('dev.errorCargarEmpresas'))
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
@@ -500,14 +505,14 @@ export default function EmpresasPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-white">Empresas</h1>
+          <h1 className="text-lg font-semibold text-white">{t('dev.empresas')}</h1>
           <p className="text-sm text-white/40 mt-0.5">
-            {loading ? '—' : `${empresas.length} empresa${empresas.length !== 1 ? 's' : ''} registradas`}
+            {loading ? '—' : `${empresas.length} ` + (empresas.length !== 1 ? t('dev.empresasRegistradas') : t('dev.empresaRegistrada'))}
           </p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setDrawer({ mode: 'create' })}>
           <Plus className="w-3.5 h-3.5" />
-          Nueva empresa
+          {t('dev.nuevaEmpresa')}
         </Button>
       </div>
 
@@ -521,7 +526,7 @@ export default function EmpresasPage() {
       ) : empresas.length === 0 ? (
         <div className="text-center py-16">
           <Building2 className="w-8 h-8 text-white/15 mx-auto mb-3" />
-          <p className="text-sm text-white/40">Sin empresas registradas</p>
+          <p className="text-sm text-white/40">{t('dev.sinEmpresas')}</p>
         </div>
       ) : (
         <div className="space-y-4 relative">

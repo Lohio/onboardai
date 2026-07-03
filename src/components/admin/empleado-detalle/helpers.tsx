@@ -18,13 +18,13 @@ export function formatFechaCorta(d: string): string {
   return new Date(d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
 }
 
-export function tiempoRelativo(iso: string): string {
+export function tiempoRelativo(iso: string, t: (key: string) => string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const min = Math.floor(diff / 60000)
-  if (min < 60) return `hace ${min} min`
+  if (min < 60) return t('adminCore.tiempo.prefijo') + min + t('adminCore.tiempo.min')
   const h = Math.floor(min / 60)
-  if (h < 24) return `hace ${h}h`
-  return `hace ${Math.floor(h / 24)}d`
+  if (h < 24) return t('adminCore.tiempo.prefijo') + h + t('adminCore.tiempo.h')
+  return t('adminCore.tiempo.prefijo') + Math.floor(h / 24) + t('adminCore.tiempo.d')
 }
 
 export function inputCls(error?: boolean): string {
@@ -48,9 +48,9 @@ export function renderLinea(line: string, key: number): React.ReactNode {
 }
 
 export const MODULOS_CONFIG = [
-  { key: 'cultura' as const, label: 'Cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-gray-900' },
-  { key: 'rol' as const, label: 'Rol y herramientas', icon: <Wrench className="w-3.5 h-3.5" />, color: 'text-gray-900' },
-  { key: 'asistente' as const, label: 'CopilBot', icon: <MessageSquare className="w-3.5 h-3.5" />, color: 'text-gray-900' },
+  { key: 'cultura' as const, labelKey: 'adminEmp.mod.cultura', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-gray-900' },
+  { key: 'rol' as const, labelKey: 'adminEmp.mod.rol', icon: <Wrench className="w-3.5 h-3.5" />, color: 'text-gray-900' },
+  { key: 'asistente' as const, labelKey: 'adminEmp.mod.asistente', icon: <MessageSquare className="w-3.5 h-3.5" />, color: 'text-gray-900' },
 ]
 
 // ── Herramienta "configurada": activa con usuario o contraseña cargados ──

@@ -6,6 +6,7 @@ import { ArrowLeft, Star, MessageSquare, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -102,28 +103,29 @@ function EstrellasSoloLectura({ valor }: { valor: number }) {
 // ─────────────────────────────────────────────
 
 function ResumenCard({ resumen }: { resumen: ResumenDia }) {
+  const { t } = useLanguage()
   const pct = resumen.total > 0 ? Math.round((resumen.respondidas / resumen.total) * 100) : 0
   return (
     <motion.div variants={itemVariants} className="glass-card rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-white/35">
-            Día {resumen.dia}
+            {t('adminEnc.dia')} {resumen.dia}
           </p>
           <p className={`text-2xl font-bold tabular-nums mt-0.5 ${colorPromedio(resumen.promedioGeneral)}`}>
             {resumen.promedioGeneral > 0 ? resumen.promedioGeneral.toFixed(1) : '—'}
           </p>
-          <p className="text-[11px] text-white/30">promedio general</p>
+          <p className="text-[11px] text-white/30">{t('adminEnc.promedioGeneral')}</p>
         </div>
         <div className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${bgColorPromedio(resumen.promedioGeneral)} ${colorPromedio(resumen.promedioGeneral)}`}>
-          {resumen.respondidas}/{resumen.total} respondidas
+          {resumen.respondidas}/{resumen.total} {t('adminEnc.respondidas')}
         </div>
       </div>
 
       {/* Barra de participación */}
       <div>
         <div className="flex justify-between items-center mb-1">
-          <span className="text-[11px] text-white/30">Participación</span>
+          <span className="text-[11px] text-white/30">{t('adminEnc.participacion')}</span>
           <span className="text-[11px] text-white/40 tabular-nums">{pct}%</span>
         </div>
         <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
@@ -175,6 +177,7 @@ function Skeleton() {
 type FiltroTab = 'todos' | '7' | '30' | '60'
 
 export default function EncuestasAdminPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [encuestas, setEncuestas] = useState<EncuestaRow[]>([])
@@ -242,7 +245,7 @@ export default function EncuestasAdminPage() {
   if (hasError) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <ErrorState mensaje="No se pudieron cargar las encuestas." onRetry={cargarDatos} />
+        <ErrorState mensaje={t('adminEnc.errorCargar')} onRetry={cargarDatos} />
       </div>
     )
   }
@@ -297,14 +300,14 @@ export default function EncuestasAdminPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-xl font-semibold text-white">Encuestas de pulso</h1>
-            <p className="text-sm text-white/40 mt-0.5">Feedback de empleados en días 7, 30 y 60</p>
+            <h1 className="text-xl font-semibold text-white">{t('adminEnc.titulo')}</h1>
+            <p className="text-sm text-white/40 mt-0.5">{t('adminEnc.subtitulo')}</p>
           </div>
           {totalRespondidas > 0 && (
             <div className="flex items-center gap-3 text-sm">
               <div className="flex items-center gap-1.5 text-white/40">
                 <Users className="w-3.5 h-3.5" />
-                <span>{totalRespondidas} respuestas</span>
+                <span>{totalRespondidas} {t('adminEnc.respuestas')}</span>
               </div>
               <div className={`flex items-center gap-1.5 font-semibold ${colorPromedio(promedioGlobal)}`}>
                 <TrendingUp className="w-3.5 h-3.5" />
@@ -327,30 +330,30 @@ export default function EncuestasAdminPage() {
             <div className="w-12 h-12 rounded-full bg-white/[0.04] flex items-center justify-center mx-auto mb-3">
               <MessageSquare className="w-5 h-5 text-white/20" />
             </div>
-            <p className="text-sm text-white/40">Aún no hay encuestas respondidas</p>
+            <p className="text-sm text-white/40">{t('adminEnc.emptyTitulo')}</p>
             <p className="text-xs text-white/25 mt-1">
-              Las encuestas aparecen automáticamente en el día 7, 30 y 60 del onboarding
+              {t('adminEnc.emptyDesc')}
             </p>
           </motion.div>
         ) : (
           <motion.div variants={itemVariants} className="glass-card rounded-xl overflow-hidden">
             {/* Tabs filtro */}
             <div className="flex items-center gap-1 px-4 pt-4 border-b border-white/[0.06] pb-3">
-              <p className="text-[11px] font-medium text-white/30 uppercase tracking-wider mr-2">Filtrar:</p>
-              {(['todos', '7', '30', '60'] as FiltroTab[]).map((t) => (
+              <p className="text-[11px] font-medium text-white/30 uppercase tracking-wider mr-2">{t('adminEnc.filtrar')}</p>
+              {(['todos', '7', '30', '60'] as FiltroTab[]).map((ft) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={ft}
+                  onClick={() => setTab(ft)}
                   className={`px-3 py-1 text-xs rounded-lg transition-colors font-medium
-                    ${tab === t
+                    ${tab === ft
                       ? 'bg-[#0EA5E9]/20 text-[#7DD3FC] border border-[#0EA5E9]/30'
                       : 'text-white/40 hover:text-white/60 hover:bg-white/[0.04]'
                     }`}
                 >
-                  {t === 'todos' ? 'Todos' : `Día ${t}`}
+                  {ft === 'todos' ? t('adminEnc.todos') : t('adminEnc.dia') + ' ' + ft}
                 </button>
               ))}
-              <span className="ml-auto text-[11px] text-white/25">{filtradas.length} entradas</span>
+              <span className="ml-auto text-[11px] text-white/25">{filtradas.length} {t('adminEnc.entradas')}</span>
             </div>
 
             {/* Lista */}
@@ -362,7 +365,7 @@ export default function EncuestasAdminPage() {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">
-                          {enc.usuario?.nombre ?? 'Empleado'}
+                          {enc.usuario?.nombre ?? t('adminEnc.empleado')}
                         </p>
                         {enc.usuario?.puesto && (
                           <p className="text-xs text-white/30 truncate">{enc.usuario.puesto}</p>
@@ -370,7 +373,7 @@ export default function EncuestasAdminPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-[11px] text-white/30 bg-white/[0.04] px-2 py-0.5 rounded-md">
-                          Día {enc.dia_onboarding}
+                          {t('adminEnc.dia')} {enc.dia_onboarding}
                         </span>
                         <span className={`text-sm font-semibold tabular-nums ${colorPromedio(promedio)}`}>
                           {promedio.toFixed(1)}
@@ -402,7 +405,7 @@ export default function EncuestasAdminPage() {
                     )}
 
                     <p className="text-[11px] text-white/20 mt-2">
-                      Respondida el {formatFecha(enc.respondida_at)}
+                      {t('adminEnc.respondidaEl')} {formatFecha(enc.respondida_at)}
                     </p>
                   </div>
                 )

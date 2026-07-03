@@ -6,11 +6,13 @@ import { motion } from 'framer-motion'
 import { User, Phone, Mail, CheckCircle, ArrowLeft, Lock, Camera, Eye, EyeOff, Save } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 
 const PHONE_STORAGE_KEY = 'heero_admin_phone'
 
 export default function AdminPerfilPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [loading, setLoading]       = useState(true)
   const [saving, setSaving]         = useState(false)
@@ -68,7 +70,7 @@ export default function AdminPerfilPage() {
 
       if (updateError) {
         console.error('Error actualizando nombre:', updateError)
-        alert('Error al guardar: ' + updateError.message)
+        alert(t('adminPerfil.errorGuardar') + updateError.message)
         return
       }
 
@@ -153,8 +155,8 @@ export default function AdminPerfilPage() {
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
-          <h1 className="text-xl font-semibold text-white">Perfil de administrador</h1>
-          <p className="text-sm text-white/40">Gestiona tu información personal</p>
+          <h1 className="text-xl font-semibold text-white">{t('adminPerfil.titulo')}</h1>
+          <p className="text-sm text-white/40">{t('adminPerfil.subtitulo')}</p>
         </div>
       </div>
 
@@ -194,7 +196,7 @@ export default function AdminPerfilPage() {
           />
         </div>
         <div>
-          <p className="text-base font-semibold text-white">{nombre || 'Administrador'}</p>
+          <p className="text-base font-semibold text-white">{nombre || t('adminPerfil.admin')}</p>
           <p className="text-sm text-white/40">{email}</p>
         </div>
       </motion.div>
@@ -210,13 +212,13 @@ export default function AdminPerfilPage() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
             <User className="w-3.5 h-3.5" />
-            Nombre completo
+            {t('adminPerfil.nombre')}
           </label>
           <input
             type="text"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
-            placeholder="Tu nombre y apellido"
+            placeholder={t('adminPerfil.phNombre')}
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
               px-4 py-3 text-sm text-white placeholder:text-gray-400
               focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
@@ -228,7 +230,7 @@ export default function AdminPerfilPage() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
             <Phone className="w-3.5 h-3.5" />
-            Teléfono
+            {t('adminPerfil.telefono')}
           </label>
           <input
             type="tel"
@@ -246,13 +248,13 @@ export default function AdminPerfilPage() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
             <Mail className="w-3.5 h-3.5" />
-            Email de recuperación
+            {t('adminPerfil.emailRecupero')}
           </label>
           <input
             type="email"
             value={emailRecupero}
             onChange={e => setEmailRecupero(e.target.value)}
-            placeholder="tu@email.com"
+            placeholder={t('adminPerfil.phEmail')}
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl
               px-4 py-3 text-sm text-white placeholder:text-gray-400
               focus:outline-none focus:ring-1 focus:ring-[#0EA5E9]/50 focus:border-[#0EA5E9]/40
@@ -260,7 +262,7 @@ export default function AdminPerfilPage() {
           />
           {emailRecupero !== email && emailRecupero && (
             <p className="text-[11px] text-amber-400/80">
-              Se enviará un mail de confirmación a la nueva dirección.
+              {t('adminPerfil.avisoEmail')}
             </p>
           )}
         </div>
@@ -269,7 +271,7 @@ export default function AdminPerfilPage() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
             <Mail className="w-3.5 h-3.5" />
-            Email actual
+            {t('adminPerfil.emailActual')}
           </label>
           <div className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl
             px-4 py-3 text-sm text-white/35 select-all">
@@ -281,7 +283,7 @@ export default function AdminPerfilPage() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-medium text-white/50 uppercase tracking-wide">
             <Lock className="w-3.5 h-3.5" />
-            Contraseña
+            {t('adminPerfil.password')}
           </label>
           <div className="relative">
             <input
@@ -299,7 +301,7 @@ export default function AdminPerfilPage() {
               onClick={() => setShowPassword(v => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded
                 text-white/30 hover:text-white/70 transition-colors duration-150"
-              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              aria-label={showPassword ? t('adminPerfil.ocultarPassword') : t('adminPerfil.mostrarPassword')}
             >
               {showPassword
                 ? <EyeOff className="w-4 h-4" />
@@ -329,17 +331,17 @@ export default function AdminPerfilPage() {
           {saved ? (
             <>
               <CheckCircle className="w-4 h-4" />
-              Guardado
+              {t('adminPerfil.guardado')}
             </>
           ) : saving ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Guardando...
+              {t('adminPerfil.guardando')}
             </>
           ) : (
             <>
               <Lock className="w-4 h-4" />
-              Guardar
+              {t('adminPerfil.guardar')}
             </>
           )}
         </button>

@@ -17,6 +17,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { EmpleadoModal } from '@/components/admin/EmpleadoModal'
 import { ResetProgresoModal } from '@/components/admin/ResetProgresoModal'
 import { ConfirmModal } from '@/components/shared/ConfirmModal'
+import { useLanguage } from '@/components/LanguageProvider'
 import type { UserRole } from '@/types'
 
 // ─────────────────────────────────────────────
@@ -43,9 +44,9 @@ interface EmpleadoConProgreso {
 const PAGE_SIZE = 50
 
 const MODALIDAD_LABEL: Record<string, string> = {
-  presencial: 'Presencial',
-  remoto:     'Remoto',
-  hibrido:    'Híbrido',
+  presencial: 'adminEmp.edit.modalityOnsite',
+  remoto:     'adminEmp.edit.modalityRemote',
+  hibrido:    'adminEmp.edit.modalityHybrid',
 }
 
 // ─────────────────────────────────────────────
@@ -140,6 +141,7 @@ function FilaEmpleado({
 // ─────────────────────────────────────────────
 
 function EmptyDetalle() {
+  const { t } = useLanguage()
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
       <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06]
@@ -147,8 +149,8 @@ function EmptyDetalle() {
         <Users className="w-6 h-6 text-white/15" />
       </div>
       <div>
-        <p className="text-sm font-medium text-white/35">Seleccioná un colaborador</p>
-        <p className="text-xs text-white/20 mt-1">para ver su detalle aquí</p>
+        <p className="text-sm font-medium text-white/35">{t('adminEmp.list.selectOne')}</p>
+        <p className="text-xs text-white/20 mt-1">{t('adminEmp.list.selectOneSub')}</p>
       </div>
     </div>
   )
@@ -169,6 +171,7 @@ function DetalleEmpleado({
   onResetear,
   onPedirEliminar,
 }: DetalleEmpleadoProps) {
+  const { t } = useLanguage()
   const initials = getInitials(emp.nombre)
 
   return (
@@ -193,7 +196,7 @@ function DetalleEmpleado({
             )}
             {emp.rol === 'admin' && (
               <div className="mt-1">
-                <Badge variant="info">Admin</Badge>
+                <Badge variant="info">{t('adminEmp.modal.roleAdmin')}</Badge>
               </div>
             )}
           </div>
@@ -227,7 +230,7 @@ function DetalleEmpleado({
             <div className="flex items-center gap-2.5 text-sm">
               <Monitor className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
               <span className="text-white/55">
-                {MODALIDAD_LABEL[emp.modalidad_trabajo] ?? emp.modalidad_trabajo}
+                {MODALIDAD_LABEL[emp.modalidad_trabajo] ? t(MODALIDAD_LABEL[emp.modalidad_trabajo]) : emp.modalidad_trabajo}
               </span>
             </div>
           )}
@@ -236,7 +239,7 @@ function DetalleEmpleado({
         {/* Progreso */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-white/40">Progreso de onboarding</span>
+            <span className="text-white/40">{t('adminEmp.list.onboardingProgress')}</span>
             <span className="font-mono text-white/60">{emp.progreso}%</span>
           </div>
           <ProgressBar value={emp.progreso} showPercentage={false} animated />
@@ -252,7 +255,7 @@ function DetalleEmpleado({
               transition-colors duration-150"
           >
             <Pencil className="w-3.5 h-3.5" />
-            Editar
+            {t('adminEmp.list.edit')}
           </Link>
 
           <button
@@ -263,7 +266,7 @@ function DetalleEmpleado({
               transition-colors duration-150"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Resetear progreso
+            {t('adminEmp.reset.title')}
           </button>
 
           <button
@@ -274,7 +277,7 @@ function DetalleEmpleado({
               transition-colors duration-150 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Eliminar
+            {t('adminEmp.acc.delete')}
           </button>
         </div>
       </div>
@@ -288,6 +291,7 @@ function DetalleEmpleado({
 
 export default function EmpleadosPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [loading, setLoading]           = useState(true)
   const [empleados, setEmpleados]       = useState<EmpleadoConProgreso[]>([])
@@ -369,11 +373,11 @@ export default function EmpleadosPage() {
       setEmpleados(lista)
     } catch (err) {
       console.error('Error cargando empleados:', err)
-      toast.error('Error al cargar empleados')
+      toast.error(t('adminEmp.list.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }, [router, t])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
@@ -415,7 +419,7 @@ export default function EmpleadosPage() {
   function handleCreado(nuevo: { id: string; nombre: string; email: string }) {
     setModalAbierto(false)
     cargarDatos()
-    toast.success(`${nuevo.nombre} agregado al equipo`)
+    toast.success(`${nuevo.nombre} ${t('adminEmp.list.addedToTeam')}`)
   }
 
   // ── Eliminar empleado ──
@@ -426,16 +430,16 @@ export default function EmpleadosPage() {
       const res = await fetch(`/api/admin/empleados/${seleccionado.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const d = await res.json() as { error?: string }
-        toast.error(d.error ?? 'Error al eliminar')
+        toast.error(d.error ?? t('adminEmp.list.deleteError'))
         return
       }
-      toast.success(`${seleccionado.nombre} eliminado`)
+      toast.success(`${seleccionado.nombre} ${t('adminEmp.list.deleted')}`)
       setEmpleados(prev => prev.filter(e => e.id !== seleccionado.id))
       setSeleccionado(null)
       setVistaDetalleMobile(false)
       setConfirmDeleteOpen(false)
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('adminCore.connectionError'))
     } finally {
       setEliminando(false)
     }
@@ -464,15 +468,15 @@ export default function EmpleadosPage() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-white">Colaboradores</h1>
-          <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? 'persona' : 'personas'}</p>
+          <h1 className="text-xl font-semibold text-white">{t('adminEmp.list.title')}</h1>
+          <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? t('adminEmp.list.person') : t('adminEmp.list.people')}</p>
         </div>
         <button
           onClick={() => setModalAbierto(true)}
           className="bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-1.5 rounded-xl flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-cyan-500/25 font-medium text-sm"
         >
           <Sparkles className="w-4 h-4" style={{ color: 'white' }} />
-          <span style={{ color: 'white' }}>Sumar al equipo</span>
+          <span style={{ color: 'white' }}>{t('adminEmp.list.addToTeam')}</span>
         </button>
       </div>
 
@@ -496,7 +500,7 @@ export default function EmpleadosPage() {
                 type="text"
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre o email..."
+                placeholder={t('adminEmp.list.searchPh')}
                 className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
                   text-white/85 placeholder:text-white/20 outline-none
                   focus:border-[#0EA5E9]/60 focus:bg-white/[0.06] transition-colors duration-150"
@@ -515,7 +519,7 @@ export default function EmpleadosPage() {
                       text-white/65 appearance-none outline-none
                       focus:border-[#0EA5E9]/60 transition-colors duration-150 cursor-pointer"
                   >
-                    <option value="" className="bg-[#111110]">Todas las áreas</option>
+                    <option value="" className="bg-[#111110]">{t('adminEmp.list.allAreas')}</option>
                     {areas.map(a => (
                       <option key={a} value={a} className="bg-[#111110]">{a}</option>
                     ))}
@@ -523,7 +527,7 @@ export default function EmpleadosPage() {
                 </div>
               )}
               <span className="text-[11px] text-white/30 whitespace-nowrap flex-shrink-0">
-                {empleadosFiltrados.length} resultado{empleadosFiltrados.length !== 1 ? 's' : ''}
+                {empleadosFiltrados.length} {empleadosFiltrados.length !== 1 ? t('adminEmp.list.results') : t('adminEmp.list.result')}
               </span>
             </div>
           </div>
@@ -541,8 +545,8 @@ export default function EmpleadosPage() {
                 <Users className="w-8 h-8 text-white/10" />
                 <p className="text-xs text-white/25 text-center px-4">
                   {busqueda
-                    ? `Sin resultados para "${busqueda}"`
-                    : 'No hay colaboradores en esta empresa'}
+                    ? `${t('adminEmp.list.noResultsFor')} "${busqueda}"`
+                    : t('adminEmp.list.noEmployees')}
                 </p>
               </div>
             ) : (
@@ -564,7 +568,7 @@ export default function EmpleadosPage() {
                       className="w-full py-2 text-xs text-white/35 hover:text-white/60
                         hover:bg-white/[0.03] rounded-lg transition-colors duration-150"
                     >
-                      Cargar más ({empleadosFiltrados.length - itemsVisibles} restantes)
+                      {t('adminEmp.list.loadMore')} ({empleadosFiltrados.length - itemsVisibles} {t('adminEmp.list.remaining')})
                     </button>
                   </div>
                 )}
@@ -593,7 +597,7 @@ export default function EmpleadosPage() {
                   hover:text-white/80 transition-colors duration-150"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Volver a la lista
+                {t('adminEmp.list.backToList')}
               </button>
             </div>
           )}
@@ -615,7 +619,7 @@ export default function EmpleadosPage() {
         <div className="flex justify-end mt-3 flex-shrink-0">
           <span className="text-[10px] font-mono text-amber-400/40 border border-amber-500/10
             px-2 py-0.5 rounded">
-            dev · acceso total
+            {t('adminEmp.list.devBadge')}
           </span>
         </div>
       )}
@@ -640,10 +644,10 @@ export default function EmpleadosPage() {
 
       {confirmDeleteOpen && seleccionado && (
         <ConfirmModal
-          title="Eliminar colaborador"
-          description={`¿Estás seguro de que querés eliminar a ${seleccionado.nombre}? Esta acción no se puede deshacer.`}
-          confirmLabel="Eliminar"
-          cancelLabel="Cancelar"
+          title={t('adminEmp.list.deleteTitle')}
+          description={`${t('adminEmp.list.deleteConfirmPre')} ${seleccionado.nombre}? ${t('adminEmp.reset.irreversible')}`}
+          confirmLabel={t('adminEmp.acc.delete')}
+          cancelLabel={t('adminCore.cancel')}
           variant="danger"
           loading={eliminando}
           onConfirm={handleEliminar}

@@ -18,6 +18,7 @@ import {
 import { CapaEmpresaPanel } from '@/components/admin/contenido/CapaEmpresaPanel'
 import { CapaBloquePanel } from '@/components/admin/contenido/CapaBloquePanel'
 import { CapaEmpleadoPanel } from '@/components/admin/contenido/CapaEmpleadoPanel'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Componente principal
@@ -25,6 +26,7 @@ import { CapaEmpleadoPanel } from '@/components/admin/contenido/CapaEmpleadoPane
 
 export default function ContenidoPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState(false)
@@ -55,11 +57,11 @@ export default function ContenidoPage() {
 
     if (error) {
       console.error('Error al cargar bloques:', error)
-      toast.error('No se pudo cargar el contenido')
+      toast.error(t('adminCont.toast.errorCargar'))
       return
     }
     setBloques((data ?? []) as BloqueContenido[])
-  }, [])
+  }, [t])
 
   // ── Fetch de áreas y puestos de empleados ──
   const cargarCapas = useCallback(async (eid: string) => {
@@ -129,12 +131,12 @@ export default function ContenidoPage() {
 
     if (error) {
       setBloques(snapshot)
-      toast.error('No se pudo eliminar el bloque')
+      toast.error(t('adminCont.toast.errorEliminar'))
     } else {
-      toast.success('Bloque eliminado')
+      toast.success(t('adminCont.toast.bloqueEliminado'))
       setBloqueAEliminar(null)
     }
-  }, [bloqueAEliminar, bloques])
+  }, [bloqueAEliminar, bloques, t])
 
   // ── Bloques de empresa (todos los sin area/puesto) ──
   const bloquesFiltradosEmpresa = bloques.filter(b => !b.area && !b.puesto)
@@ -158,7 +160,7 @@ export default function ContenidoPage() {
         <div>
           <h1 className="text-lg font-semibold text-white/90">CopilBot</h1>
           <p className="text-sm text-white/40 mt-0.5">
-            Administrá el conocimiento institucional que nutre al asistente IA
+            {t('adminCont.subtitulo')}
           </p>
         </div>
       </motion.div>
@@ -192,7 +194,7 @@ export default function ContenidoPage() {
                 >
                   {capa.icon}
                 </span>
-                <span>{capa.label}</span>
+                <span>{t('adminCont.capa.' + capa.key)}</span>
                 {count > 0 && (
                   <span
                     className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold

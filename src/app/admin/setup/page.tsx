@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Stepper } from '@/components/admin/setup/Stepper'
 import { Step1Empresa } from '@/components/admin/setup/Step1Empresa'
 import { Step2Cultura } from '@/components/admin/setup/Step2Cultura'
@@ -35,11 +36,12 @@ const stepVariants = {
 // Pasos del wizard
 // ─────────────────────────────────────────────
 
+// Labels como claves i18n — se traducen al renderizar
 const STEPS = [
-  { label: 'Empresa' },
-  { label: 'Cultura' },
-  { label: 'Contacto' },
-  { label: 'Primer empleado' },
+  { label: 'adminSetup.stepEmpresa' },
+  { label: 'adminSetup.stepCultura' },
+  { label: 'adminSetup.stepContacto' },
+  { label: 'adminSetup.stepEmpleado' },
 ]
 
 // ─────────────────────────────────────────────
@@ -48,6 +50,7 @@ const STEPS = [
 
 export default function SetupPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(0)
   const [setupData, setSetupData] = useState<SetupData | null>(null)
   const [cargando, setCargando] = useState(true)
@@ -125,8 +128,9 @@ export default function SetupPage() {
       localStorage.setItem('onboarding_setup_completo', 'true')
     }
 
-    toast.success('¡Setup completo! Bienvenido a Heero')
+    toast.success(t('adminSetup.toastCompleto'))
     router.push('/admin')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setupData, router])
 
   const nextStep = useCallback(() => {
@@ -142,7 +146,7 @@ export default function SetupPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-[#0EA5E9]/30 border-t-[#0EA5E9] rounded-full animate-spin-fast" />
-          <span className="text-sm text-white/40">Cargando...</span>
+          <span className="text-sm text-white/40">{t('adminSetup.cargando')}</span>
         </div>
       </div>
     )
@@ -153,7 +157,7 @@ export default function SetupPage() {
   return (
     <div className="max-w-2xl mx-auto py-6 px-2">
       {/* Stepper de progreso */}
-      <Stepper steps={STEPS} currentStep={currentStep} />
+      <Stepper steps={STEPS.map(s => ({ label: t(s.label) }))} currentStep={currentStep} />
 
       {/* Contenido del paso activo */}
       <AnimatePresence>

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -76,6 +77,7 @@ export function BloqueContenidoForm({
   onSuccess,
   onCancel,
 }: BloqueContenidoFormProps) {
+  const { t } = useLanguage()
   const esEdicion = bloque !== undefined
 
   const [form, setForm] = useState<FormData>({
@@ -88,8 +90,8 @@ export function BloqueContenidoForm({
   // ── Validación ──
   function validar(): boolean {
     const errs: FormErrors = {}
-    if (!form.titulo.trim()) errs.titulo = 'El título es requerido'
-    if (!form.contenido.trim()) errs.contenido = 'El contenido es requerido'
+    if (!form.titulo.trim()) errs.titulo = t('adminCont.form.tituloRequerido')
+    if (!form.contenido.trim()) errs.contenido = t('adminCont.form.contenidoRequerido')
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -105,7 +107,7 @@ export function BloqueContenidoForm({
       // Verificar que el usuario sea admin o dev
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        toast.error('Sesión expirada')
+        toast.error(t('adminCont.form.sesionExpirada'))
         return
       }
       const { data: perfil } = await supabase
@@ -115,7 +117,7 @@ export function BloqueContenidoForm({
         .single()
 
       if (!perfil || !['admin', 'dev'].includes(perfil.rol)) {
-        toast.error('Sin permisos para esta acción')
+        toast.error(t('adminCont.form.sinPermisos'))
         return
       }
 
@@ -140,11 +142,11 @@ export function BloqueContenidoForm({
 
       if (error) throw error
 
-      toast.success(esEdicion ? 'Bloque actualizado' : 'Bloque creado')
+      toast.success(esEdicion ? t('adminCont.form.actualizado') : t('adminCont.form.creado'))
       onSuccess(data as BloqueContenido)
     } catch (err) {
       console.error('Error al guardar bloque:', err)
-      toast.error('No se pudo guardar el bloque')
+      toast.error(t('adminCont.form.errorGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -159,12 +161,12 @@ export function BloqueContenidoForm({
       className="rounded-xl border border-[#0EA5E9]/15 bg-[#0EA5E9]/[0.05] p-4 space-y-3"
     >
       <p className="text-xs font-semibold text-[#7DD3FC] uppercase tracking-wider">
-        {esEdicion ? 'Editar bloque' : 'Nuevo bloque'}
+        {esEdicion ? t('adminCont.editarBloque') : t('adminCont.nuevoBloque')}
       </p>
 
       {/* Título */}
       <div className="space-y-1">
-        <label className="text-xs text-white/50">Título</label>
+        <label className="text-xs text-white/50">{t('adminCont.form.titulo')}</label>
         <input
           type="text"
           value={form.titulo}
@@ -172,7 +174,7 @@ export function BloqueContenidoForm({
             setForm(prev => ({ ...prev, titulo: e.target.value }))
             if (errors.titulo) setErrors(prev => ({ ...prev, titulo: undefined }))
           }}
-          placeholder="Ej: Historia de la empresa"
+          placeholder={t('adminCont.form.tituloPlaceholder')}
           className={fieldCls(!!errors.titulo)}
           autoFocus
         />
@@ -183,14 +185,14 @@ export function BloqueContenidoForm({
 
       {/* Contenido */}
       <div className="space-y-1">
-        <label className="text-xs text-white/50">Contenido</label>
+        <label className="text-xs text-white/50">{t('adminCont.form.contenido')}</label>
         <textarea
           value={form.contenido}
           onChange={e => {
             setForm(prev => ({ ...prev, contenido: e.target.value }))
             if (errors.contenido) setErrors(prev => ({ ...prev, contenido: undefined }))
           }}
-          placeholder="Escribí el contenido que verá el asistente IA..."
+          placeholder={t('adminCont.form.contenidoPlaceholder')}
           rows={5}
           className={cn(fieldCls(!!errors.contenido), 'resize-y min-h-[100px]')}
         />
@@ -208,7 +210,7 @@ export function BloqueContenidoForm({
           disabled={guardando}
         >
           <X className="w-3.5 h-3.5" />
-          Cancelar
+          {t('adminCont.cancelar')}
         </Button>
         <Button
           variant="primary"
@@ -217,7 +219,7 @@ export function BloqueContenidoForm({
           onClick={handleGuardar}
         >
           <Save className="w-3.5 h-3.5" />
-          Guardar
+          {t('adminCont.guardar')}
         </Button>
       </div>
     </motion.div>

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { UserPlus, AlertCircle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { SetupData } from '@/app/admin/setup/page'
@@ -42,6 +43,7 @@ interface Step4Props {
 }
 
 export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
+  const { t } = useLanguage()
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [puesto, setPuesto] = useState('')
@@ -53,8 +55,8 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
 
   const [touched, setTouched] = useState({ nombre: false, email: false })
 
-  const nombreError = touched.nombre && !nombre.trim() ? 'El nombre es obligatorio' : null
-  const emailError = touched.email && !isValidEmail(email) ? 'Ingresá un email válido' : null
+  const nombreError = touched.nombre && !nombre.trim() ? t('adminSetup.s4ErrNombre') : null
+  const emailError = touched.email && !isValidEmail(email) ? t('adminSetup.s4ErrEmail') : null
 
   const handleInvitar = useCallback(async () => {
     setTouched({ nombre: true, email: true })
@@ -81,17 +83,18 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
       const data = await res.json() as { usuario?: unknown; error?: string }
 
       if (!res.ok) {
-        setError(data.error ?? 'Error al crear el empleado')
+        setError(data.error ?? t('adminSetup.s4ErrCrear'))
         return
       }
 
-      toast.success(`¡${nombre} fue invitado exitosamente!`)
+      toast.success(t('adminSetup.s4InvitadoPre') + nombre + t('adminSetup.s4InvitadoPost'))
       onFinish()
     } catch {
-      setError('Error inesperado. Intentá de nuevo')
+      setError(t('adminSetup.s4ErrInesperado'))
     } finally {
       setSaving(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nombre, email, puesto, fechaIngreso, onFinish])
 
   return (
@@ -104,10 +107,10 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
           <UserPlus className="w-8 h-8 text-teal-400" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-1">
-          Invitá a tu primer empleado
+          {t('adminSetup.s4Titulo')}
         </h2>
         <p className="text-sm text-white/45 max-w-sm">
-          Podés agregar más empleados después desde el panel.
+          {t('adminSetup.s4Subtitulo')}
         </p>
       </div>
 
@@ -118,7 +121,7 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
             htmlFor="s4-nombre"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Nombre completo *
+            {t('adminSetup.s4Nombre')}
           </label>
           <input
             id="s4-nombre"
@@ -150,7 +153,7 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
             htmlFor="s4-email"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Email *
+            {t('adminSetup.s4Email')}
           </label>
           <input
             id="s4-email"
@@ -182,14 +185,14 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
             htmlFor="s4-puesto"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Puesto <span className="text-white/20 normal-case tracking-normal">(opcional)</span>
+            {t('adminSetup.s4Puesto')} <span className="text-white/20 normal-case tracking-normal">{t('adminSetup.s4Opcional')}</span>
           </label>
           <input
             id="s4-puesto"
             type="text"
             value={puesto}
             onChange={e => setPuesto(e.target.value)}
-            placeholder="Desarrolladora Frontend"
+            placeholder={t('adminSetup.s4PuestoPh')}
             className={inputCls}
           />
         </div>
@@ -200,7 +203,7 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
             htmlFor="s4-fecha"
             className="block text-[11px] font-medium text-white/45 mb-1.5 tracking-widest uppercase"
           >
-            Fecha de ingreso
+            {t('adminSetup.s4Fecha')}
           </label>
           <input
             id="s4-fecha"
@@ -236,7 +239,7 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
           onClick={handleInvitar}
           className="flex-1"
         >
-          {saving ? 'Invitando...' : 'Invitar y finalizar'}
+          {saving ? t('adminSetup.s4Invitando') : t('adminSetup.s4Invitar')}
         </Button>
         <Button
           variant="ghost"
@@ -245,7 +248,7 @@ export function Step4Empleado({ onFinish, onSkip }: Step4Props) {
           disabled={saving}
           className="flex-1 sm:flex-none"
         >
-          Hacerlo después
+          {t('adminSetup.s4Despues')}
         </Button>
       </div>
     </div>

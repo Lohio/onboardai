@@ -12,6 +12,7 @@ import { BloqueContenidoForm } from '@/components/admin/BloqueContenidoForm'
 import type { BloqueContenido } from '@/components/admin/BloqueContenidoForm'
 import type { FormularioEmpresa } from './types'
 import { containerVariants, itemVariants, SkeletonBloques, EmptyState } from './helpers'
+import { useLanguage } from '@/components/LanguageProvider'
 
 export function CapaEmpresaPanel({
   loading,
@@ -34,6 +35,7 @@ export function CapaEmpresaPanel({
   onBloqueActualizado: (b: BloqueContenido) => void
   onBloqueEliminar: (b: BloqueContenido) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="glass-card rounded-xl overflow-hidden">
       {/* Header */}
@@ -43,15 +45,15 @@ export function CapaEmpresaPanel({
             <Building2 className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white/85">Conocimiento general</h2>
+            <h2 className="text-sm font-semibold text-white/85">{t('adminCont.empresa.titulo')}</h2>
             <p className="text-xs text-white/35 mt-0.5">
-              Información institucional visible para todos los empleados
+              {t('adminCont.empresa.desc')}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={bloquesFiltradosEmpresa.length > 0 ? 'success' : 'default'}>
-            {bloquesFiltradosEmpresa.length} bloque{bloquesFiltradosEmpresa.length !== 1 ? 's' : ''}
+            {bloquesFiltradosEmpresa.length} {bloquesFiltradosEmpresa.length !== 1 ? t('adminCont.bloques') : t('adminCont.bloque')}
           </Badge>
           <button
             onClick={() =>
@@ -62,7 +64,7 @@ export function CapaEmpresaPanel({
             style={{ color: 'white' }}
           >
             <Plus className="w-3.5 h-3.5" />
-            Agregar
+            {t('adminCont.agregar')}
           </button>
         </div>
       </div>
@@ -91,7 +93,7 @@ export function CapaEmpresaPanel({
 
             {bloquesFiltradosEmpresa.length === 0 && !formulario ? (
               <EmptyState
-                label="la empresa"
+                label={t('adminCont.labelEmpresa')}
                 onAgregar={() => setFormulario({ modulo: 'empresa' })}
               />
             ) : (
@@ -145,7 +147,7 @@ export function CapaEmpresaPanel({
                               onClick={() => setFormulario({ modulo: bl.modulo, bloque: bl })}
                               className="p-1.5 rounded-lg text-white/30 hover:text-[#38BDF8]
                                 hover:bg-[#0EA5E9]/10 transition-colors duration-150"
-                              aria-label="Editar bloque"
+                              aria-label={t('adminCont.editarBloque')}
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
@@ -153,7 +155,7 @@ export function CapaEmpresaPanel({
                               onClick={() => onBloqueEliminar(bl)}
                               className="p-1.5 rounded-lg text-white/30 hover:text-red-400
                                 hover:bg-red-500/10 transition-colors duration-150"
-                              aria-label="Eliminar bloque"
+                              aria-label={t('adminCont.eliminarBloque')}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

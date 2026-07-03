@@ -22,6 +22,7 @@ import { BloqueContenidoForm } from '@/components/admin/BloqueContenidoForm'
 import { EliminarBloqueModal } from '@/components/admin/EliminarBloqueModal'
 import toast from 'react-hot-toast'
 import type { BloqueContenido } from '@/components/admin/BloqueContenidoForm'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -108,6 +109,7 @@ function SkeletonBloques() {
 // ─────────────────────────────────────────────
 
 function EmptyState({ onAgregar }: { onAgregar: () => void }) {
+  const { t } = useLanguage()
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -118,14 +120,14 @@ function EmptyState({ onAgregar }: { onAgregar: () => void }) {
         <FileText className="w-5 h-5 text-white/20" />
       </div>
       <div className="text-center">
-        <p className="text-sm text-white/50 font-medium">Sin bloques todavía</p>
+        <p className="text-sm text-white/50 font-medium">{t('adminCont.mod.empty.titulo')}</p>
         <p className="text-xs text-white/30 mt-0.5">
-          Creá el primer bloque de conocimiento para este módulo
+          {t('adminCont.mod.empty.desc')}
         </p>
       </div>
       <Button variant="secondary" size="sm" onClick={onAgregar}>
         <Plus className="w-3.5 h-3.5" />
-        Crear primer bloque
+        {t('adminCont.mod.empty.crear')}
       </Button>
     </motion.div>
   )
@@ -136,6 +138,7 @@ function EmptyState({ onAgregar }: { onAgregar: () => void }) {
 // ─────────────────────────────────────────────
 
 export default function ModuloContenidoPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const params = useParams()
   const moduloParam = params.modulo as string
@@ -209,11 +212,11 @@ export default function ModuloContenidoPage() {
 
     if (error) {
       console.error('Error al cargar bloques del módulo:', error)
-      toast.error('No se pudo cargar el contenido')
+      toast.error(t('adminCont.toast.errorCargar'))
       return
     }
     setBloques((data ?? []) as BloqueContenido[])
-  }, [moduloKey])
+  }, [moduloKey, t])
 
   // ── Persistir nuevo orden en Supabase ──
   const persistirOrden = useCallback(async (nuevosBloques: BloqueContenido[]) => {
@@ -234,11 +237,11 @@ export default function ModuloContenidoPage() {
       if (error) throw error
     } catch (err) {
       console.error('Error al guardar orden:', err)
-      toast.error('No se pudo guardar el orden')
+      toast.error(t('adminCont.toast.errorOrden'))
     } finally {
       setGuardandoOrden(false)
     }
-  }, [])
+  }, [t])
 
   // ── Eliminar bloque ──
   const eliminarBloque = useCallback(async () => {
@@ -255,12 +258,12 @@ export default function ModuloContenidoPage() {
 
     if (error) {
       setBloques(snapshot)
-      toast.error('No se pudo eliminar el bloque')
+      toast.error(t('adminCont.toast.errorEliminar'))
     } else {
-      toast.success('Bloque eliminado')
+      toast.success(t('adminCont.toast.bloqueEliminado'))
       setBloqueAEliminar(null)
     }
-  }, [bloqueAEliminar, bloques])
+  }, [bloqueAEliminar, bloques, t])
 
   // ─────────────────────────────────────────────
   // Drag & Drop handlers (HTML5 API nativa)
@@ -322,12 +325,12 @@ export default function ModuloContenidoPage() {
   if (!moduloKey || !moduloDef) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <p className="text-sm text-white/40">Módulo no encontrado</p>
+        <p className="text-sm text-white/40">{t('adminCont.mod.noEncontrado')}</p>
         <Link
           href="/admin/contenido"
           className="text-sm text-[#38BDF8] hover:text-[#7DD3FC] transition-colors"
         >
-          ← Volver al contenido
+          ← {t('adminCont.mod.volver')}
         </Link>
       </div>
     )
@@ -352,7 +355,7 @@ export default function ModuloContenidoPage() {
           href="/admin/contenido"
           className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.04]
             transition-colors duration-150"
-          aria-label="Volver"
+          aria-label={t('adminCont.mod.volverAria')}
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
@@ -360,20 +363,20 @@ export default function ModuloContenidoPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className={moduloDef.accentColor}>{moduloDef.icon}</span>
-            <h1 className="text-base font-semibold text-white/90">{moduloDef.label}</h1>
+            <h1 className="text-base font-semibold text-white/90">{t('adminCont.modLabel.' + moduloDef.key)}</h1>
           </div>
-          <p className="text-xs text-white/35 mt-0.5">{moduloDef.descripcion}</p>
+          <p className="text-xs text-white/35 mt-0.5">{t('adminCont.modDesc.' + moduloDef.key)}</p>
         </div>
 
         <div className="flex items-center gap-2">
           {guardandoOrden && (
             <div className="flex items-center gap-1.5 text-xs text-white/30">
               <div className="w-3 h-3 border border-white/20 border-t-white/50 rounded-full animate-spin-fast" />
-              Guardando orden...
+              {t('adminCont.guardandoOrden')}
             </div>
           )}
           <Badge variant={bloques.length > 0 ? 'success' : 'default'}>
-            {bloques.length} bloque{bloques.length !== 1 ? 's' : ''}
+            {bloques.length} {bloques.length !== 1 ? t('adminCont.bloques') : t('adminCont.bloque')}
           </Badge>
           <Button
             variant="primary"
@@ -383,7 +386,7 @@ export default function ModuloContenidoPage() {
             }
           >
             <Plus className="w-3.5 h-3.5" />
-            Nuevo bloque
+            {t('adminCont.nuevoBloque')}
           </Button>
         </div>
       </motion.div>
@@ -395,7 +398,7 @@ export default function ModuloContenidoPage() {
           className="text-xs text-white/25 flex items-center gap-1.5"
         >
           <GripVertical className="w-3.5 h-3.5" />
-          Arrastrá los bloques para cambiar el orden de lectura del asistente IA
+          {t('adminCont.hintDrag')}
         </motion.p>
       )}
 
@@ -498,7 +501,7 @@ export default function ModuloContenidoPage() {
                         onClick={() => setFormulario(bl)}
                         className="p-1.5 rounded-lg text-white/30 hover:text-[#38BDF8]
                           hover:bg-[#0EA5E9]/10 transition-colors duration-150"
-                        aria-label="Editar bloque"
+                        aria-label={t('adminCont.editarBloque')}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
@@ -506,7 +509,7 @@ export default function ModuloContenidoPage() {
                         onClick={() => setBloqueAEliminar(bl)}
                         className="p-1.5 rounded-lg text-white/30 hover:text-red-400
                           hover:bg-red-500/10 transition-colors duration-150"
-                        aria-label="Eliminar bloque"
+                        aria-label={t('adminCont.eliminarBloque')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

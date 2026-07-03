@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Portal } from '@/components/shared/Portal'
+import { useLanguage } from '@/components/LanguageProvider'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -166,6 +167,7 @@ function DrawerAlta({
   onCreado: (emp: EmpleadoRow) => void
   empleadosExistentes: EmpleadoRow[]
 }) {
+  const { t } = useLanguage()
   const [form, setForm] = useState<FormData>({
     ...FORM_INICIAL,
     password: generarPassword(),
@@ -205,14 +207,14 @@ function DrawerAlta({
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(data.error ?? 'Error al crear el empleado')
+        toast.error(data.error ?? t('adminEquipo.createError'))
         return
       }
 
       onCreado(data.usuario)
       setCredenciales({ email: form.email, password: form.password })
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('adminCore.connectionError'))
     } finally {
       setEnviando(false)
     }
@@ -221,7 +223,7 @@ function DrawerAlta({
   const copiarCredenciales = () => {
     if (!credenciales) return
     navigator.clipboard.writeText(
-      `Email: ${credenciales.email}\nContraseña: ${credenciales.password}`
+      `${t('adminEmp.modal.email')}: ${credenciales.email}\n${t('adminEmp.modal.password')}: ${credenciales.password}`
     )
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2000)
@@ -232,7 +234,7 @@ function DrawerAlta({
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-          <h2 className="text-sm font-semibold text-white/80">Empleado creado</h2>
+          <h2 className="text-sm font-semibold text-white/80">{t('adminEquipo.created')}</h2>
           <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -243,16 +245,16 @@ function DrawerAlta({
             <Check className="w-7 h-7 text-teal-400" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium text-white/80 mb-1">¡{form.nombre} fue dado de alta!</p>
-            <p className="text-xs text-white/40">Compartí las credenciales con el empleado</p>
+            <p className="text-sm font-medium text-white/80 mb-1">{t('adminEquipo.altaPre')}{form.nombre} {t('adminEquipo.altaPost')}</p>
+            <p className="text-xs text-white/40">{t('adminEquipo.shareCreds')}</p>
           </div>
           <div className="w-full glass-card rounded-xl p-4 space-y-3">
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Email</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('adminEmp.modal.email')}</p>
               <p className="text-sm font-mono text-white/75">{credenciales.email}</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Contraseña temporal</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('adminEquipo.tempPassword')}</p>
               <p className="text-sm font-mono text-white/75">{credenciales.password}</p>
             </div>
             <button
@@ -263,7 +265,7 @@ function DrawerAlta({
                 transition-colors duration-150"
             >
               {copiado ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiado ? 'Copiado' : 'Copiar credenciales'}
+              {copiado ? t('adminEquipo.copied') : t('adminEquipo.copyCreds')}
             </button>
           </div>
           <button
@@ -271,7 +273,7 @@ function DrawerAlta({
             className="w-full h-10 rounded-lg bg-[#0EA5E9]/80 hover:bg-[#0EA5E9]
               text-sm text-white font-medium transition-colors duration-150"
           >
-            Cerrar
+            {t('adminEquipo.close')}
           </button>
         </div>
       </div>
@@ -283,7 +285,7 @@ function DrawerAlta({
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
-        <h2 className="text-sm font-semibold text-white/80">Dar de alta empleado</h2>
+        <h2 className="text-sm font-semibold text-white/80">{t('adminEquipo.drawerTitle')}</h2>
         <button type="button" onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors">
           <X className="w-4 h-4" />
         </button>
@@ -295,22 +297,22 @@ function DrawerAlta({
         {/* Acceso */}
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 text-[11px] font-medium text-white/35 uppercase tracking-widest">
-            <Lock className="w-3.5 h-3.5" />Acceso
+            <Lock className="w-3.5 h-3.5" />{t('adminEquipo.access')}
           </h3>
-          <Campo label="Email" required>
+          <Campo label={t('adminEmp.modal.email')} required>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
               <input
                 type="email"
                 value={form.email}
                 onChange={set('email')}
-                placeholder="empleado@empresa.com"
+                placeholder={t('adminEquipo.emailPh')}
                 required
                 className={inputCls + ' pl-9'}
               />
             </div>
           </Campo>
-          <Campo label="Contraseña temporal" required>
+          <Campo label={t('adminEquipo.tempPassword')} required>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
               <input
@@ -334,40 +336,40 @@ function DrawerAlta({
         {/* Datos personales */}
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 text-[11px] font-medium text-white/35 uppercase tracking-widest">
-            <User className="w-3.5 h-3.5" />Datos personales
+            <User className="w-3.5 h-3.5" />{t('adminEmp.edit.personalData')}
           </h3>
-          <Campo label="Nombre completo" required>
+          <Campo label={t('adminEmp.modal.fullName')} required>
             <input
               type="text"
               value={form.nombre}
               onChange={set('nombre')}
-              placeholder="Juan García"
+              placeholder={t('adminEquipo.namePh')}
               required
               className={inputCls}
             />
           </Campo>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Puesto">
+            <Campo label={t('adminEmp.modal.position')}>
               <input
                 type="text"
                 value={form.puesto}
                 onChange={set('puesto')}
-                placeholder="Desarrollador"
+                placeholder={t('adminEquipo.positionPh')}
                 className={inputCls}
               />
             </Campo>
-            <Campo label="Área">
+            <Campo label={t('adminEmp.modal.area')}>
               <input
                 type="text"
                 value={form.area}
                 onChange={set('area')}
-                placeholder="Tecnología"
+                placeholder={t('adminEquipo.areaPh')}
                 className={inputCls}
               />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Fecha de ingreso">
+            <Campo label={t('adminEmp.modal.startDate')}>
               <input
                 type="date"
                 value={form.fecha_ingreso}
@@ -375,12 +377,12 @@ function DrawerAlta({
                 className={inputCls + ' text-white/60'}
               />
             </Campo>
-            <Campo label="Modalidad">
+            <Campo label={t('adminEmp.edit.modality')}>
               <select value={form.modalidad_trabajo} onChange={set('modalidad_trabajo')} className={selectCls}>
-                <option value="">— elegir —</option>
-                <option value="presencial">Presencial</option>
-                <option value="remoto">Remoto</option>
-                <option value="hibrido">Híbrido</option>
+                <option value="">{t('adminEquipo.choose')}</option>
+                <option value="presencial">{t('adminEmp.edit.modalityOnsite')}</option>
+                <option value="remoto">{t('adminEmp.edit.modalityRemote')}</option>
+                <option value="hibrido">{t('adminEmp.edit.modalityHybrid')}</option>
               </select>
             </Campo>
           </div>
@@ -389,11 +391,11 @@ function DrawerAlta({
         {/* Equipo */}
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 text-[11px] font-medium text-white/35 uppercase tracking-widest">
-            <Users className="w-3.5 h-3.5" />Equipo
+            <Users className="w-3.5 h-3.5" />{t('adminEquipo.team')}
           </h3>
-          <Campo label="Jefe / Manager">
+          <Campo label={t('adminEquipo.managerLabel')}>
             <select value={form.manager_id} onChange={set('manager_id')} className={selectCls}>
-              <option value="">— sin asignar —</option>
+              <option value="">{t('adminEquipo.unassignedOpt')}</option>
               {empleadosExistentes.map(e => (
                 <option key={e.id} value={e.id}>
                   {e.nombre}{e.puesto ? ` (${e.puesto})` : ''}
@@ -401,9 +403,9 @@ function DrawerAlta({
               ))}
             </select>
           </Campo>
-          <Campo label="Buddy / Acompañante">
+          <Campo label={t('adminEquipo.buddyLabel')}>
             <select value={form.buddy_id} onChange={set('buddy_id')} className={selectCls}>
-              <option value="">— sin asignar —</option>
+              <option value="">{t('adminEquipo.unassignedOpt')}</option>
               {empleadosExistentes.map(e => (
                 <option key={e.id} value={e.id}>
                   {e.nombre}{e.puesto ? ` (${e.puesto})` : ''}
@@ -416,13 +418,13 @@ function DrawerAlta({
         {/* Sobre el empleado */}
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 text-[11px] font-medium text-white/35 uppercase tracking-widest">
-            <MessageSquare className="w-3.5 h-3.5" />Sobre el empleado
+            <MessageSquare className="w-3.5 h-3.5" />{t('adminEmp.edit.about')}
           </h3>
-          <Campo label="Descripción / Presentación">
+          <Campo label={t('adminEquipo.descLabel')}>
             <textarea
               value={form.sobre_mi}
               onChange={set('sobre_mi')}
-              placeholder="Breve descripción del empleado para que sus compañeros lo conozcan..."
+              placeholder={t('adminEquipo.descPh')}
               rows={3}
               className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-lg
                 px-3 py-2.5 text-sm text-white/80 placeholder:text-white/20
@@ -441,7 +443,7 @@ function DrawerAlta({
           className="flex-1 h-10 rounded-lg border border-white/[0.08] text-sm text-white/50
             hover:border-white/[0.15] hover:text-white/70 transition-colors duration-150"
         >
-          Cancelar
+          {t('adminCore.cancel')}
         </button>
         <button
           type="submit"
@@ -456,7 +458,7 @@ function DrawerAlta({
           ) : (
             <UserPlus className="w-4 h-4" />
           )}
-          {enviando ? 'Creando...' : 'Dar de alta'}
+          {enviando ? t('adminEquipo.creating') : t('adminEquipo.altaBtn')}
         </button>
       </div>
     </form>
@@ -483,6 +485,7 @@ function Skeleton() {
 // ─────────────────────────────────────────────
 
 export default function EquipoPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [empleados, setEmpleados] = useState<EmpleadoRow[]>([])
   const [drawerAbierto, setDrawerAbierto] = useState(false)
@@ -536,11 +539,11 @@ export default function EquipoPage() {
         className="flex items-center justify-between mb-6"
       >
         <div>
-          <h1 className="text-xl font-semibold text-white">Equipo</h1>
+          <h1 className="text-xl font-semibold text-white">{t('adminEquipo.title')}</h1>
           <p className="text-sm text-white/40 mt-0.5">
             {empleados.length === 0
-              ? 'Sin empleados aún'
-              : `${empleados.length} empleado${empleados.length !== 1 ? 's' : ''}`}
+              ? t('adminEquipo.noEmployees')
+              : `${empleados.length} ${empleados.length !== 1 ? t('adminEquipo.employees') : t('adminEquipo.employee')}`}
           </p>
         </div>
         <button
@@ -550,7 +553,7 @@ export default function EquipoPage() {
             transition-colors duration-150"
         >
           <UserPlus className="w-4 h-4" />
-          Dar de alta
+          {t('adminEquipo.altaBtn')}
         </button>
       </motion.div>
 
@@ -574,8 +577,8 @@ export default function EquipoPage() {
             <path d="M46 48c0-6-3.5-10-8-12" stroke="url(#teamGrad)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
           </svg>
           <p className="text-sm text-white/35 text-center">
-            Aún no hay empleados registrados.<br />
-            Hacé click en <strong className="text-white/50">Dar de alta</strong> para comenzar.
+            {t('adminEquipo.emptyLine1')}<br />
+            {t('adminEquipo.emptyClickPre')} <strong className="text-white/50">{t('adminEquipo.altaBtn')}</strong> {t('adminEquipo.emptyClickPost')}
           </p>
         </motion.div>
       ) : (

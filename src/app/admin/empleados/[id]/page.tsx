@@ -17,6 +17,7 @@ import type {
   AccesoRow, AccesoEditDraft, ChipDraft, TabKey,
 } from '@/components/admin/empleado-detalle/types'
 import { getInitials } from '@/components/admin/empleado-detalle/helpers'
+import { useLanguage } from '@/components/LanguageProvider'
 import { TabEdicion } from '@/components/admin/empleado-detalle/TabEdicion'
 import { TabRol } from '@/components/admin/empleado-detalle/TabRol'
 import { TabProgreso } from '@/components/admin/empleado-detalle/TabProgreso'
@@ -54,6 +55,7 @@ function Skeleton() {
 export default function EmpleadoDetallePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [tab, setTab] = useState<TabKey>('edicion')
   const [loading, setLoading] = useState(true)
@@ -148,7 +150,7 @@ export default function EmpleadoDetallePage() {
       ])
 
       if (empError || !empData) {
-        toast.error('Empleado no encontrado')
+        toast.error(t('adminEmp.det.notFound'))
         router.push('/admin/empleados')
         return
       }
@@ -246,13 +248,13 @@ export default function EmpleadoDetallePage() {
       const compRol = progresoRows.filter(p => p.modulo === 'rol' && p.completado).length
       setProgresos([
         {
-          modulo: 'cultura', label: 'Cultura e Identidad',
+          modulo: 'cultura', label: t('adminEmp.det.cultureLabel'),
           icon: <BookOpen className="w-4 h-4" />,
           completados: compCultura, total: totalCultura,
           pct: totalCultura > 0 ? Math.round((compCultura / totalCultura) * 100) : 0,
         },
         {
-          modulo: 'rol', label: 'Rol y Herramientas',
+          modulo: 'rol', label: t('adminEmp.det.roleLabel'),
           icon: <Wrench className="w-4 h-4" />,
           completados: compRol, total: 1,
           pct: compRol > 0 ? 100 : 0,
@@ -265,19 +267,19 @@ export default function EmpleadoDetallePage() {
       // Timeline
       const eventos: TimelineEvento[] = []
       if (empData.fecha_ingreso) {
-        eventos.push({ id: 'ingreso', tipo: 'ingreso', descripcion: 'Ingresó a la empresa', fecha: empData.fecha_ingreso })
+        eventos.push({ id: 'ingreso', tipo: 'ingreso', descripcion: t('adminEmp.det.tlJoined'), fecha: empData.fecha_ingreso })
       }
       for (const p of progresoRows.filter(p => p.completado && p.completado_at)) {
         eventos.push({
           id: `bloque-${p.modulo}-${p.bloque}`,
           tipo: 'bloque',
-          descripcion: `Completó "${p.bloque.replace(/_/g, ' ')}" en ${p.modulo === 'cultura' ? 'Cultura' : 'Rol'}`,
+          descripcion: `${t('adminEmp.det.tlCompleted')} "${p.bloque.replace(/_/g, ' ')}" ${t('adminEmp.det.tlIn')} ${p.modulo === 'cultura' ? t('adminEmp.mod.cultura') : t('adminEmp.det.rolShort')}`,
           fecha: p.completado_at as string,
         })
       }
-      for (const t of (tareasCompRes.data ?? [])) {
-        if (t.completada_at) {
-          eventos.push({ id: `tarea-${t.id}`, tipo: 'tarea', descripcion: `Completó tarea: ${t.titulo}`, fecha: t.completada_at })
+      for (const tarea of (tareasCompRes.data ?? [])) {
+        if (tarea.completada_at) {
+          eventos.push({ id: `tarea-${tarea.id}`, tipo: 'tarea', descripcion: `${t('adminEmp.det.tlCompletedTask')}: ${tarea.titulo}`, fecha: tarea.completada_at })
         }
       }
       eventos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
@@ -319,11 +321,11 @@ export default function EmpleadoDetallePage() {
 
     } catch (err) {
       console.error('Error cargando detalle:', err)
-      toast.error('Error al cargar datos')
+      toast.error(t('adminEmp.det.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [id, router])
+  }, [id, router, t])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
 
@@ -359,11 +361,11 @@ export default function EmpleadoDetallePage() {
         }),
       })
       const data = await res.json() as { usuario?: EmpleadoFull; error?: string }
-      if (!res.ok) { toast.error(data.error ?? 'Error al guardar'); return }
+      if (!res.ok) { toast.error(data.error ?? t('adminEmp.det.saveError')); return }
       setEmpleado(data.usuario!)
-      toast.success('Cambios guardados')
+      toast.success(t('adminEmp.det.saved'))
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('adminCore.connectionError'))
     } finally {
       setSaving(false)
     }
@@ -386,20 +388,20 @@ export default function EmpleadoDetallePage() {
           body: JSON.stringify({ usuarioId: empleado.id }),
         })
         const data = await res.json() as { error?: string }
-        if (!res.ok) { toast.error(data.error ?? 'Error al activar pre-boarding'); return }
-        toast.success('Pre-boarding activado — email enviado al empleado')
+        if (!res.ok) { toast.error(data.error ?? t('adminEmp.det.preOnError')); return }
+        toast.success(t('adminEmp.det.preOnOk'))
       } else {
         const supabase = createClient()
         const { error } = await supabase.from('usuarios').update({ preboarding_activo: false }).eq('id', empleado.id)
-        if (error) { toast.error('Error al desactivar pre-boarding'); return }
-        toast.success('Pre-boarding desactivado')
+        if (error) { toast.error(t('adminEmp.det.preOffError')); return }
+        toast.success(t('adminEmp.det.preOffOk'))
       }
       setEmpleado(prev => prev
         ? { ...prev, preboarding_activo: nuevoEstado, fecha_acceso_preboarding: nuevoEstado ? new Date().toISOString() : prev.fecha_acceso_preboarding }
         : prev,
       )
     } catch {
-      toast.error('Error de conexión')
+      toast.error(t('adminCore.connectionError'))
     } finally {
       setTogglingPreboarding(false)
     }
@@ -421,7 +423,7 @@ export default function EmpleadoDetallePage() {
         setReporte(prev => prev + decoder.decode(value, { stream: true }))
       }
     } catch {
-      setReporte('Error al generar el reporte. Intentá de nuevo.')
+      setReporte(t('adminEmp.det.reportError'))
     } finally {
       setGenerando(false)
     }
@@ -444,7 +446,7 @@ export default function EmpleadoDetallePage() {
         setResumen(prev => prev + decoder.decode(value, { stream: true }))
       }
     } catch {
-      toast.error('No se pudo generar el resumen')
+      toast.error(t('adminEmp.det.summaryError'))
     } finally {
       setGenerandoResumen(false)
     }
@@ -500,14 +502,14 @@ export default function EmpleadoDetallePage() {
         notas:          draft.notas.trim() || null,
       })
       .eq('id', accesoId)
-    if (error) { toast.error('Error al guardar'); cargarDatos(); return }
-    toast.success('Acceso guardado')
+    if (error) { toast.error(t('adminEmp.det.saveError')); cargarDatos(); return }
+    toast.success(t('adminEmp.det.accessSaved'))
     setExpandedAccesoId(null)
   }
 
   // ── Agregar nuevo acceso vacío (botón "Agregar herramienta") ──
   async function agregarAcceso(nombreHerramienta = '') {
-    if (!empresaId) { toast.error('Error: empresa no cargada, recargá la página'); return }
+    if (!empresaId) { toast.error(t('adminEmp.det.noCompany')); return }
     const supabase = createClient()
     const { data, error } = await supabase
       .from('accesos_herramientas')
@@ -516,7 +518,7 @@ export default function EmpleadoDetallePage() {
       .single()
     if (error) {
       console.error('[agregarAcceso]', error)
-      toast.error(`Error al agregar: ${error.message}`)
+      toast.error(`${t('adminEmp.det.addError')}: ${error.message}`)
       return
     }
     const newAcceso = data as AccesoRow
@@ -566,7 +568,7 @@ export default function EmpleadoDetallePage() {
     const { data, error } = queryResult
     if (error) {
       console.error('[guardarChipDraft]', error)
-      toast.error(`No se pudo guardar: ${error.message}`)
+      toast.error(`${t('adminEmp.det.cantSave')}: ${error.message}`)
       return
     }
     const saved = data as AccesoRow
@@ -575,7 +577,7 @@ export default function EmpleadoDetallePage() {
       return existe ? prev.map(a => a.id === saved.id ? saved : a) : [...prev, saved]
     })
     setChipDraft(null)
-    toast.success(`${chipDraft.nombre} configurado ✓`)
+    toast.success(`${chipDraft.nombre} ${t('adminEmp.det.configuredOk')}`)
   }
 
   // ── Eliminar acceso ──
@@ -587,7 +589,7 @@ export default function EmpleadoDetallePage() {
       .from('accesos_herramientas')
       .delete()
       .eq('id', accesoId)
-    if (error) { toast.error('No se pudo eliminar'); cargarDatos() }
+    if (error) { toast.error(t('adminEmp.det.cantDelete')); cargarDatos() }
   }
 
   // ── Plan 30-60-90 handlers ──
@@ -605,7 +607,7 @@ export default function EmpleadoDetallePage() {
       .update({ completado: nuevoEstado, completado_at: nuevoEstado ? new Date().toISOString() : null })
       .eq('id', item.id)
     if (error) {
-      toast.error('No se pudo actualizar el ítem')
+      toast.error(t('adminEmp.det.cantUpdateItem'))
       setPlanItems(prev => prev.map(p => p.id === item.id ? item : p))
     }
     setPlanToggling(null)
@@ -615,7 +617,7 @@ export default function EmpleadoDetallePage() {
     setPlanItems(prev => prev.filter(p => p.id !== itemId))
     const supabase = createClient()
     const { error } = await supabase.from('plan_30_60_90').delete().eq('id', itemId)
-    if (error) { toast.error('No se pudo eliminar'); cargarDatos() }
+    if (error) { toast.error(t('adminEmp.det.cantDelete')); cargarDatos() }
   }
 
   async function handleAddPlanItem() {
@@ -634,11 +636,11 @@ export default function EmpleadoDetallePage() {
     }
     const { data, error } = await supabase.from('plan_30_60_90').insert(payload).select().single()
     if (error) {
-      toast.error('No se pudo agregar el ítem')
+      toast.error(t('adminEmp.det.cantAddItem'))
     } else {
       setPlanItems(prev => [...prev, data as PlanItem])
       setPlanForm({ titulo: '', tipo: 'objetivo', fecha_target: '', descripcion: '' })
-      toast.success('Ítem agregado')
+      toast.success(t('adminEmp.det.itemAdded'))
     }
     setPlanSaving(false)
   }
@@ -688,7 +690,7 @@ export default function EmpleadoDetallePage() {
             style={{ color: 'white' }}
           >
             <Lock className="w-3.5 h-3.5" />
-            Guardar
+            {t('adminEmp.acc.save')}
           </button>
         )}
         {tab === 'progreso' && (
@@ -701,8 +703,8 @@ export default function EmpleadoDetallePage() {
                 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {generandoResumen
-                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />Generando...</>
-                : <><Sparkles className="w-3 h-3" />Resumen semanal</>
+                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />{t('adminEmp.det.generating')}</>
+                : <><Sparkles className="w-3 h-3" />{t('adminEmp.prog.weeklySummary')}</>
               }
             </button>
             <button
@@ -713,8 +715,8 @@ export default function EmpleadoDetallePage() {
                 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {generando
-                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />Generando...</>
-                : <><Sparkles className="w-3 h-3" />Generar reporte</>
+                ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin-fast" />{t('adminEmp.det.generating')}</>
+                : <><Sparkles className="w-3 h-3" />{t('adminEmp.det.generateReport')}</>
               }
             </button>
           </div>
@@ -724,23 +726,23 @@ export default function EmpleadoDetallePage() {
       {/* ── Tabs ── */}
       <div className="flex items-center gap-1 border-b border-white/[0.07] pb-0">
         {([
-          { key: 'edicion' as TabKey, label: 'Perfil', icon: <Image src="/heero-icons2.svg" alt="" width={20} height={20} /> },
-          { key: 'rol' as TabKey, label: 'Rol y herramientas', icon: <Image src="/heero-icons4.svg" alt="" width={20} height={20} /> },
-          { key: 'plan' as TabKey, label: 'CopilBot', icon: <Image src="/heero-icons3.svg" alt="" width={20} height={20} /> },
-          { key: 'progreso' as TabKey, label: 'Progreso y reporte', icon: <Image src="/heero-icons6.svg" alt="" width={20} height={20} /> },
-        ]).map(t => (
+          { key: 'edicion' as TabKey, label: t('adminEmp.edit.profile'), icon: <Image src="/heero-icons2.svg" alt="" width={20} height={20} /> },
+          { key: 'rol' as TabKey, label: t('adminEmp.mod.rol'), icon: <Image src="/heero-icons4.svg" alt="" width={20} height={20} /> },
+          { key: 'plan' as TabKey, label: t('adminEmp.mod.asistente'), icon: <Image src="/heero-icons3.svg" alt="" width={20} height={20} /> },
+          { key: 'progreso' as TabKey, label: t('adminEmp.det.tabProgress'), icon: <Image src="/heero-icons6.svg" alt="" width={20} height={20} /> },
+        ]).map(tb => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tb.key}
+            onClick={() => setTab(tb.key)}
             className={cn(
               'flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors duration-150',
-              tab === t.key
+              tab === tb.key
                 ? 'border-[#38BDF8] text-white'
                 : 'border-transparent text-white/40 hover:text-white/70',
             )}
           >
-            {t.icon}
-            {t.label}
+            {tb.icon}
+            {tb.label}
           </button>
         ))}
       </div>

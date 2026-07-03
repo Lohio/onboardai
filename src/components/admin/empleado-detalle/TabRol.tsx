@@ -7,6 +7,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Plus, Trash2, Target } from 'lucide-react'
 import { inputCls } from './helpers'
+import { useLanguage } from '@/components/LanguageProvider'
 
 export interface TabRolProps {
   rolAutonomia: string
@@ -25,29 +26,30 @@ export function TabRol({
   rolKpis, setRolKpis,
   rolHerramientas, setRolHerramientas,
 }: TabRolProps) {
+  const { t } = useLanguage()
   return (
     <div className="glass-card rounded-xl p-6 space-y-6">
       <div>
-        <h2 className="text-sm font-semibold text-white/70 mb-1">Descripción del rol</h2>
-        <p className="text-xs text-white/30">Esta información se muestra al empleado en M3 — Rol y herramientas.</p>
+        <h2 className="text-sm font-semibold text-white/70 mb-1">{t('adminEmp.rol.title')}</h2>
+        <p className="text-xs text-white/30">{t('adminEmp.rol.subtitle')}</p>
       </div>
 
       {/* Nivel de autonomía */}
       <div>
-        <label className="block text-xs font-medium text-white/40 mb-1.5">Nivel de autonomía</label>
+        <label className="block text-xs font-medium text-white/40 mb-1.5">{t('adminEmp.rol.autonomy')}</label>
         <textarea
           value={rolAutonomia}
           onChange={e => setRolAutonomia(e.target.value)}
           rows={3}
           maxLength={2000}
-          placeholder="Describe el nivel de autonomía del empleado en su rol..."
+          placeholder={t('adminEmp.rol.autonomyPh')}
           className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08] text-white/85 placeholder:text-white/20 outline-none transition-colors focus:bg-white/[0.06] focus:border-[#0EA5E9]/60 resize-none"
         />
       </div>
 
       {/* Responsabilidades */}
       <div>
-        <label className="block text-xs font-medium text-white/40 mb-1.5">Responsabilidades</label>
+        <label className="block text-xs font-medium text-white/40 mb-1.5">{t('adminEmp.rol.responsibilities')}</label>
         <div className="space-y-2">
           {rolResponsabilidades.map((item, idx) => (
             <div key={idx} className="flex gap-2">
@@ -59,7 +61,7 @@ export function TabRol({
                   next[idx] = e.target.value
                   setRolResponsabilidades(next)
                 }}
-                placeholder="Ej: Gestionar pipeline de ventas"
+                placeholder={t('adminEmp.rol.respPh')}
                 className={inputCls()}
               />
               <button
@@ -78,7 +80,7 @@ export function TabRol({
             onClick={() => setRolResponsabilidades(prev => [...prev, ''])}
             className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
           >
-            <Plus className="w-3 h-3" /> Agregar responsabilidad
+            <Plus className="w-3 h-3" /> {t('adminEmp.rol.addResp')}
           </button>
         )}
       </div>
@@ -86,7 +88,7 @@ export function TabRol({
       {/* KPIs */}
       <div>
         <label className="block text-xs font-medium text-white/40 mb-1.5 flex items-center gap-1.5">
-          <Target className="w-3 h-3" /> KPIs / Métricas de éxito
+          <Target className="w-3 h-3" /> {t('adminEmp.rol.kpis')}
         </label>
         <div className="space-y-2">
           {rolKpis.map((item, idx) => (
@@ -99,7 +101,7 @@ export function TabRol({
                   next[idx] = e.target.value
                   setRolKpis(next)
                 }}
-                placeholder="Ej: Tasa de conversión > 15%"
+                placeholder={t('adminEmp.rol.kpiPh')}
                 className={inputCls()}
               />
               <button
@@ -118,14 +120,14 @@ export function TabRol({
             onClick={() => setRolKpis(prev => [...prev, ''])}
             className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
           >
-            <Plus className="w-3 h-3" /> Agregar KPI
+            <Plus className="w-3 h-3" /> {t('adminEmp.rol.addKpi')}
           </button>
         )}
       </div>
 
       {/* Herramientas del rol */}
       <div>
-        <label className="block text-xs font-medium text-white/40 mb-1.5">Herramientas del rol</label>
+        <label className="block text-xs font-medium text-white/40 mb-1.5">{t('adminEmp.rol.tools')}</label>
         <div className="space-y-2">
           {rolHerramientas.map((item, idx) => (
             <div key={idx} className="flex gap-2">
@@ -137,7 +139,7 @@ export function TabRol({
                   next[idx] = { ...next[idx], nombre: e.target.value }
                   setRolHerramientas(next)
                 }}
-                placeholder="Ej: Figma"
+                placeholder={t('adminEmp.rol.toolNamePh')}
                 className={inputCls()}
                 style={{ maxWidth: '140px' }}
               />
@@ -149,7 +151,7 @@ export function TabRol({
                   next[idx] = { ...next[idx], uso: e.target.value }
                   setRolHerramientas(next)
                 }}
-                placeholder="Ej: Diseño de interfaces y prototipos"
+                placeholder={t('adminEmp.rol.toolUsePh')}
                 className={inputCls()}
               />
               <button
@@ -168,7 +170,7 @@ export function TabRol({
             onClick={() => setRolHerramientas(prev => [...prev, { nombre: '', uso: '' }])}
             className="mt-2 flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors"
           >
-            <Plus className="w-3 h-3" /> Agregar herramienta
+            <Plus className="w-3 h-3" /> {t('adminEmp.rol.addTool')}
           </button>
         )}
       </div>
