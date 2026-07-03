@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabaseService'
 
 // ─────────────────────────────────────────────
 // Singleton del cliente Anthropic
@@ -102,6 +102,15 @@ function escaparAttr(valor: string): string {
   return valor.replace(/"/g, '&quot;')
 }
 
+/**
+ * Neutraliza tags <bloque>/</bloque> dentro del cuerpo de un bloque para
+ * que contenido subido por el admin (ej: texto extraído de un PDF) no pueda
+ * cerrar el encuadre XML e inyectar instrucciones al asistente.
+ */
+function neutralizarDelimitadores(texto: string): string {
+  return texto.replace(/<\s*\/?\s*bloque/gi, '&lt;bloque')
+}
+
 /** Renderiza un bloque de conocimiento con metadata estructurada */
 function renderBloqueXML(b: {
   modulo: string
@@ -125,7 +134,7 @@ function renderBloqueXML(b: {
       : null,
   ].filter(Boolean).join('\n\n')
 
-  return `<bloque ${attrs}>\n${cuerpo}\n</bloque>`
+  return `<bloque ${attrs}>\n${neutralizarDelimitadores(cuerpo)}\n</bloque>`
 }
 
 // ─────────────────────────────────────────────
@@ -136,7 +145,7 @@ function renderBloqueXML(b: {
 
 async function getAppConfig(): Promise<ResolvedConfig> {
   try {
-    const supabase = createClient()
+    const supabase = createServiceClient()
     const { data, error } = await supabase
       .from('app_config')
       .select('clave, valor')
@@ -202,7 +211,7 @@ export async function buildSystemPromptWithConfig(
   /** Instrucciones extra que entran al prefijo estable (ej: modo agente) */
   prefijoInstrucciones?: string,
 ): Promise<SystemPromptResult> {
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   // Cargar conocimiento, config global y prompt de empresa en paralelo
   const [bloquesRes, config, { data: empresa }] = await Promise.all([
@@ -399,7 +408,7 @@ async function ejecutarBusquedaConocimiento(
   query: string,
 ): Promise<string> {
   try {
-    const supabase = createClient()
+    const supabase = createServiceClient()
     const { data, error } = await supabase.rpc('buscar_conocimiento', {
       p_empresa_id: empresaId,
       p_query: query,
@@ -527,7 +536,7 @@ export async function logMensaje({
   contenido,
 }: LogMensajeParams): Promise<void> {
   try {
-    const supabase = createClient()
+    const supabase = createServiceClient()
     await supabase.from('mensajes_chat').insert({
       usuario_id: usuarioId,
       empresa_id: empresaId,

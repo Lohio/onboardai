@@ -30,18 +30,18 @@ export interface RegistrarUsoParams {
   cuentaConsulta?: boolean
 }
 
-/** Primer día del mes actual en formato date (YYYY-MM-01) */
-function mesActual(): string {
-  const now = new Date()
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`
-}
-
 /**
- * Verifica la cuota mensual de consultas IA de la empresa.
- * Fail-open: ante un error de DB se permite la consulta (con warn) —
- * la cuota no debe tirar el chat por un fallo transitorio.
+ * Reserva UNA consulta de la cuota mensual de forma ATÓMICA (incremento
+ * condicional en un solo statement vía RPC), evitando el TOCTOU de
+ * "leer y después incrementar". Contá la consulta ANTES del stream; los
+ * tokens se registran después con `cuentaConsulta: false`.
+ *
+ * Devuelve `usadas` = valor YA incrementado (post-reserva).
+ * Fail-open: ante error de DB permite la consulta (con warn) — la cuota
+ * no debe tirar el chat por un fallo transitorio (en ese caso la consulta
+ * no queda contada, consistente con el comportamiento previo).
  */
-export async function verificarCuotaIA(
+export async function reservarConsultaIA(
   supabase: SupabaseClient,
   empresaId: string,
   plan: string | null | undefined,
@@ -49,19 +49,22 @@ export async function verificarCuotaIA(
   const limite = cuotaIA(plan)
 
   try {
-    const { data, error } = await supabase
-      .from('uso_mensual_ia')
-      .select('consultas')
-      .eq('empresa_id', empresaId)
-      .eq('mes', mesActual())
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('reservar_consulta_ia', {
+      p_empresa_id: empresaId,
+      p_limite: limite,
+    })
 
     if (error) throw new Error(error.message)
 
-    const usadas = data?.consultas ?? 0
-    return { permitido: usadas < limite, usadas, limite }
+    // La RPC devuelve un array con una fila { permitido, usadas }
+    const fila = Array.isArray(data) ? data[0] : data
+    return {
+      permitido: fila?.permitido ?? true,
+      usadas: fila?.usadas ?? 0,
+      limite,
+    }
   } catch (err) {
-    console.warn('[usoIA] No se pudo verificar la cuota (fail-open):',
+    console.warn('[usoIA] No se pudo reservar la cuota (fail-open):',
       err instanceof Error ? err.message : err)
     return { permitido: true, usadas: 0, limite }
   }

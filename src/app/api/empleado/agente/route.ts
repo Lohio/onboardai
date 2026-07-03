@@ -3,7 +3,7 @@ import { streamChat } from '@/lib/claude'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { agenteSchema } from '@/lib/schemas/empleado'
-import { verificarCuotaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
+import { reservarConsultaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
 import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 import type { ChatMensaje } from '@/lib/claude'
 
@@ -45,7 +45,7 @@ export const POST = withHandler(
       .eq('id', usuario.empresa_id)
       .single()
 
-    const cuota = await verificarCuotaIA(supabase!, usuario.empresa_id, empresa?.plan)
+    const cuota = await reservarConsultaIA(supabase!, usuario.empresa_id, empresa?.plan)
     if (!cuota.permitido) {
       return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
         headers: {
@@ -101,7 +101,8 @@ export const POST = withHandler(
             onDone: () => {},
           })
 
-          // ── Metering: registrar consumo + avisos de umbral ────
+          // ── Metering: registrar tokens (la consulta ya se contó en
+          //    la reserva atómica) + avisos de umbral ─────────────
           await registrarUsoIA({
             supabase: supabaseRef,
             empresaId,
@@ -112,11 +113,12 @@ export const POST = withHandler(
             outputTokens: tokenUsage.outputTokens,
             cacheReadTokens: tokenUsage.cacheReadTokens,
             cacheCreationTokens: tokenUsage.cacheCreationTokens,
+            cuentaConsulta: false,
           })
           notificarUmbralCuotaIA({
             supabase: supabaseRef,
             empresaId,
-            usadas: cuota.usadas + 1,
+            usadas: cuota.usadas,
             limite: cuota.limite,
           })
         } catch (err) {

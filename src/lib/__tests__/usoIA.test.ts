@@ -2,37 +2,29 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { verificarCuotaIA, registrarUsoIA } from '@/lib/usoIA'
+import { reservarConsultaIA, registrarUsoIA } from '@/lib/usoIA'
 import { cuotaIA, PLANES } from '@/lib/billing'
 
 // ── Mock mínimo del cliente Supabase ─────────────────────────
+// `reserva`: valor que devuelve la RPC reservar_consulta_ia.
+// `errorRpc`: fuerza un error en cualquier rpc (para fail-open / registro).
 
 function crearSupabaseMock(opts: {
-  consultas?: number | null
-  errorSelect?: boolean
+  reserva?: { permitido: boolean; usadas: number }
   errorRpc?: boolean
 }): { mock: SupabaseClient; rpcSpy: ReturnType<typeof vi.fn> } {
-  const maybeSingle = vi.fn().mockResolvedValue(
-    opts.errorSelect
-      ? { data: null, error: { message: 'tabla no existe' } }
-      : { data: opts.consultas != null ? { consultas: opts.consultas } : null, error: null }
-  )
+  const rpcSpy = vi.fn().mockImplementation((fn: string) => {
+    if (opts.errorRpc) return Promise.resolve({ data: null, error: { message: 'rpc falló' } })
+    if (fn === 'reservar_consulta_ia') {
+      return Promise.resolve({
+        data: [opts.reserva ?? { permitido: true, usadas: 1 }],
+        error: null,
+      })
+    }
+    return Promise.resolve({ data: null, error: null })
+  })
 
-  const rpcSpy = vi.fn().mockResolvedValue(
-    opts.errorRpc ? { error: { message: 'rpc falló' } } : { error: null }
-  )
-
-  const mock = {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({ maybeSingle })),
-        })),
-      })),
-    })),
-    rpc: rpcSpy,
-  } as unknown as SupabaseClient
-
+  const mock = { rpc: rpcSpy } as unknown as SupabaseClient
   return { mock, rpcSpy }
 }
 
@@ -59,31 +51,32 @@ describe('cuotaIA', () => {
   })
 })
 
-// ── verificarCuotaIA ─────────────────────────────────────────
+// ── reservarConsultaIA (reserva atómica) ─────────────────────
 
-describe('verificarCuotaIA', () => {
-  it('permite cuando las consultas usadas están bajo el límite', async () => {
-    const { mock } = crearSupabaseMock({ consultas: 5 })
-    const r = await verificarCuotaIA(mock, 'empresa-1', 'trial')
-    expect(r).toEqual({ permitido: true, usadas: 5, limite: PLANES.trial.consultasIA })
+describe('reservarConsultaIA', () => {
+  it('permite y devuelve las consultas ya reservadas cuando hay cupo', async () => {
+    const { mock, rpcSpy } = crearSupabaseMock({ reserva: { permitido: true, usadas: 6 } })
+    const r = await reservarConsultaIA(mock, 'empresa-1', 'trial')
+    expect(r).toEqual({ permitido: true, usadas: 6, limite: PLANES.trial.consultasIA })
+    // Llama la RPC atómica con el límite del plan
+    expect(rpcSpy).toHaveBeenCalledWith('reservar_consulta_ia', {
+      p_empresa_id: 'empresa-1',
+      p_limite: PLANES.trial.consultasIA,
+    })
   })
 
-  it('bloquea cuando se alcanzó el límite del plan', async () => {
-    const { mock } = crearSupabaseMock({ consultas: PLANES.trial.consultasIA })
-    const r = await verificarCuotaIA(mock, 'empresa-1', 'trial')
+  it('bloquea cuando la reserva reporta cuota agotada', async () => {
+    const { mock } = crearSupabaseMock({
+      reserva: { permitido: false, usadas: PLANES.trial.consultasIA },
+    })
+    const r = await reservarConsultaIA(mock, 'empresa-1', 'trial')
     expect(r.permitido).toBe(false)
     expect(r.usadas).toBe(PLANES.trial.consultasIA)
   })
 
-  it('permite con 0 usadas cuando no hay fila del mes (empresa sin uso)', async () => {
-    const { mock } = crearSupabaseMock({ consultas: null })
-    const r = await verificarCuotaIA(mock, 'empresa-1', 'pro')
-    expect(r).toEqual({ permitido: true, usadas: 0, limite: PLANES.pro.consultasIA })
-  })
-
-  it('fail-open: permite si la query falla (tabla no migrada)', async () => {
-    const { mock } = crearSupabaseMock({ errorSelect: true })
-    const r = await verificarCuotaIA(mock, 'empresa-1', 'pro')
+  it('fail-open: permite si la RPC falla (tabla no migrada)', async () => {
+    const { mock } = crearSupabaseMock({ errorRpc: true })
+    const r = await reservarConsultaIA(mock, 'empresa-1', 'pro')
     expect(r.permitido).toBe(true)
     expect(console.warn).toHaveBeenCalled()
   })

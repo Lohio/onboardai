@@ -4,7 +4,7 @@ import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { chatSchema } from '@/lib/schemas/empleado'
 import { logStreamError } from '@/lib/api-error'
-import { verificarCuotaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
+import { reservarConsultaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
 import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 
 // ─────────────────────────────────────────────
@@ -44,7 +44,7 @@ export const POST = withHandler(
       .eq('id', empresaId)
       .single()
 
-    const cuota = await verificarCuotaIA(supabase!, empresaId, empresa?.plan)
+    const cuota = await reservarConsultaIA(supabase!, empresaId, empresa?.plan)
     if (!cuota.permitido) {
       // Responder como mensaje normal del asistente para no romper la UX del chat
       return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
@@ -184,7 +184,8 @@ export const POST = withHandler(
             }
           }
 
-          // ── Metering: registrar consumo + avisos de umbral ────
+          // ── Metering: registrar tokens (la consulta ya se contó en
+          //    la reserva atómica) + avisos de umbral ─────────────
           await registrarUsoIA({
             supabase: supabaseRef,
             empresaId,
@@ -195,11 +196,12 @@ export const POST = withHandler(
             outputTokens: tokenUsage.outputTokens,
             cacheReadTokens: tokenUsage.cacheReadTokens,
             cacheCreationTokens: tokenUsage.cacheCreationTokens,
+            cuentaConsulta: false,
           })
           notificarUmbralCuotaIA({
             supabase: supabaseRef,
             empresaId,
-            usadas: cuota.usadas + 1,
+            usadas: cuota.usadas,
             limite: cuota.limite,
           })
 

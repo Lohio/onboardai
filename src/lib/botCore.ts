@@ -2,7 +2,7 @@
 // Usado por los endpoints /api/bot/gchat y /api/bot/teams
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
-import { verificarCuotaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
+import { reservarConsultaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
 import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 
 // Modelo rápido y económico para respuestas async del bot
@@ -199,7 +199,7 @@ export async function procesarMensajeBot(input: BotInput): Promise<BotOutput> {
   const nombreEmpresa = empresaData?.nombre ?? 'tu empresa'
 
   // 4b. Cuota mensual de consultas IA (por empresa, según plan)
-  const cuota = await verificarCuotaIA(supabase, vinculacion.empresa_id, empresaData?.plan)
+  const cuota = await reservarConsultaIA(supabase, vinculacion.empresa_id, empresaData?.plan)
   if (!cuota.permitido) {
     return {
       respuesta: MENSAJE_CUOTA_AGOTADA,
@@ -247,11 +247,12 @@ export async function procesarMensajeBot(input: BotInput): Promise<BotOutput> {
     outputTokens: response.usage.output_tokens,
     cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
     cacheCreationTokens: response.usage.cache_creation_input_tokens ?? 0,
+    cuentaConsulta: false, // la consulta ya se contó en la reserva atómica
   })
   notificarUmbralCuotaIA({
     supabase,
     empresaId: vinculacion.empresa_id,
-    usadas: cuota.usadas + 1,
+    usadas: cuota.usadas,
     limite: cuota.limite,
   })
 
