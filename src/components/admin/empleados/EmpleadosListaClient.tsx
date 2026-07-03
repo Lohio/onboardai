@@ -1,0 +1,606 @@
+'use client'
+
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import {
+  Search, Filter, Pencil, RotateCcw, Trash2,
+  Calendar, Briefcase, MapPin, Users,
+  ArrowLeft, Mail, Monitor, Sparkles,
+} from 'lucide-react'
+import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase'
+import { getInitials, formatFecha, semaforoColor } from '@/lib/utils'
+import { cargarListaEmpleados } from '@/lib/listaEmpleados'
+import type { EmpleadoConProgreso } from '@/lib/listaEmpleados'
+import { Badge } from '@/components/ui/Badge'
+import { ProgressBar } from '@/components/ui/ProgressBar'
+import { EmpleadoModal } from '@/components/admin/EmpleadoModal'
+import { ResetProgresoModal } from '@/components/admin/ResetProgresoModal'
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
+import { ErrorState } from '@/components/shared/ErrorState'
+import { useLanguage } from '@/components/LanguageProvider'
+import type { UserRole } from '@/types'
+
+// ─────────────────────────────────────────────
+// Constantes
+// ─────────────────────────────────────────────
+
+/** Cuántos empleados mostrar por carga */
+const PAGE_SIZE = 50
+
+const MODALIDAD_LABEL: Record<string, string> = {
+  presencial: 'adminEmp.edit.modalityOnsite',
+  remoto:     'adminEmp.edit.modalityRemote',
+  hibrido:    'adminEmp.edit.modalityHybrid',
+}
+
+// ─────────────────────────────────────────────
+// Props
+// ─────────────────────────────────────────────
+
+interface EmpleadosListaClientProps {
+  empresaId: string | null
+  rolAdmin: UserRole
+  empleadosIniciales: EmpleadoConProgreso[]
+  errorInicial?: boolean
+}
+
+// ─────────────────────────────────────────────
+// Skeleton de la lista
+// ─────────────────────────────────────────────
+
+function SkeletonLista() {
+  return (
+    <div className="space-y-px">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-white/[0.06] flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 bg-white/[0.06] rounded w-32" />
+            <div className="h-2.5 bg-white/[0.04] rounded w-20" />
+          </div>
+          <div className="w-16 h-1.5 bg-white/[0.04] rounded-full" />
+          <div className="w-2.5 h-2.5 rounded-full bg-white/[0.06]" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Fila compacta de la lista
+// ─────────────────────────────────────────────
+
+function FilaEmpleado({
+  emp,
+  seleccionado,
+  onClick,
+}: {
+  emp: EmpleadoConProgreso
+  seleccionado: boolean
+  onClick: () => void
+}) {
+  const initials = getInitials(emp.nombre)
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left
+        transition-colors duration-100 cursor-pointer
+        border-l-2 group
+        ${seleccionado
+          ? 'bg-[#0EA5E9]/[0.10] border-l-[#0EA5E9]'
+          : 'border-l-transparent hover:bg-white/[0.03]'
+        }`}
+    >
+      {/* Avatar */}
+      <div className="w-8 h-8 rounded-full flex-shrink-0 bg-[#0EA5E9]/20 border border-[#0EA5E9]/20
+        flex items-center justify-center">
+        <span className="text-[#7DD3FC] text-[11px] font-semibold">{initials}</span>
+      </div>
+
+      {/* Nombre + área */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-medium truncate transition-colors duration-100
+          ${seleccionado ? 'text-white/90' : 'text-white/70 group-hover:text-white/85'}`}>
+          {emp.nombre}
+        </p>
+        {emp.area && (
+          <p className="text-[11px] text-white/30 truncate">{emp.area}</p>
+        )}
+      </div>
+
+      {/* Barra mini de progreso */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="w-16 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${semaforoColor(emp.progreso)}`}
+            style={{ width: `${emp.progreso}%` }}
+          />
+        </div>
+        <span className="text-[10px] font-mono text-white/30 w-7 text-right">
+          {emp.progreso}%
+        </span>
+        {/* Dot semáforo */}
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${semaforoColor(emp.progreso)}`} />
+      </div>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Panel derecho — Empty state
+// ─────────────────────────────────────────────
+
+function EmptyDetalle() {
+  const { t } = useLanguage()
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06]
+        flex items-center justify-center">
+        <Users className="w-6 h-6 text-white/15" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-white/35">{t('adminEmp.list.selectOne')}</p>
+        <p className="text-xs text-white/20 mt-1">{t('adminEmp.list.selectOneSub')}</p>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Panel derecho — Detalle del empleado
+// ─────────────────────────────────────────────
+
+interface DetalleEmpleadoProps {
+  emp: EmpleadoConProgreso
+  onResetear: () => void
+  onPedirEliminar: () => void
+}
+
+function DetalleEmpleado({
+  emp,
+  onResetear,
+  onPedirEliminar,
+}: DetalleEmpleadoProps) {
+  const { t } = useLanguage()
+  const initials = getInitials(emp.nombre)
+
+  return (
+    <motion.div
+      key={emp.id}
+      initial={{ opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="h-full flex flex-col overflow-y-auto"
+    >
+      <div className="p-6 space-y-6">
+        {/* Avatar + datos principales */}
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-full flex-shrink-0 bg-[#0EA5E9]/25 border border-[#0EA5E9]/25
+            flex items-center justify-center">
+            <span className="text-[#7DD3FC] text-lg font-semibold">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-semibold text-white/90 truncate">{emp.nombre}</h2>
+            {emp.puesto && (
+              <p className="text-sm text-white/50 mt-0.5 truncate">{emp.puesto}</p>
+            )}
+            {emp.rol === 'admin' && (
+              <div className="mt-1">
+                <Badge variant="info">{t('adminEmp.modal.roleAdmin')}</Badge>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Detalles */}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2.5 text-sm">
+            <Mail className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+            <span className="text-white/55 truncate">{emp.email}</span>
+          </div>
+          {emp.area && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <MapPin className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{emp.area}</span>
+            </div>
+          )}
+          {emp.fecha_ingreso && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <Calendar className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{formatFecha(emp.fecha_ingreso)}</span>
+            </div>
+          )}
+          {emp.puesto && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <Briefcase className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">{emp.puesto}</span>
+            </div>
+          )}
+          {emp.modalidad_trabajo && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <Monitor className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+              <span className="text-white/55">
+                {MODALIDAD_LABEL[emp.modalidad_trabajo] ? t(MODALIDAD_LABEL[emp.modalidad_trabajo]) : emp.modalidad_trabajo}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Progreso */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/40">{t('adminEmp.list.onboardingProgress')}</span>
+            <span className="font-mono text-white/60">{emp.progreso}%</span>
+          </div>
+          <ProgressBar value={emp.progreso} showPercentage={false} animated />
+        </div>
+
+        {/* Acciones */}
+        <div className="flex flex-col gap-2 pt-2 max-w-[224px] mx-auto w-full">
+          <Link
+            href={`/admin/empleados/${emp.id}`}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-white/90 hover:bg-white/[0.07] hover:border-white/[0.14]
+              transition-colors duration-150"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            {t('adminEmp.list.edit')}
+          </Link>
+
+          <button
+            onClick={onResetear}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-amber-400/80 hover:bg-amber-500/[0.08] hover:border-amber-500/20
+              transition-colors duration-150"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            {t('adminEmp.reset.title')}
+          </button>
+
+          <button
+            onClick={onPedirEliminar}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm
+              bg-white/[0.04] border border-white/[0.08] text-white/65
+              hover:text-red-400/80 hover:bg-red-500/[0.08] hover:border-red-500/20
+              transition-colors duration-150 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('adminEmp.acc.delete')}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Client Component principal
+// ─────────────────────────────────────────────
+
+export function EmpleadosListaClient({
+  empresaId,
+  rolAdmin,
+  empleadosIniciales,
+  errorInicial = false,
+}: EmpleadosListaClientProps) {
+  const { t } = useLanguage()
+
+  const [empleados, setEmpleados]       = useState<EmpleadoConProgreso[]>(empleadosIniciales)
+  const [error, setError]               = useState(errorInicial)
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [resetTarget, setResetTarget]   = useState<{ id: string; nombre: string } | null>(null)
+
+  // Panel derecho
+  const [seleccionado, setSeleccionado] = useState<EmpleadoConProgreso | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [eliminando, setEliminando]       = useState(false)
+
+  // Mobile: mostrar detalle a pantalla completa
+  const [vistaDetalleMobile, setVistaDetalleMobile] = useState(false)
+
+  // Filtros
+  const [busqueda, setBusqueda]   = useState('')
+  const [areaFiltro, setAreaFiltro] = useState('')
+
+  // "Cargar más" (infinite-style)
+  const [itemsVisibles, setItemsVisibles] = useState(PAGE_SIZE)
+
+  // Ref al contenedor de la lista para scroll independiente
+  const listaRef = useRef<HTMLDivElement>(null)
+
+  // ── Recarga de datos (retry / tras mutaciones) ──
+  const recargarDatos = useCallback(async () => {
+    if (!empresaId) return
+    try {
+      const supabase = createClient()
+      const lista = await cargarListaEmpleados(supabase, empresaId)
+      setEmpleados(lista)
+      setError(false)
+    } catch (err) {
+      console.error('Error cargando empleados:', err)
+      setError(true)
+      toast.error(t('adminEmp.list.loadError'))
+    }
+  }, [empresaId, t])
+
+  // ── Filtros en memoria (sin re-fetch) ──
+  const areas = useMemo(() => {
+    const set = new Set(empleados.map(e => e.area).filter(Boolean) as string[])
+    return Array.from(set).sort()
+  }, [empleados])
+
+  const empleadosFiltrados = useMemo(() => {
+    const q = busqueda.toLowerCase()
+    return empleados.filter(e => {
+      const matchBusqueda = !q ||
+        e.nombre.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q)
+      const matchArea = !areaFiltro || e.area === areaFiltro
+      return matchBusqueda && matchArea
+    })
+  }, [empleados, busqueda, areaFiltro])
+
+  // Resetear items visibles al cambiar filtros
+  useEffect(() => { setItemsVisibles(PAGE_SIZE) }, [busqueda, areaFiltro])
+
+  const empleadosVisibles = useMemo(
+    () => empleadosFiltrados.slice(0, itemsVisibles),
+    [empleadosFiltrados, itemsVisibles]
+  )
+
+  const hayMas = empleadosFiltrados.length > itemsVisibles
+
+  // ── Seleccionar empleado ──
+  function handleSeleccionar(emp: EmpleadoConProgreso) {
+    setSeleccionado(emp)
+    setConfirmDeleteOpen(false)
+    setVistaDetalleMobile(true)
+  }
+
+  // ── Crear empleado ──
+  function handleCreado(nuevo: { id: string; nombre: string; email: string }) {
+    setModalAbierto(false)
+    recargarDatos()
+    toast.success(`${nuevo.nombre} ${t('adminEmp.list.addedToTeam')}`)
+  }
+
+  // ── Eliminar empleado ──
+  async function handleEliminar() {
+    if (!seleccionado) return
+    setEliminando(true)
+    try {
+      const res = await fetch(`/api/admin/empleados/${seleccionado.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json() as { error?: string }
+        toast.error(d.error ?? t('adminEmp.list.deleteError'))
+        return
+      }
+      toast.success(`${seleccionado.nombre} ${t('adminEmp.list.deleted')}`)
+      setEmpleados(prev => prev.filter(e => e.id !== seleccionado.id))
+      setSeleccionado(null)
+      setVistaDetalleMobile(false)
+      setConfirmDeleteOpen(false)
+    } catch {
+      toast.error(t('adminCore.connectionError'))
+    } finally {
+      setEliminando(false)
+    }
+  }
+
+  // ── Reset progreso ──
+  function handleReset() {
+    recargarDatos()
+    setResetTarget(null)
+    // Refrescar el empleado seleccionado con los nuevos datos
+    if (seleccionado) {
+      setSeleccionado(prev => prev ? { ...prev, progreso: 0 } : null)
+    }
+  }
+
+  // ── Altura de la lista (viewport - header admin ~56px - page header ~80px) ──
+  const LISTA_HEIGHT = 'calc(100dvh - 56px - 80px - 24px)'
+
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col h-full max-w-7xl mx-auto">
+
+      {/* ── Page header ── */}
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-white">{t('adminEmp.list.title')}</h1>
+          <p className="text-sm text-white/40">{empleados.length} {empleados.length === 1 ? t('adminEmp.list.person') : t('adminEmp.list.people')}</p>
+        </div>
+        <button
+          onClick={() => setModalAbierto(true)}
+          className="bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-1.5 rounded-xl flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-cyan-500/25 font-medium text-sm"
+        >
+          <Sparkles className="w-4 h-4" style={{ color: 'white' }} />
+          <span style={{ color: 'white' }}>{t('adminEmp.list.addToTeam')}</span>
+        </button>
+      </div>
+
+      {/* ── Layout dos paneles ── */}
+      <div className="flex gap-4 min-h-0 flex-1">
+
+        {/* ════════════════════════════════════════
+            PANEL IZQUIERDO — Lista
+        ════════════════════════════════════════ */}
+        <div
+          className={`flex flex-col flex-shrink-0 glass-card rounded-xl overflow-hidden
+            w-full md:w-[40%]
+            ${vistaDetalleMobile && seleccionado ? 'hidden md:flex' : 'flex'}`}
+        >
+          {/* Filtros */}
+          <div className="p-3 border-b border-white/[0.06] space-y-2 flex-shrink-0">
+            {/* Búsqueda */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
+              <input
+                type="text"
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+                placeholder={t('adminEmp.list.searchPh')}
+                className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
+                  text-white/85 placeholder:text-white/20 outline-none
+                  focus:border-[#0EA5E9]/60 focus:bg-white/[0.06] transition-colors duration-150"
+              />
+            </div>
+
+            {/* Filtro área + contador */}
+            <div className="flex items-center gap-2">
+              {areas.length > 0 && (
+                <div className="relative flex-1">
+                  <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/25 pointer-events-none" />
+                  <select
+                    value={areaFiltro}
+                    onChange={e => setAreaFiltro(e.target.value)}
+                    className="w-full h-8 pl-7 pr-2 rounded-lg text-xs bg-white/[0.04] border border-white/[0.08]
+                      text-white/65 appearance-none outline-none
+                      focus:border-[#0EA5E9]/60 transition-colors duration-150 cursor-pointer"
+                  >
+                    <option value="" className="bg-[#111110]">{t('adminEmp.list.allAreas')}</option>
+                    {areas.map(a => (
+                      <option key={a} value={a} className="bg-[#111110]">{a}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <span className="text-[11px] text-white/30 whitespace-nowrap flex-shrink-0">
+                {empleadosFiltrados.length} {empleadosFiltrados.length !== 1 ? t('adminEmp.list.results') : t('adminEmp.list.result')}
+              </span>
+            </div>
+          </div>
+
+          {/* Lista scrolleable */}
+          <div
+            ref={listaRef}
+            className="flex-1 overflow-y-auto"
+            style={{ maxHeight: LISTA_HEIGHT }}
+          >
+            {error ? (
+              <ErrorState mensaje={t('adminEmp.list.loadError')} onRetry={recargarDatos} />
+            ) : empleadosFiltrados.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Users className="w-8 h-8 text-white/10" />
+                <p className="text-xs text-white/25 text-center px-4">
+                  {busqueda
+                    ? `${t('adminEmp.list.noResultsFor')} "${busqueda}"`
+                    : t('adminEmp.list.noEmployees')}
+                </p>
+              </div>
+            ) : (
+              <div>
+                {empleadosVisibles.map(emp => (
+                  <FilaEmpleado
+                    key={emp.id}
+                    emp={emp}
+                    seleccionado={seleccionado?.id === emp.id}
+                    onClick={() => handleSeleccionar(emp)}
+                  />
+                ))}
+
+                {/* Botón cargar más */}
+                {hayMas && (
+                  <div className="p-3 border-t border-white/[0.04]">
+                    <button
+                      onClick={() => setItemsVisibles(v => v + PAGE_SIZE)}
+                      className="w-full py-2 text-xs text-white/35 hover:text-white/60
+                        hover:bg-white/[0.03] rounded-lg transition-colors duration-150"
+                    >
+                      {t('adminEmp.list.loadMore')} ({empleadosFiltrados.length - itemsVisibles} {t('adminEmp.list.remaining')})
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════
+            PANEL DERECHO — Detalle
+        ════════════════════════════════════════ */}
+        <div
+          className={`flex-1 min-w-0 glass-card rounded-xl overflow-hidden
+            ${vistaDetalleMobile && seleccionado ? 'flex flex-col' : 'hidden md:flex md:flex-col'}`}
+        >
+          {/* Botón "Volver" en mobile */}
+          {vistaDetalleMobile && seleccionado && (
+            <div className="md:hidden px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
+              <button
+                onClick={() => {
+                  setVistaDetalleMobile(false)
+                  setSeleccionado(null)
+                  setConfirmDeleteOpen(false)
+                }}
+                className="flex items-center gap-1.5 text-sm text-white/50
+                  hover:text-white/80 transition-colors duration-150"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t('adminEmp.list.backToList')}
+              </button>
+            </div>
+          )}
+
+          {seleccionado ? (
+            <DetalleEmpleado
+              emp={seleccionado}
+              onResetear={() => setResetTarget({ id: seleccionado.id, nombre: seleccionado.nombre })}
+              onPedirEliminar={() => setConfirmDeleteOpen(true)}
+            />
+          ) : (
+            <EmptyDetalle />
+          )}
+        </div>
+      </div>
+
+      {/* ── Dev badge ── */}
+      {rolAdmin === 'dev' && (
+        <div className="flex justify-end mt-3 flex-shrink-0">
+          <span className="text-[10px] font-mono text-amber-400/40 border border-amber-500/10
+            px-2 py-0.5 rounded">
+            {t('adminEmp.list.devBadge')}
+          </span>
+        </div>
+      )}
+
+      {/* ── Modales ── */}
+      {modalAbierto && (
+        <EmpleadoModal
+          onClose={() => setModalAbierto(false)}
+          onCreated={handleCreado}
+        />
+      )}
+
+      {resetTarget && (
+        <ResetProgresoModal
+          empleadoId={resetTarget.id}
+          empleadoNombre={resetTarget.nombre}
+          modulo="todos"
+          onClose={() => setResetTarget(null)}
+          onReset={handleReset}
+        />
+      )}
+
+      {confirmDeleteOpen && seleccionado && (
+        <ConfirmModal
+          title={t('adminEmp.list.deleteTitle')}
+          description={`${t('adminEmp.list.deleteConfirmPre')} ${seleccionado.nombre}? ${t('adminEmp.reset.irreversible')}`}
+          confirmLabel={t('adminEmp.acc.delete')}
+          cancelLabel={t('adminCore.cancel')}
+          variant="danger"
+          loading={eliminando}
+          onConfirm={handleEliminar}
+          onClose={() => setConfirmDeleteOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
