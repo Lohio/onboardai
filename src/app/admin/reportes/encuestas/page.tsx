@@ -5,6 +5,7 @@
 
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 import { cargarEncuestasAdmin, datosEncuestasVacios } from '@/lib/encuestasAdmin'
 import type { DatosEncuestasAdmin } from '@/lib/encuestasAdmin'
 import { EncuestasClient } from '@/components/admin/reportes/EncuestasClient'
@@ -13,7 +14,7 @@ export default async function EncuestasAdminPage() {
   const supabase = await createServerSupabaseClient()
 
   // El middleware ya garantiza sesión + rol, pero manejamos el caso null igual
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUsuarioSesion(supabase)
   if (!user) redirect('/auth/login')
 
   const { data: perfil } = await supabase

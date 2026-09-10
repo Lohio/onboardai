@@ -5,6 +5,7 @@
 
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 import { cargarDashboardDev, datosDashboardDevVacios } from '@/lib/dashboardDev'
 import type { DatosDashboardDev } from '@/lib/dashboardDev'
 import { DevDashboardClient } from '@/components/dev/dashboard/DevDashboardClient'
@@ -13,7 +14,7 @@ export default async function DevDashboardPage() {
   const supabase = await createServerSupabaseClient()
 
   // El middleware ya garantiza sesión + rol dev, pero manejamos ambos casos igual
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUsuarioSesion(supabase)
   if (!user) redirect('/auth/login')
 
   const { data: ud } = await supabase.from('usuarios').select('rol').eq('id', user.id).single()

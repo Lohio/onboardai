@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/nextjs'
 import { ZodType, ZodError } from 'zod'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 import { ApiError } from '@/lib/errors'
 import { classifyError } from '@/lib/api-error'
 import { generateRequestId } from '@/lib/api/requestId'
@@ -73,10 +74,9 @@ export function withHandler<TBody = unknown>(
       let user: ApiContext<TBody>['user'] = null
 
       if (options.auth === 'session') {
-        const { data: { user: authUser }, error: authError } =
-          await supabase.auth.getUser()
+        const authUser = await getUsuarioSesion(supabase)
 
-        if (authError || !authUser) {
+        if (!authUser) {
           status = 401
           return ApiError.unauthorized(undefined, requestId)
         }

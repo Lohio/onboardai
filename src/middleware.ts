@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { UserRole } from '@/types'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────────────────────
 // Constantes
@@ -137,9 +138,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── 1. Verificar sesión ──────────────────────────────────────
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUsuarioSesion(supabase)
 
   // Sin sesión → login (si ya estamos en /auth/* dejamos pasar)
   if (!user) {

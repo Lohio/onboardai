@@ -9,6 +9,7 @@
 
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 import { cargarHomeEmpleado, datosHomeVacios } from '@/lib/homeEmpleado'
 import type { DatosHomeEmpleado } from '@/lib/homeEmpleado'
 import { EmpleadoHomeClient } from '@/components/empleado/home/EmpleadoHomeClient'
@@ -17,7 +18,7 @@ export default async function EmpleadoHomePage() {
   const supabase = await createServerSupabaseClient()
 
   // El middleware ya garantiza sesión + rol, pero manejamos el caso null igual
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUsuarioSesion(supabase)
   if (!user) redirect('/auth/login')
 
   let datos: DatosHomeEmpleado = datosHomeVacios()

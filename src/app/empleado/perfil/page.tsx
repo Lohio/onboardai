@@ -6,6 +6,7 @@
 
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 import { safeDecrypt } from '@/lib/encryption'
 import { cargarPerfilEmpleado, datosPerfilVacios } from '@/lib/perfilEmpleado'
 import type { DatosPerfilEmpleado, PerfilPasswords } from '@/lib/perfilEmpleado'
@@ -15,7 +16,7 @@ export default async function PerfilPage() {
   const supabase = await createServerSupabaseClient()
 
   // El middleware ya garantiza sesión + rol, pero manejamos el caso null igual
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUsuarioSesion(supabase)
   if (!user) redirect('/auth/login')
 
   let datos: DatosPerfilEmpleado = datosPerfilVacios()
