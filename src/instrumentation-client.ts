@@ -21,7 +21,7 @@ Sentry.init({
   ],
 
   enableLogs: true,
-  sendDefaultPii: true,
+  sendDefaultPii: false, // no enviar cookies/headers de sesión a Sentry
 
   // No capturar errores en desarrollo local
   enabled: process.env.NODE_ENV === 'production',

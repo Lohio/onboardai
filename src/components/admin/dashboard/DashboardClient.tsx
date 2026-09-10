@@ -165,7 +165,7 @@ export function DashboardClient({ empresaId, datosIniciales }: DashboardClientPr
     if (!empresaId) return
     const supabase = createClient()
     const channel = supabase.channel('dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'progreso_modulos' }, () => cargarDatos(empresaId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'progreso_modulos', filter: `empresa_id=eq.${empresaId}` }, () => cargarDatos(empresaId))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas_conocimiento', filter: `empresa_id=eq.${empresaId}` }, () => cargarDatos(empresaId))
       .subscribe()
     return () => { supabase.removeChannel(channel) }

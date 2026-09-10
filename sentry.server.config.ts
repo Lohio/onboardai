@@ -10,7 +10,7 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 1.0 : 0.1,
 
   enableLogs: true,
-  sendDefaultPii: true,
+  sendDefaultPii: false, // no enviar cookies/headers de sesión a Sentry
 
   // No capturar errores en desarrollo local
   enabled: process.env.NODE_ENV === 'production',

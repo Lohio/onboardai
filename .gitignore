@@ -58,3 +58,6 @@ tsconfig.tsbuildinfo
 
 # artefactos accidentales de windows
 nul
+
+# config local de Claude Code (puede contener secretos)
+.claude/settings.local.json

@@ -69,15 +69,17 @@ export const POST = withHandler(
         .single()
       if (!conv) convId = null
 
-      // Cargar historial existente (últimas 20 interacciones)
+      // Cargar historial existente: los 20 MÁS RECIENTES (desc + limit) y
+      // luego invertir para mantener el orden cronológico que espera Claude.
+      // Con asc+limit se traían los 20 más viejos y el modelo perdía los turnos recientes.
       const { data: mensajesHistorial } = convId ? await supabase!
         .from('mensajes_ia')
         .select('rol, contenido')
         .eq('conversacion_id', convId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(20) : { data: null }
 
-      historial = (mensajesHistorial ?? []).map(m => ({
+      historial = (mensajesHistorial ?? []).reverse().map(m => ({
         role: m.rol as 'user' | 'assistant',
         content: m.contenido,
       }))

@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import * as Sentry from '@sentry/nextjs'
 import { ZodType, ZodError } from 'zod'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
@@ -289,6 +290,14 @@ export function withHandler<TBody = unknown>(
       // Fallback: clasificar el error para dar respuesta precisa
       const classified = classifyError(err)
       status = classified.status
+
+      // Reportar a Sentry los errores de servidor: este catch-all los convierte
+      // en JSON y, sin esto, nunca llegan a onRequestError (quedan invisibles)
+      if (classified.status >= 500) {
+        Sentry.captureException(err, {
+          tags: { requestId, path: new URL(req.url).pathname },
+        })
+      }
 
       console.error(
         `[withHandler][${requestId}] ${classified.source} — ${classified.logMessage}`,
