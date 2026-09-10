@@ -53,6 +53,12 @@ function crearSupabaseMock(config: MockSupabaseConfig = {}): SupabaseClient {
 
   const mock = {
     auth: {
+      // getClaims: withHandler verifica el JWT localmente (getUsuarioSesion)
+      getClaims: vi.fn().mockResolvedValue(
+        authUser
+          ? { data: { claims: { sub: authUser.id } }, error: null }
+          : { data: null, error: { message: 'sin sesión' } }
+      ),
       getUser: vi.fn().mockResolvedValue(
         authUser
           ? { data: { user: authUser }, error: null }
