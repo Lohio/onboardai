@@ -65,11 +65,13 @@ export async function cargarPerfilEmpleado(
 ): Promise<DatosPerfilEmpleado> {
   const datos = datosPerfilVacios()
 
-  // 1. Perfil + relaciones + accesos en paralelo
-  const [perfilRes, relacionesRes, accesosRes] = await Promise.all([
+  // 1. Todo lo que depende solo de userId en un único round-trip:
+  //    perfil (con la empresa embebida vía FK usuarios.empresa_id → empresas),
+  //    relaciones, accesos, progreso de módulos y encuestas de pulso.
+  const [perfilRes, relacionesRes, accesosRes, progresoRes, encuestasRes] = await Promise.all([
     supabase
       .from('usuarios')
-      .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email')
+      .select('id, nombre, puesto, area, email, modalidad, fecha_ingreso, bio, foto_url, empresa_id, manager_id, buddy_id, contacto_it_nombre, contacto_it_email, contacto_rrhh_nombre, contacto_rrhh_email, empresas(nombre, herramientas_contacto)')
       .eq('id', userId)
       .single(),
     supabase
@@ -81,26 +83,39 @@ export async function cargarPerfilEmpleado(
       .select('*')
       .eq('usuario_id', userId)
       .order('herramienta'),
+    // Progreso de módulos (no bloqueante — tabla puede no existir)
+    supabase
+      .from('progreso_modulos')
+      .select('modulo, bloque, completado')
+      .eq('usuario_id', userId),
+    // Encuestas de pulso (no bloqueante)
+    supabase
+      .from('encuestas_pulso')
+      .select('dia_onboarding, respondida')
+      .eq('usuario_id', userId),
   ])
 
-  const perfilRow = perfilRes.data
+  const perfilData = perfilRes.data
+  // Perfil sin la key `empresas` embebida, para conservar exactamente las
+  // mismas columnas que antes
+  let perfilRow: Omit<NonNullable<typeof perfilData>, 'empresas'> | null = null
 
-  if (perfilRow) {
+  if (perfilData) {
+    const { empresas: empresaEmbed, ...resto } = perfilData
+    perfilRow = resto
+
     // Mezclar passwords descifradas (server-side) con el perfil
     datos.perfil = { ...perfilRow, ...passwords } as Usuario
 
-    // Herramienta de contacto + nombre de la empresa
-    const empresaRes = await supabase
-      .from('empresas')
-      .select('nombre, herramientas_contacto')
-      .eq('id', perfilRow.empresa_id)
-      .single()
-    const herramientas = empresaRes.data?.herramientas_contacto
+    // Herramienta de contacto + nombre de la empresa (embed to-one puede llegar
+    // como objeto o como array de un elemento según la versión del cliente)
+    const empresa = Array.isArray(empresaEmbed) ? empresaEmbed[0] : empresaEmbed
+    const herramientas = empresa?.herramientas_contacto
     if (herramientas && herramientas.length > 0) {
       datos.herramientaContacto = herramientas[0] as string
     }
-    if (empresaRes.data?.nombre) {
-      datos.nombreEmpresa = empresaRes.data.nombre as string
+    if (empresa?.nombre) {
+      datos.nombreEmpresa = empresa.nombre as string
     }
   }
 
@@ -169,32 +184,21 @@ export async function cargarPerfilEmpleado(
     }
   }
 
-  // 3. Progreso de módulos (no bloqueante — tabla puede no existir)
-  try {
-    const { data: rows } = await supabase
-      .from('progreso_modulos')
-      .select('modulo, bloque, completado')
-      .eq('usuario_id', userId)
-
-    const progresoRows = rows ?? []
-    const culturaCompletados = progresoRows.filter(
-      r => r.modulo === 'cultura' && r.completado
-    ).length
-    const m2 = culturaCompletados >= CULTURA_TOTAL
-    const m3 = progresoRows.some(r => r.modulo === 'rol' && r.completado)
-
-    datos.modulosProgreso = { M1: true, M2: m2, M3: m3 }
-  } catch (err) {
-    console.warn('[Perfil] progreso_modulos:', err)
+  // 3. Progreso de módulos (ya cargado en el paso 1; si falla queda el default)
+  if (progresoRes.error) {
+    console.warn('[Perfil] progreso_modulos:', progresoRes.error.message)
   }
+  const progresoRows = progresoRes.data ?? []
+  const culturaCompletados = progresoRows.filter(
+    r => r.modulo === 'cultura' && r.completado
+  ).length
+  const m2 = culturaCompletados >= CULTURA_TOTAL
+  const m3 = progresoRows.some(r => r.modulo === 'rol' && r.completado)
 
-  // 4. Encuestas de pulso (no bloqueante)
-  const { data: encuestasData } = await supabase
-    .from('encuestas_pulso')
-    .select('dia_onboarding, respondida')
-    .eq('usuario_id', userId)
+  datos.modulosProgreso = { M1: true, M2: m2, M3: m3 }
 
-  datos.encuestasPulso = (encuestasData ?? []).map(e => ({
+  // 4. Encuestas de pulso (ya cargadas en el paso 1)
+  datos.encuestasPulso = (encuestasRes.data ?? []).map(e => ({
     dia: e.dia_onboarding as 7 | 30 | 60,
     respondida: e.respondida ?? false,
   }))

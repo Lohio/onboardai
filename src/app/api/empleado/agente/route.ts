@@ -27,10 +27,10 @@ export const POST = withHandler(
   async ({ body, supabase, user }) => {
     const { mensaje, modulo, contexto, historial = [] } = body
 
-    // ── Datos del empleado ────────────────────────────────────────
+    // ── Datos del empleado (+ plan de la empresa via join, 1 round-trip) ──
     const { data: usuario } = await supabase!
       .from('usuarios')
-      .select('nombre, puesto, area, empresa_id, fecha_ingreso')
+      .select('nombre, puesto, area, empresa_id, fecha_ingreso, empresas(plan)')
       .eq('id', user!.id)
       .single()
 
@@ -38,13 +38,11 @@ export const POST = withHandler(
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    // ── Cuota mensual de consultas IA (por empresa, según plan) ───
-    const { data: empresa } = await supabase!
-      .from('empresas')
-      .select('plan')
-      .eq('id', usuario.empresa_id)
-      .single()
+    // El join puede venir como objeto o como array según la FK detectada
+    const empresa = Array.isArray(usuario.empresas) ? usuario.empresas[0] : usuario.empresas
 
+    // ── Cuota mensual de consultas IA (por empresa, según plan) ───
+    // Reserva atómica: DEBE ocurrir antes de llamar a Claude
     const cuota = await reservarConsultaIA(supabase!, usuario.empresa_id, empresa?.plan)
     if (!cuota.permitido) {
       return new NextResponse(MENSAJE_CUOTA_AGOTADA, {

@@ -38,17 +38,28 @@ export function datosDashboardVacios(): DatosDashboardAdmin {
 // Helpers de cálculo
 // ─────────────────────────────────────────────
 
-function calcularProgreso(userId: string, progresoRows: ProgresoRow[], totalBloques: number): number {
-  const completados = progresoRows.filter(p => p.usuario_id === userId && p.completado).length
+/** Agrupa las filas de progreso por usuario en una sola pasada (O(n)). */
+function agruparPorUsuario(progresoRows: ProgresoRow[]): Map<string, ProgresoRow[]> {
+  const porUsuario = new Map<string, ProgresoRow[]>()
+  for (const row of progresoRows) {
+    const filas = porUsuario.get(row.usuario_id)
+    if (filas) filas.push(row)
+    else porUsuario.set(row.usuario_id, [row])
+  }
+  return porUsuario
+}
+
+function calcularProgreso(filasUsuario: ProgresoRow[], totalBloques: number): number {
+  const completados = filasUsuario.filter(p => p.completado).length
   return totalBloques > 0 ? Math.min(100, Math.round((completados / totalBloques) * 100)) : 0
 }
 
 function calcularPromedioModulo(
-  progresoRows: ProgresoRow[], empleadoIds: string[], modulo: string, totalBloques: number
+  porUsuario: Map<string, ProgresoRow[]>, empleadoIds: string[], modulo: string, totalBloques: number
 ): number {
   if (empleadoIds.length === 0 || totalBloques === 0) return 0
   const suma = empleadoIds.reduce((acc, uid) => {
-    const completados = progresoRows.filter(p => p.usuario_id === uid && p.modulo === modulo && p.completado).length
+    const completados = (porUsuario.get(uid) ?? []).filter(p => p.modulo === modulo && p.completado).length
     return acc + Math.min(100, Math.round((completados / totalBloques) * 100))
   }, 0)
   return Math.round(suma / empleadoIds.length)
@@ -79,11 +90,12 @@ export async function cargarDashboardAdmin(
     supabase.from('alertas_conocimiento')
       .select('id, pregunta, usuario_id, created_at, resuelta, usuarios(nombre)')
       .eq('empresa_id', empresaId).eq('resuelta', false).order('created_at', { ascending: false }).limit(8),
-    supabase.from('conocimiento').select('*', { count: 'exact', head: true }).eq('empresa_id', empresaId).eq('modulo', 'cultura'),
-    supabase.from('conocimiento').select('*', { count: 'exact', head: true }).eq('empresa_id', empresaId).eq('modulo', 'rol'),
+    supabase.from('conocimiento').select('id', { count: 'exact', head: true }).eq('empresa_id', empresaId).eq('modulo', 'cultura'),
+    supabase.from('conocimiento').select('id', { count: 'exact', head: true }).eq('empresa_id', empresaId).eq('modulo', 'rol'),
   ])
 
   const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
+  const porUsuario = agruparPorUsuario(progresoRows)
   const totalBloquesCultura = culturaCountRes.count ?? 0
   const totalBloquesRol = Math.max(1, rolCountRes.count ?? 1)
   const totalBloques = totalBloquesCultura + totalBloquesRol
@@ -92,11 +104,11 @@ export async function cargarDashboardAdmin(
     id: e.id, nombre: e.nombre ?? '', puesto: e.puesto ?? undefined,
     area: e.area ?? undefined, foto_url: e.foto_url ?? undefined,
     fecha_ingreso: e.fecha_ingreso ?? undefined,
-    progreso: calcularProgreso(e.id, progresoRows, totalBloques),
+    progreso: calcularProgreso(porUsuario.get(e.id) ?? [], totalBloques),
   }))
 
-  const avgCultura = calcularPromedioModulo(progresoRows, empleadoIds, 'cultura', totalBloquesCultura)
-  const avgRol = calcularPromedioModulo(progresoRows, empleadoIds, 'rol', totalBloquesRol)
+  const avgCultura = calcularPromedioModulo(porUsuario, empleadoIds, 'cultura', totalBloquesCultura)
+  const avgRol = calcularPromedioModulo(porUsuario, empleadoIds, 'rol', totalBloquesRol)
 
   return {
     empleados,

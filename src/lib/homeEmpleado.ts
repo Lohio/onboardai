@@ -78,10 +78,14 @@ export async function cargarHomeEmpleado(
   datos.datosBase = usuario as DatosBaseEmpleado
   datos.planItems = (planRes.data ?? []) as PlanItem[]
 
-  // Ahora que tenemos empresa_id, consultamos el total de bloques de cultura
+  // Ahora que tenemos empresa_id, consultamos el total de bloques de cultura.
+  // Queda serial a propósito: `conocimiento` no tiene FK hacia `usuarios`, así que
+  // no se puede embeber/filtrar por userId en la misma query sin pasar por
+  // usuarios → empresas → conocimiento (embed de 2 niveles con count agregado),
+  // que depende de features de PostgREST no verificadas en este proyecto.
   const culturaCountRes = await supabase
     .from('conocimiento')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('empresa_id', usuario.empresa_id)
     .eq('modulo', 'cultura')
 

@@ -57,8 +57,17 @@ export async function cargarEmpresasDev(supabase: SupabaseClient): Promise<Datos
 
   const usrs = (usersData ?? []) as UsuarioRow[]
 
+  // Agrupar usuarios por empresa una sola vez (O(n)) en lugar de filtrar
+  // el array completo por cada empresa (O(n·m)). El orden por nombre se conserva.
+  const usuariosPorEmpresa = new Map<string, UsuarioRow[]>()
+  for (const u of usrs) {
+    const lista = usuariosPorEmpresa.get(u.empresa_id)
+    if (lista) lista.push(u)
+    else usuariosPorEmpresa.set(u.empresa_id, [u])
+  }
+
   const empresas: Empresa[] = (empData ?? []).map(e => {
-    const empUsers = usrs.filter(u => u.empresa_id === e.id)
+    const empUsers = usuariosPorEmpresa.get(e.id) ?? []
     return {
       ...e,
       plan: (e.plan as Plan) ?? null,

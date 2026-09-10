@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 1.0 : 0.1,
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0.1, // 10% en prod: suficiente para tendencias, evita overhead por request
 
   enableLogs: true,
   sendDefaultPii: false, // no enviar cookies/headers de sesión a Sentry

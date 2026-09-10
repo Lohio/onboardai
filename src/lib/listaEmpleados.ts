@@ -48,20 +48,23 @@ export async function cargarListaEmpleados(
   supabase: SupabaseClient,
   empresaId: string
 ): Promise<EmpleadoConProgreso[]> {
-  const { data: rows } = await supabase
-    .from('usuarios')
-    .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, rol')
-    .eq('empresa_id', empresaId)
-    .eq('rol', 'empleado')
-    .order('nombre')
+  // Empleados y total de bloques en paralelo (el count solo depende de empresaId).
+  // progreso_modulos no tiene empresa_id, así que necesita los ids de los empleados.
+  const [{ data: rows }, { count: totalBloques }] = await Promise.all([
+    supabase
+      .from('usuarios')
+      .select('id, nombre, email, puesto, area, fecha_ingreso, modalidad_trabajo, rol')
+      .eq('empresa_id', empresaId)
+      .eq('rol', 'empleado')
+      .order('nombre'),
+    supabase
+      .from('conocimiento')
+      .select('id', { count: 'exact', head: true })
+      .eq('empresa_id', empresaId),
+  ])
 
   const empRows = (rows ?? []) as EmpleadoRow[]
   const empIds = empRows.map(e => e.id)
-
-  const { count: totalBloques } = await supabase
-    .from('conocimiento')
-    .select('*', { count: 'exact', head: true })
-    .eq('empresa_id', empresaId)
 
   const { data: progresoRows } = await supabase
     .from('progreso_modulos')

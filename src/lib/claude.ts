@@ -65,15 +65,21 @@ interface ResolvedConfig {
   maxTokens: number
 }
 
-/** Fila de conocimiento usada para armar el prompt */
-interface BloqueConocimiento {
+/** Metadata de un bloque de conocimiento (query liviana: índice + estimación de tamaño) */
+interface BloqueIndice {
   modulo: string
   bloque: string
   titulo: string
-  contenido: string
-  contenido_extraido?: string | null
   area?: string | null
   puesto?: string | null
+  /** Columna generada por scripts/conocimiento_tokens.sql */
+  tokens_estimados?: number | null
+}
+
+/** Fila completa de conocimiento usada para armar el prompt */
+interface BloqueConocimiento extends BloqueIndice {
+  contenido: string
+  contenido_extraido?: string | null
 }
 
 // Fallback hardcodeado — solo se usa si app_config no es accesible.
@@ -141,9 +147,18 @@ function renderBloqueXML(b: {
 // getAppConfig
 // Lee model, max_tokens y system_prompt_base de app_config.
 // Si la tabla no existe o hay un error de RLS, retorna defaults.
+// Es config global: se memoiza en memoria del módulo con TTL de 60 s
+// para no pagar un round-trip a Supabase en cada turno del chat.
 // ─────────────────────────────────────────────
 
+const APP_CONFIG_TTL_MS = 60_000
+let appConfigCache: { valor: ResolvedConfig; expira: number } | null = null
+
 async function getAppConfig(): Promise<ResolvedConfig> {
+  if (appConfigCache && appConfigCache.expira > Date.now()) {
+    return appConfigCache.valor
+  }
+
   try {
     const supabase = createServiceClient()
     const { data, error } = await supabase
@@ -161,12 +176,15 @@ async function getAppConfig(): Promise<ResolvedConfig> {
     const map: Record<string, string> = {}
     for (const row of (data ?? [])) map[row.clave] = row.valor ?? ''
 
-    return {
+    const valor: ResolvedConfig = {
       systemPromptBase: map['system_prompt_base'] ?? '',
       systemPromptInstrucciones: map['system_prompt_instrucciones'] ?? INSTRUCCIONES_FALLBACK,
       claudeModel: map['claude_model'] || 'claude-sonnet-4-6',
       maxTokens: Math.max(256, parseInt(map['max_tokens'] ?? '1024', 10) || 1024),
     }
+    // Solo se cachea una lectura exitosa: el fallback se reintenta en cada turno
+    appConfigCache = { valor, expira: Date.now() + APP_CONFIG_TTL_MS }
+    return valor
   } catch {
     return {
       systemPromptBase: '',
@@ -203,6 +221,58 @@ interface SystemPromptResult {
   config: ResolvedConfig
 }
 
+/**
+ * Separa los bloques en las 3 capas que aplican al empleado.
+ * Orden determinístico (modulo, bloque) heredado de la query — es lo que
+ * hace que el prefijo cacheado sea idéntico entre requests.
+ */
+function filtrarCapas<T extends BloqueIndice>(
+  bloques: T[],
+  empleadoArea?: string | null,
+  empleadoPuesto?: string | null,
+): { empresaBloques: T[]; areaBloques: T[]; rolBloques: T[] } {
+  return {
+    // Capa 1: empresa (sin area ni puesto) — comportamiento original
+    empresaBloques: bloques.filter(b => !b.area && !b.puesto),
+    // Capa 2: área del empleado
+    areaBloques: empleadoArea
+      ? bloques.filter(b => b.area === empleadoArea && !b.puesto)
+      : [],
+    // Capa 3: puesto/rol del empleado
+    rolBloques: empleadoPuesto
+      ? bloques.filter(b => b.puesto === empleadoPuesto)
+      : [],
+  }
+}
+
+/**
+ * Trae los bloques completos (contenido + contenido_extraido) de la empresa.
+ * Fallback: la migración de contenido_extraido (conocimiento_fts.sql) puede
+ * no estar ejecutada todavía — reintentar sin esa columna.
+ */
+async function cargarBloquesCompletos(
+  supabase: ReturnType<typeof createServiceClient>,
+  empresaId: string,
+): Promise<BloqueConocimiento[]> {
+  const { data, error } = await supabase
+    .from('conocimiento')
+    .select('modulo, bloque, titulo, contenido, contenido_extraido, area, puesto')
+    .eq('empresa_id', empresaId)
+    .order('modulo', { ascending: true })
+    .order('bloque', { ascending: true })
+
+  if (!error) return (data ?? []) as BloqueConocimiento[]
+
+  console.warn('[claude] Query de conocimiento con contenido_extraido falló, reintentando:', error.message)
+  const { data: basicos } = await supabase
+    .from('conocimiento')
+    .select('modulo, bloque, titulo, contenido, area, puesto')
+    .eq('empresa_id', empresaId)
+    .order('modulo', { ascending: true })
+    .order('bloque', { ascending: true })
+  return ((basicos ?? []) as BloqueConocimiento[]).map(b => ({ ...b, contenido_extraido: null }))
+}
+
 export async function buildSystemPromptWithConfig(
   empresaId: string,
   contextoEmpleado?: string,
@@ -213,11 +283,13 @@ export async function buildSystemPromptWithConfig(
 ): Promise<SystemPromptResult> {
   const supabase = createServiceClient()
 
-  // Cargar conocimiento, config global y prompt de empresa en paralelo
-  const [bloquesRes, config, { data: empresa }] = await Promise.all([
+  // Cargar índice de conocimiento (liviano: sin contenido), config global y
+  // prompt de empresa en paralelo. El contenido completo solo se baja si el
+  // conocimiento relevante entra inline — en modo búsqueda el índice alcanza.
+  const [indiceRes, config, { data: empresa }] = await Promise.all([
     supabase
       .from('conocimiento')
-      .select('modulo, bloque, titulo, contenido, contenido_extraido, area, puesto')
+      .select('modulo, bloque, titulo, area, puesto, tokens_estimados')
       .eq('empresa_id', empresaId)
       .order('modulo', { ascending: true })
       .order('bloque', { ascending: true }),
@@ -229,34 +301,43 @@ export async function buildSystemPromptWithConfig(
       .single(),
   ])
 
-  let bloques = bloquesRes.data as BloqueConocimiento[] | null
-  if (bloquesRes.error) {
-    // Fallback: la migración de contenido_extraido (conocimiento_fts.sql)
-    // puede no estar ejecutada todavía — reintentar sin esa columna
-    console.warn('[claude] Query de conocimiento con contenido_extraido falló, reintentando:', bloquesRes.error.message)
-    const { data: basicos } = await supabase
-      .from('conocimiento')
-      .select('modulo, bloque, titulo, contenido, area, puesto')
-      .eq('empresa_id', empresaId)
-      .order('modulo', { ascending: true })
-      .order('bloque', { ascending: true })
-    bloques = (basicos ?? []).map(b => ({ ...b, contenido_extraido: null }))
+  // ── Modo híbrido por tamaño ───────────────────────────────────
+  // Si el conocimiento relevante para este empleado supera el umbral,
+  // en vez de inyectarlo completo se le da al modelo la tool de búsqueda.
+  let modoConocimiento: 'inline' | 'busqueda'
+  let indiceBloques: BloqueIndice[]
+  let bloquesCompletos: BloqueConocimiento[] = []
+
+  if (indiceRes.error) {
+    // Fallback: la migración de tokens_estimados (conocimiento_tokens.sql)
+    // puede no estar ejecutada — comportamiento anterior: traer todo y estimar
+    console.warn('[claude] Query de índice con tokens_estimados falló, trayendo conocimiento completo:', indiceRes.error.message)
+    bloquesCompletos = await cargarBloquesCompletos(supabase, empresaId)
+    indiceBloques = bloquesCompletos
+
+    const capas = filtrarCapas(bloquesCompletos, empleadoArea, empleadoPuesto)
+    const textoConocimiento = [...capas.empresaBloques, ...capas.areaBloques, ...capas.rolBloques]
+      .map(renderBloqueXML)
+      .join('\n\n')
+    modoConocimiento = estimarTokens(textoConocimiento) > UMBRAL_TOKENS_INLINE ? 'busqueda' : 'inline'
+  } else {
+    indiceBloques = (indiceRes.data ?? []) as BloqueIndice[]
+
+    const capas = filtrarCapas(indiceBloques, empleadoArea, empleadoPuesto)
+    const tokensRelevantes = [...capas.empresaBloques, ...capas.areaBloques, ...capas.rolBloques]
+      .reduce((acc, b) => acc + (b.tokens_estimados ?? 0), 0)
+    modoConocimiento = tokensRelevantes > UMBRAL_TOKENS_INLINE ? 'busqueda' : 'inline'
+
+    if (modoConocimiento === 'inline') {
+      bloquesCompletos = await cargarBloquesCompletos(supabase, empresaId)
+    }
   }
 
-  const todosLosBloques = bloques ?? []
-
-  // ── Capa 1: empresa (sin area ni puesto) — comportamiento original ──
-  const empresaBloques = todosLosBloques.filter(b => !b.area && !b.puesto)
-
-  // ── Capa 2: área del empleado ──
-  const areaBloques = empleadoArea
-    ? todosLosBloques.filter(b => b.area === empleadoArea && !b.puesto)
-    : []
-
-  // ── Capa 3: puesto/rol del empleado ──
-  const rolBloques = empleadoPuesto
-    ? todosLosBloques.filter(b => b.puesto === empleadoPuesto)
-    : []
+  const { empresaBloques, areaBloques, rolBloques } = filtrarCapas(
+    bloquesCompletos,
+    empleadoArea,
+    empleadoPuesto,
+  )
 
   // ── Renderizar conocimiento con tags <bloque> (anti-alucinación) ──
   const seccionesEmpresa =
@@ -285,17 +366,6 @@ export async function buildSystemPromptWithConfig(
     partesEstables.push(`# Instrucciones específicas de esta empresa\n\n${promptEmpresa}`)
   }
 
-  // ── Modo híbrido por tamaño ───────────────────────────────────
-  // Estimar el tamaño del conocimiento relevante para este empleado
-  const textoConocimiento = [
-    seccionesEmpresa,
-    ...areaBloques.map(renderBloqueXML),
-    ...rolBloques.map(renderBloqueXML),
-  ].join('\n\n')
-
-  const modoConocimiento: 'inline' | 'busqueda' =
-    estimarTokens(textoConocimiento) > UMBRAL_TOKENS_INLINE ? 'busqueda' : 'inline'
-
   if (modoConocimiento === 'inline') {
     partesEstables.push(`# Conocimiento de la empresa\n\n${seccionesEmpresa}`)
 
@@ -313,7 +383,7 @@ export async function buildSystemPromptWithConfig(
   } else {
     // Base de conocimiento grande: solo índice + tool de búsqueda.
     // El índice da contexto global sin pagar el contenido completo.
-    const indice = todosLosBloques
+    const indice = indiceBloques
       .map(b => {
         const capas = [b.area ? `área: ${b.area}` : null, b.puesto ? `puesto: ${b.puesto}` : null]
           .filter(Boolean).join(', ')
@@ -464,7 +534,20 @@ export async function streamChat({
   // Loop manual de tool-use: en modo 'busqueda' el modelo puede llamar a
   // buscar_conocimiento; los resultados vuelven como tool_result y se
   // continúa hasta que responde con texto (o se agotan las iteraciones).
-  const mensajesLoop: Anthropic.MessageParam[] = [...mensajes]
+  //
+  // Segundo breakpoint de cache en el ÚLTIMO mensaje del historial recibido:
+  // cachea system + historial completo, así las iteraciones de tool-use y el
+  // turno siguiente reutilizan ese prefijo. Los mensajes que agrega el loop
+  // NO llevan breakpoint (máx. 4 por request — acá quedan 2).
+  const mensajesLoop: Anthropic.MessageParam[] = mensajes.map((m, i) => {
+    if (i !== mensajes.length - 1) return m
+    const bloque: Anthropic.TextBlockParam = {
+      type: 'text',
+      text: m.content,
+      cache_control: { type: 'ephemeral' },
+    }
+    return { role: m.role, content: [bloque] }
+  })
 
   for (let iteracion = 0; iteracion <= MAX_ITERACIONES_TOOL; iteracion++) {
     const stream = anthropic.messages.stream({

@@ -111,16 +111,25 @@ export async function cargarReportesAdmin(
       .in('usuario_id', empleadoIds),
     supabase
       .from('conocimiento')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('empresa_id', empresaId),
   ])
 
   const progresoRows: ProgresoRow[] = (progresoRes.data ?? []) as ProgresoRow[]
   const totalBloques = Math.max(totalBloquesRes.count ?? 1, 1)
 
+  // Agrupar filas de progreso por usuario una sola vez (O(n)) en lugar de
+  // filtrar el array completo por cada empleado (O(n·m))
+  const porUsuario = new Map<string, ProgresoRow[]>()
+  for (const row of progresoRows) {
+    const filas = porUsuario.get(row.usuario_id)
+    if (filas) filas.push(row)
+    else porUsuario.set(row.usuario_id, [row])
+  }
+
   // ── Procesar datos por empleado ──
   const empleados: EmpleadoReporte[] = usuariosRaw.map(u => {
-    const filasUsuario = progresoRows.filter(r => r.usuario_id === u.id)
+    const filasUsuario = porUsuario.get(u.id) ?? []
 
     // Progreso: bloques completados / total
     const completados = filasUsuario.filter(r => r.completado).length

@@ -24,26 +24,46 @@ export const POST = withHandler(
   async ({ body, supabase, user, requestId }) => {
     const { mensaje, conversacionId } = body
 
-    // ── Datos del empleado ────────────────────────────────────────
-    const { data: usuario } = await supabase!
-      .from('usuarios')
-      .select('nombre, puesto, area, empresa_id, fecha_ingreso, notas_ia')
-      .eq('id', user!.id)
-      .single()
+    // ── Datos del empleado (+ plan de la empresa via join), ownership de la
+    //    conversación e historial: independientes entre sí → en paralelo ──
+    const [{ data: usuario }, { data: conv }, { data: mensajesHistorial }] = await Promise.all([
+      supabase!
+        .from('usuarios')
+        .select('nombre, puesto, area, empresa_id, fecha_ingreso, notas_ia, empresas(plan)')
+        .eq('id', user!.id)
+        .single(),
+      // Verificar ownership antes de usar la conversación
+      conversacionId
+        ? supabase!
+            .from('conversaciones_ia')
+            .select('id')
+            .eq('id', conversacionId)
+            .eq('usuario_id', user!.id)
+            .single()
+        : Promise.resolve({ data: null }),
+      // Historial existente: los 20 MÁS RECIENTES (desc + limit) y luego
+      // invertir para mantener el orden cronológico que espera Claude.
+      // Con asc+limit se traían los 20 más viejos y el modelo perdía los turnos recientes.
+      conversacionId
+        ? supabase!
+            .from('mensajes_ia')
+            .select('rol, contenido')
+            .eq('conversacion_id', conversacionId)
+            .order('created_at', { ascending: false })
+            .limit(20)
+        : Promise.resolve({ data: null }),
+    ])
 
     if (!usuario) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     const { empresa_id: empresaId } = usuario
+    // El join puede venir como objeto o como array según la FK detectada
+    const empresa = Array.isArray(usuario.empresas) ? usuario.empresas[0] : usuario.empresas
 
     // ── Cuota mensual de consultas IA (por empresa, según plan) ───
-    const { data: empresa } = await supabase!
-      .from('empresas')
-      .select('plan')
-      .eq('id', empresaId)
-      .single()
-
+    // Reserva atómica: DEBE ocurrir antes de llamar a Claude
     const cuota = await reservarConsultaIA(supabase!, empresaId, empresa?.plan)
     if (!cuota.permitido) {
       // Responder como mensaje normal del asistente para no romper la UX del chat
@@ -56,34 +76,18 @@ export const POST = withHandler(
     }
 
     // ── Gestión de conversación ───────────────────────────────────
-    let historial: { role: 'user' | 'assistant'; content: string }[] = []
-    let convId = conversacionId ?? null
+    // Si la conversación no es del usuario se descarta (sin crear una nueva)
+    const convValida = Boolean(conversacionId && conv)
+    let convId: string | null = convValida ? conversacionId! : null
 
-    if (convId) {
-      // Verificar ownership antes de cargar historial
-      const { data: conv } = await supabase!
-        .from('conversaciones_ia')
-        .select('id')
-        .eq('id', convId)
-        .eq('usuario_id', user!.id)
-        .single()
-      if (!conv) convId = null
+    const historial: { role: 'user' | 'assistant'; content: string }[] = convValida
+      ? (mensajesHistorial ?? []).reverse().map(m => ({
+          role: m.rol as 'user' | 'assistant',
+          content: m.contenido,
+        }))
+      : []
 
-      // Cargar historial existente: los 20 MÁS RECIENTES (desc + limit) y
-      // luego invertir para mantener el orden cronológico que espera Claude.
-      // Con asc+limit se traían los 20 más viejos y el modelo perdía los turnos recientes.
-      const { data: mensajesHistorial } = convId ? await supabase!
-        .from('mensajes_ia')
-        .select('rol, contenido')
-        .eq('conversacion_id', convId)
-        .order('created_at', { ascending: false })
-        .limit(20) : { data: null }
-
-      historial = (mensajesHistorial ?? []).reverse().map(m => ({
-        role: m.rol as 'user' | 'assistant',
-        content: m.contenido,
-      }))
-    } else {
+    if (!conversacionId) {
       // Crear nueva conversación
       const { data: nuevaConv } = await supabase!
         .from('conversaciones_ia')
@@ -93,14 +97,20 @@ export const POST = withHandler(
       convId = nuevaConv?.id ?? null
     }
 
-    // Guardar mensaje del usuario en el historial persistente
-    if (convId) {
-      await supabase!.from('mensajes_ia').insert({
-        conversacion_id: convId,
-        rol: 'user',
-        contenido: mensaje,
-      })
-    }
+    // Guardar mensaje del usuario en el historial persistente — no bloquea
+    // el stream; se espera antes de insertar la respuesta del asistente para
+    // preservar el orden created_at (user → assistant) del historial.
+    const guardarMensajeUsuario: PromiseLike<void> = convId
+      ? supabase!
+          .from('mensajes_ia')
+          .insert({ conversacion_id: convId, rol: 'user', contenido: mensaje })
+          .then(
+            ({ error }) => {
+              if (error) console.warn('[chat] No se pudo guardar el mensaje del usuario:', error.message)
+            },
+            (err: unknown) => console.warn('[chat] No se pudo guardar el mensaje del usuario:', err),
+          )
+      : Promise.resolve()
 
     // Log de auditoría (mensajes_chat) — fire and forget
     logMensaje({ usuarioId: user!.id, empresaId, rol: 'user', contenido: mensaje })
@@ -151,6 +161,9 @@ export const POST = withHandler(
 
           // ── Trabajo post-stream ───────────────────────────────
           if (convId && respuestaCompleta) {
+            // Asegurar que el mensaje del usuario quedó antes (orden created_at)
+            await guardarMensajeUsuario
+
             // Persistir respuesta del asistente
             await supabaseRef.from('mensajes_ia').insert({
               conversacion_id: convId,
