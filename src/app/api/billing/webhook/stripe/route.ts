@@ -3,16 +3,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import type Stripe from 'stripe'
-
-// Supabase con service role para bypassear RLS
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -32,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Firma inválida' }, { status: 400 })
   }
 
-  const supabase = getServiceSupabase()
+  const supabase = createServiceClient()
 
   try {
     switch (event.type) {

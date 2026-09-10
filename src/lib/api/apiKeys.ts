@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────
 
 import crypto from 'crypto'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 
 // Scopes disponibles para las API keys
 export const API_KEY_SCOPES = [
@@ -59,14 +59,7 @@ export async function verifyApiKey(
 
   const keyHash = hashApiKey(rawKey)
 
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) return null
-
-  const sa = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const sa = createServiceClient()
 
   const { data, error } = await sa
     .from('api_keys')

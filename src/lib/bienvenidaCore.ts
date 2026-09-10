@@ -4,15 +4,7 @@
 // NO importa nada de src/lib/claude.ts ni de la tabla conocimiento.
 import crypto from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
-
-// ── Cliente admin (mismo patrón que botCore.ts) ──────────────
-function getAdminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createServiceClient } from '@/lib/supabaseService'
 
 // ── Cliente Anthropic (mismo patrón que botCore.ts) ──────────
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -138,7 +130,7 @@ export function generarTokenInvitacion(): string {
 export async function resolverDatosBienvenida(
   usuarioId: string
 ): Promise<DatosBienvenida | null> {
-  const supabase = getAdminClient()
+  const supabase = createServiceClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: uRaw } = await supabase
@@ -227,7 +219,7 @@ export async function resolverDatosBienvenida(
 // ── Fallback acotado con Claude ───────────────────────────────
 
 async function resolverModelo(): Promise<string> {
-  const supabase = getAdminClient()
+  const supabase = createServiceClient()
   const { data } = await supabase
     .from('app_config')
     .select('valor')
@@ -271,7 +263,7 @@ async function respuestaClaude(mensaje: string, d: DatosBienvenida): Promise<str
 
 export async function procesarBienvenida(input: BienvenidaInput): Promise<BienvenidaOutput> {
   const { chatUserId, plataforma, mensaje } = input
-  const supabase = getAdminClient()
+  const supabase = createServiceClient()
   const texto = mensaje.trim()
 
   // 1) Deep-link: "/start <token>" — vincula la cuenta de Telegram al empleado

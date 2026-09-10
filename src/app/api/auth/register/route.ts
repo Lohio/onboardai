@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { registerSchema } from '@/lib/schemas/auth'
@@ -21,19 +21,7 @@ export const POST = withHandler(
     const { email, password, nombre, nombreEmpresa } = body
 
     // Cliente con service role (bypasea RLS)
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) {
-      return NextResponse.json(
-        { error: 'Configuración del servidor incompleta' },
-        { status: 500 }
-      )
-    }
-
-    const sa = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const sa = createServiceClient()
 
     // 1. Crear auth user
     const { data: authData, error: authError } = await sa.auth.admin.createUser({

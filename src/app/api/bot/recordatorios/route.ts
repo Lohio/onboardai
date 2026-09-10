@@ -1,16 +1,8 @@
 // Cron de recordatorios proactivos del bot (días 7, 30 y 60)
 // Invocado diariamente por Vercel Cron a las 9:00 AM UTC
 import { NextResponse } from 'next/server'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
-
-// Cliente con service role — necesario para leer usuarios cross-empresa
-function getAdminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -127,7 +119,7 @@ export const GET = withHandler(
   },
   async () => {
     // withHandler ya verificó el CRON_SECRET — usar cliente admin para queries cross-empresa
-    const supabase = getAdminClient()
+    const supabase = createServiceClient()
     const hoy      = new Date()
 
     // Calcular fechas objetivo (hoy menos 7, 30 y 60 días)

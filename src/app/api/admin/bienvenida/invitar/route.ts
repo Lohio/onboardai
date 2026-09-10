@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { ApiError } from '@/lib/errors'
 import { generarTokenInvitacion } from '@/lib/bienvenidaCore'
 
 const schema = z.object({ usuarioId: z.string().uuid() })
-
-function adminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
 
 export const POST = withHandler(
   { auth: 'session', rol: ['admin', 'dev'], schema },
@@ -21,7 +13,7 @@ export const POST = withHandler(
     const username = process.env.TELEGRAM_BOT_USERNAME
     if (!username) return ApiError.internal('TELEGRAM_BOT_USERNAME no configurado')
 
-    const db = adminClient()
+    const db = createServiceClient()
 
     const { data: empleado } = await db
       .from('usuarios')

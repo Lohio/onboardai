@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { crearEmpleadoSchema } from '@/lib/schemas/admin'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
@@ -42,17 +42,7 @@ export const POST = withHandler(
     }
 
     // Crear cliente con service role key
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) {
-      console.error('[POST empleados] SUPABASE_SERVICE_ROLE_KEY no configurada')
-      return ApiError.internal()
-    }
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabaseAdmin = createServiceClient()
 
     // 1. Crear auth user (sin confirmación de email)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({

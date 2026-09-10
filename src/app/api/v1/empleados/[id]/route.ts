@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
-import { makeServiceClient } from '@/lib/api/serviceClient'
+import { createServiceClient } from '@/lib/supabaseService'
 import { optionsResponse } from '@/lib/api/cors'
 import { ApiError } from '@/lib/errors'
 
@@ -22,7 +22,7 @@ export const GET = withHandler(
     const empresaId = apiKeyRecord!.empresa_id
     const { id } = params
 
-    const sa = makeServiceClient()
+    const sa = createServiceClient()
 
     const { data: empleado, error } = await sa
       .from('usuarios')

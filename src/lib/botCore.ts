@@ -1,20 +1,12 @@
 // botCore.ts — Lógica central del bot de Teams/GChat
 // Usado por los endpoints /api/bot/gchat y /api/bot/teams
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { reservarConsultaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
 import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
 
 // Modelo rápido y económico para respuestas async del bot
 const BOT_MODEL = 'claude-haiku-4-5-20251001'
-
-// Cliente con service role para el bot — bypasea RLS en lectura cross-empresa
-function getAdminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -74,7 +66,7 @@ async function buildBotSystemPrompt(
   plataforma:   'teams' | 'gchat',
   mensaje:      string,
 ): Promise<string> {
-  const supabase = getAdminClient()
+  const supabase = createServiceClient()
 
   const { data: bloques } = await supabase
     .from('conocimiento')
@@ -138,7 +130,7 @@ Respondé únicamente con base en el conocimiento provisto. Si no tenés la info
 
 export async function procesarMensajeBot(input: BotInput): Promise<BotOutput> {
   const { chatUserId, chatEmail, plataforma, mensaje } = input
-  const supabase = getAdminClient()
+  const supabase = createServiceClient()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://heero.app'
 
   // 1. Buscar vinculación por chatUserId + plataforma

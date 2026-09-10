@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
-import { makeServiceClient } from '@/lib/api/serviceClient'
+import { createServiceClient } from '@/lib/supabaseService'
 import { optionsResponse } from '@/lib/api/cors'
 import { ApiError } from '@/lib/errors'
 import { crearEmpleadoSchema } from '@/lib/schemas/admin'
@@ -30,7 +30,7 @@ export const GET = withHandler(
     const limit = Math.min(100, Math.max(1, limitRaw))
     const offset = (page - 1) * limit
 
-    const sa = makeServiceClient()
+    const sa = createServiceClient()
 
     // Contar total de empleados de la empresa
     const { count, error: countError } = await sa
@@ -76,7 +76,7 @@ export const POST = withHandler(
     const empresaId = apiKeyRecord!.empresa_id
     const { email, password, nombre } = body
 
-    const sa = makeServiceClient()
+    const sa = createServiceClient()
 
     // Validar que manager_id y buddy_id pertenecen a la empresa (si están presentes)
     if (body.manager_id) {

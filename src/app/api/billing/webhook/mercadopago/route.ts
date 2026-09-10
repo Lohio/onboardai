@@ -3,14 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getMPPayment } from '@/lib/mercadopago-server'
-import { createClient } from '@supabase/supabase-js'
-
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createServiceClient } from '@/lib/supabaseService'
 
 /** Verifica la firma HMAC-SHA256 del webhook de MercadoPago */
 async function verificarFirmaMP(req: NextRequest, dataId: string): Promise<boolean> {
@@ -77,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    const supabase = getServiceSupabase()
+    const supabase = createServiceClient()
     const estado = payment.status === 'approved' ? 'completado' : 'fallido'
 
     if (payment.status === 'approved') {

@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { hasScope } from '@/lib/api/apiKeys'
-import { makeServiceClient } from '@/lib/api/serviceClient'
+import { createServiceClient } from '@/lib/supabaseService'
 import { optionsResponse } from '@/lib/api/cors'
 import { ApiError } from '@/lib/errors'
 
@@ -35,7 +35,7 @@ export const GET = withHandler(
     const limit = Math.min(100, Math.max(1, limitRaw))
     const offset = (page - 1) * limit
 
-    const sa = makeServiceClient()
+    const sa = createServiceClient()
 
     // Construir query base: join con usuarios para filtrar por empresa
     let query = sa

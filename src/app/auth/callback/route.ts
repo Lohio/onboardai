@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url)
@@ -42,11 +42,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Usuario nuevo → crear empresa trial + admin con service role (bypasea RLS)
-  const serviceClient = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const serviceClient = createServiceClient()
 
   const nombre = data.user.user_metadata?.full_name
     ?? data.user.user_metadata?.name

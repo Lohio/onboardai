@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { ApiError } from '@/lib/errors'
 
@@ -21,16 +21,7 @@ export const DELETE = withHandler(
       return ApiError.badRequest('ID de API key requerido')
     }
 
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) {
-      return ApiError.internal('SUPABASE_SERVICE_ROLE_KEY no configurada en el servidor')
-    }
-
-    const sa = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const sa = createServiceClient()
 
     // Verificar que la key existe y pertenece a la empresa del usuario
     // (dev puede revocar cualquier key)

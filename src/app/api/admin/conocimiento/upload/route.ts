@@ -5,7 +5,7 @@
 // Requiere SUPABASE_SERVICE_ROLE_KEY
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
@@ -141,10 +141,7 @@ export const POST = withHandler(
     const path = `${empresaId}/${modulo}/${uuid}.${ext}`
 
     // Subir con service role key (bypass RLS de Storage)
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const serviceSupabase = createServiceClient()
 
     const { error: uploadError } = await serviceSupabase
       .storage

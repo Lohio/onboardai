@@ -4,7 +4,7 @@
 // de corta vida. Permite mantener el bucket privado sin URLs públicas.
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { ApiError } from '@/lib/errors'
 
@@ -28,10 +28,7 @@ export const GET = withHandler(
       return ApiError.forbidden()
     }
 
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const serviceSupabase = createServiceClient()
 
     const { data, error } = await serviceSupabase
       .storage

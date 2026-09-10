@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { crearApiKeySchema } from '@/lib/schemas/admin'
 import { generateApiKey, hashApiKey } from '@/lib/api/apiKeys'
@@ -17,16 +17,7 @@ export const GET = withHandler(
     bodyType: 'none',
   },
   async ({ user }) => {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) {
-      return ApiError.internal()
-    }
-
-    const sa = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const sa = createServiceClient()
 
     // dev puede ver todas las keys; admin solo las de su empresa
     let query = sa
@@ -61,16 +52,7 @@ export const POST = withHandler(
     schema: crearApiKeySchema,
   },
   async ({ body, user }) => {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey) {
-      return ApiError.internal()
-    }
-
-    const sa = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const sa = createServiceClient()
 
     // Generar y hashear la key
     const rawKey = generateApiKey()
