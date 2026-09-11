@@ -435,15 +435,6 @@ respuesta, decilo honestamente y sugerí consultar con el manager o buddy.`
   return { systemPrompt, systemBlocks, modoConocimiento, config }
 }
 
-/**
- * @deprecated Usar buildSystemPromptWithConfig para evitar doble query a app_config.
- * Se mantiene por compatibilidad con código externo.
- */
-export async function buildSystemPrompt(empresaId: string): Promise<string> {
-  const { systemPrompt } = await buildSystemPromptWithConfig(empresaId)
-  return systemPrompt
-}
-
 // ─────────────────────────────────────────────
 // streamChat
 // Hace streaming real con la Claude API usando el contexto de la empresa.
