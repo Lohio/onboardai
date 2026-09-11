@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wrench, ExternalLink, ChevronDown, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/LanguageProvider'
-import { cn } from '@/lib/utils'
+import { cn, hrefSeguro } from '@/lib/utils'
 import type { HerramientaRol } from '@/types'
 import { SectionHeader, getIcono, itemVariants } from './helpers'
 
@@ -41,7 +41,7 @@ function HerramientaCard({ herramienta }: { herramienta: HerramientaRol }) {
               <p className="text-sm font-semibold text-gray-900 truncate">{herramienta.nombre}</p>
               {herramienta.url && (
                 <a
-                  href={herramienta.url}
+                  href={hrefSeguro(herramienta.url)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={e => e.stopPropagation()}

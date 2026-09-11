@@ -4,6 +4,7 @@
 
 import { FileDown, Link2, ExternalLink, Download } from 'lucide-react'
 import { MiniMarkdownPreview } from '@/components/shared/MiniMarkdownPreview'
+import { hrefSeguro } from '@/lib/utils'
 import {
   getDomainFromUrl,
   getFilenameFromPath,
@@ -81,7 +82,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
             <p className="text-xs text-white/35 mt-0.5">{t('adminCont.tipoDesc.pdf')}</p>
           </div>
           <a
-            href={pdfSrc}
+            href={hrefSeguro(pdfSrc)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-xs text-[#38BDF8] hover:text-[#7DD3FC]
@@ -121,7 +122,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
               </div>
             </div>
             <a
-              href={bloque.url}
+              href={hrefSeguro(bloque.url)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0"
@@ -153,7 +154,7 @@ export function ContenidoPreview({ bloque }: ContenidoPreviewProps) {
           </div>
           {archivoSrc && (
             <a
-              href={archivoSrc}
+              href={hrefSeguro(archivoSrc)}
               target="_blank"
               rel="noopener noreferrer"
               download

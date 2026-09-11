@@ -7,7 +7,7 @@ import {
   Copy, Check, User, Clock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { cn } from '@/lib/utils'
+import { cn, hrefSeguro } from '@/lib/utils'
 import { buildContactUrl, getHerramientaLabel } from '@/lib/contacto'
 import { HerramientaIcon } from '@/components/icons/HerramientaIcon'
 
@@ -138,7 +138,7 @@ export function ContactoCard({ tipo, nombre, email, herramienta }: ContactoCardP
         <div className="border-t border-gray-200 pt-2">
           {url ? (
             <a
-              href={url}
+              href={hrefSeguro(url)}
               target={!url.startsWith('mailto:') ? '_blank' : undefined}
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-sky-600 transition-colors duration-150"

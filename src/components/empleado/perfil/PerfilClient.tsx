@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/Badge'
-import { cn, getInitials, diasDesde } from '@/lib/utils'
+import { cn, getInitials, diasDesde, hrefSeguro } from '@/lib/utils'
 import { ContactoCard } from '@/components/empleado/ContactoCard'
 import { MiOnboardingCard, EncuestasPulsoCard } from '@/components/empleado/ProgresoPanel'
 import { PerfilSkeleton } from '@/components/empleado/perfil/PerfilSkeleton'
@@ -531,7 +531,7 @@ export function PerfilClient({ datosIniciales, errorInicial = false }: PerfilCli
                                   <Badge variant="success">Activo</Badge>
                                   {acceso.url && (
                                     <a
-                                      href={acceso.url}
+                                      href={hrefSeguro(acceso.url)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-gray-400 hover:text-sky-600 transition-colors duration-150"
