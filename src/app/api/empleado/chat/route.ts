@@ -6,6 +6,7 @@ import { chatSchema } from '@/lib/schemas/empleado'
 import { logStreamError } from '@/lib/api-error'
 import { reservarConsultaIA, registrarUsoIA, MENSAJE_CUOTA_AGOTADA } from '@/lib/usoIA'
 import { notificarUmbralCuotaIA } from '@/lib/emails/avisoCuotaIA'
+import { createServiceClient } from '@/lib/supabaseService'
 
 // ─────────────────────────────────────────────
 // POST /api/empleado/chat
@@ -63,8 +64,12 @@ export const POST = withHandler(
     const empresa = Array.isArray(usuario.empresas) ? usuario.empresas[0] : usuario.empresas
 
     // ── Cuota mensual de consultas IA (por empresa, según plan) ───
-    // Reserva atómica: DEBE ocurrir antes de llamar a Claude
-    const cuota = await reservarConsultaIA(supabase!, empresaId, empresa?.plan)
+    // Reserva atómica: DEBE ocurrir antes de llamar a Claude.
+    // Los RPC de metering son SECURITY DEFINER y ya no son invocables por el
+    // rol authenticated (ver scripts/seguridad_baja.sql); se llaman con
+    // service-role. El empresaId viene del perfil del usuario, validado arriba.
+    const metering = createServiceClient()
+    const cuota = await reservarConsultaIA(metering, empresaId, empresa?.plan)
     if (!cuota.permitido) {
       // Responder como mensaje normal del asistente para no romper la UX del chat
       return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
@@ -202,7 +207,7 @@ export const POST = withHandler(
           // ── Metering: registrar tokens (la consulta ya se contó en
           //    la reserva atómica) + avisos de umbral ─────────────
           await registrarUsoIA({
-            supabase: supabaseRef,
+            supabase: metering,
             empresaId,
             usuarioId: userId,
             fuente: 'chat',
@@ -214,7 +219,7 @@ export const POST = withHandler(
             cuentaConsulta: false,
           })
           notificarUmbralCuotaIA({
-            supabase: supabaseRef,
+            supabase: metering,
             empresaId,
             usadas: cuota.usadas,
             limite: cuota.limite,
