@@ -59,5 +59,7 @@ tsconfig.tsbuildinfo
 # artefactos accidentales de windows
 nul
 
-# config local de Claude Code (puede contener secretos)
+# config local de Claude Code y MCP (pueden contener secretos) — repo PÚBLICO
 .claude/settings.local.json
+.claude/settings.json
+.mcp.json
