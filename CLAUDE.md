@@ -6,10 +6,10 @@ Permite que empresas carguen su conocimiento institucional y nuevos empleados lo
 a través de un agente IA conversacional.
 
 ## Stack tecnológico
-- Next.js 14 con App Router y TypeScript estricto
+- Next.js 16 (App Router, Turbopack) + React 19 + TypeScript estricto
 - Tailwind CSS + Framer Motion para animaciones
-- Supabase para base de datos y autenticación
-- Claude API (claude-sonnet-4-20250514) para el agente IA
+- Supabase para base de datos, auth (JWT firmados con ECC P-256 → `getClaims()` local), Storage y Realtime
+- Claude API para el agente IA: modelo desde `app_config.claude_model` (fallback `claude-sonnet-4-6`); los bots usan `claude-haiku-4-5-20251001`
 - Lucide React para íconos
 - Recharts para gráficos
 - Vercel para deploy
@@ -57,10 +57,16 @@ El login es único en `/auth/login`. El sistema redirige según el rol del usuar
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=   # Requerida para crear usuarios auth desde el admin (/api/admin/empleados POST)
+SUPABASE_SERVICE_ROLE_KEY=   # Única fábrica: createServiceClient() en src/lib/supabaseService.ts (asistente IA, upload, admin auth, webhooks, bots)
 ANTHROPIC_API_KEY=
+ENCRYPTION_KEY=              # Cifrado de passwords de accesos + firma HMAC de la cookie de rol del middleware
+NEXT_PUBLIC_APP_URL=         # https://app.heero.la en producción (links de emails, OAuth callback)
+CRON_SECRET=                 # Vercel cron → /api/bot/recordatorios
 RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en consola.
 ```
+Opcionales por integración: `STRIPE_*` / `MP_*` (billing), `TEAMS_WEBHOOK_TOKEN` / `GCHAT_SERVICE_ACCOUNT_JSON` / `TELEGRAM_*` (bots), `NEXT_PUBLIC_SENTRY_DSN`. La lista completa y validada está en `src/lib/schemas/env.ts`.
+
+**El repo es PÚBLICO**: nunca commitear secretos (ni en `.claude/settings*.json`).
 
 ---
 
@@ -106,6 +112,8 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 | `/dev/config` | Configuración interna del sistema |
 
 ### API routes
+
+Toda route se define con `withHandler({ auth, rol, schema, rateLimit }, handler)` de `src/lib/api/withHandler.ts` y responde errores con `ApiError` (`src/lib/errors.ts`), nunca con `NextResponse.json({ error })` a mano. La tabla es un resumen; el listado completo está en `src/app/api/` (incluye `/api/v1/*` con API key, `/api/billing/*` webhooks y `/api/bot/*`).
 
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
@@ -161,9 +169,13 @@ RESEND_API_KEY=   # Opcional: emails con resend.com. Sin esta key se loguean en 
 ### Librerías (`src/lib/`)
 | Archivo | Descripción |
 |---------|-------------|
-| `supabase.ts` | `createClient()` (client-side) y `createServerSupabaseClient()` (server-side) |
-| `claude.ts` | `buildSystemPrompt()`, `streamChat()`, `logMensaje()` — integración con Claude API |
-| `roles.ts` | Helpers de control de acceso por rol |
+| `supabase.ts` | `createClient()` (client-side) y `createServerSupabaseClient()` (server-side, cookies) |
+| `supabaseService.ts` | `createServiceClient()` — ÚNICA fábrica de cliente service-role (cacheada por proceso; nunca hacer `signIn*` sobre ella). Solo server-side |
+| `authSesion.ts` | `getUsuarioSesion(supabase)` — verifica el JWT localmente con `getClaims()`; usar en middleware, `withHandler` y pages RSC en vez de `getUser()` |
+| `claude.ts` | `buildSystemPromptWithConfig()`, `streamChat()`, `logMensaje()` — integración con Claude API (prompt caching, tool `buscar_conocimiento`) |
+| `usoIA.ts` | Cuota mensual de consultas IA por plan: `reservarConsultaIA()` (atómica, antes de llamar a Claude), `registrarUsoIA()`, `MENSAJE_CUOTA_AGOTADA` |
+| `api/withHandler.ts` | Wrapper obligatorio de toda API route: auth (`session`/`apiKey`/`cron`/`webhook`/`none`), rol, Zod, rate limit, `X-Request-Id`, Sentry en 5xx |
+| `i18n/{es,en,fr,pt}.ts` | Diccionarios (mismas claves en los 4). `LanguageProvider` carga `es` estático y el resto por `import()` dinámico |
 | `utils.ts` | `cn()` para merging de classNames, funciones de formato |
 | `contacto.ts` | Resolución de contactos de equipo/IT/RRHH |
 | `conocimiento.ts` | Utilidades del módulo de conocimiento: `parseVideoUrl`, `getDomainFromUrl`, `getFilenameFromPath`, `estadoBloque`, `infoBloque`, `formatFileSize`, `getFileEmoji`, `ACCEPT_BY_TIPO`, `MAX_SIZE_BY_TIPO`, `TIPO_LABELS`, `LINK_PLATAFORMAS` |
@@ -217,8 +229,8 @@ throw new Error(postgrestError.message ?? 'Error desconocido')
 ```
 
 ### Migración a Server Components
-Patrón objetivo para páginas con carga inicial de datos. Referencia: `/admin` (dashboard) y `/empleado/perfil`, ya migradas; el resto se migra gradualmente.
-- **`page.tsx` = Server Component** (sin `'use client'`): obtiene la sesión con `createServerSupabaseClient()` (manejar `user` null con `redirect('/auth/login')` aunque el middleware ya proteja la ruta), hace las queries iniciales en paralelo (`Promise.all`) y renderiza `<XxxClient datosIniciales={...} />`
+Patrón para páginas con carga inicial de datos. Ya migradas: `/admin`, `/admin/empleados`, `/admin/reportes`, `/admin/reportes/encuestas`, `/dev`, `/dev/empresas`, `/dev/usuarios`, `/empleado`, `/empleado/perfil`. Las páginas con mucha mutación (contenido, conocimiento, organigrama, configuración, cultura, rol, asistente) siguen siendo client y se migran solo si aporta.
+- **`page.tsx` = Server Component** (sin `'use client'`): obtiene la sesión con `createServerSupabaseClient()` + `getUsuarioSesion()` (manejar `null` con `redirect('/auth/login')` aunque el middleware ya proteja la ruta), hace las queries iniciales en paralelo (`Promise.all`) y renderiza `<XxxClient datosIniciales={...} />`
 - **Client Component** en `src/components/<área>/<página>/XxxClient.tsx` (`'use client'`): TODO el JSX/estado/interactividad; recibe los datos iniciales por props tipadas e inicializa el `useState` con ellos — sin `useEffect` de carga inicial
 - **Lógica de fetch compartida** en `src/lib/` (ej: `dashboardAdmin.ts`, `perfilEmpleado.ts`): función `cargarXxx(supabase: SupabaseClient, ...)` que usan tanto el server (carga inicial) como el client (recargas por realtime / retry, con `createClient()` dentro del callback como siempre)
 - **`loading.tsx`** junto al `page.tsx` con el skeleton de la página (fallback de Suspense del segmento)
@@ -232,6 +244,8 @@ Patrón objetivo para páginas con carga inicial de datos. Referencia: `/admin` 
 - Supabase Realtime para alertas en el layout del admin
 - Optimistic updates con rollback en mutaciones (ej: toggle checkbox de tareas)
 - `AnimatePresence` con `mode="wait"` para transiciones entre tabs/vistas
+- **i18n**: todo texto visible va por `const { t } = useLanguage()` → `t('seccion.clave')`. Al agregar una clave, agregarla en los 4 diccionarios (`src/lib/i18n/es.ts`, `en.ts`, `fr.ts`, `pt.ts`); `TranslationMap` es `Record<string, string>`, así que TypeScript NO avisa si falta una clave: verificar los 4 a mano
+- **Service-role**: solo server-side y siempre filtrando por `empresa_id` validado desde la sesión. Los RPC `SECURITY DEFINER` validan tenant con `assert_tenant_acceso()`; las columnas `usuarios.rol/empresa_id` y las de billing de `empresas` están protegidas por triggers (solo service-role o dev)
 
 ---
 
