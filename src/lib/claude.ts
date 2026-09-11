@@ -103,9 +103,18 @@ function estimarTokens(texto: string): number {
   return Math.ceil(texto.length / 3.5)
 }
 
-/** Escapa comillas para atributos de los tags <bloque> */
+/**
+ * Escapa para atributos de los tags <bloque>. Además de las comillas, escapa
+ * < y > (y &) para que un titulo/area/puesto malicioso no pueda cerrar el tag
+ * de apertura ni inyectar un </bloque> falso y romper el encuadre XML que
+ * aísla el conocimiento de las instrucciones del asistente.
+ */
 function escaparAttr(valor: string): string {
-  return valor.replace(/"/g, '&quot;')
+  return valor
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 /**
