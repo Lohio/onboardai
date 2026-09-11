@@ -123,7 +123,9 @@ export const POST = withHandler(
         empresa_id: empresaId,
         nombre: nombre.trim(),
         email: email.trim().toLowerCase(),
-        rol: body.rol ?? 'empleado',
+        // La API pública NUNCA crea cuentas con privilegios: una key con scope
+        // empleados:write solo da de alta empleados, aunque el body pida 'admin'.
+        rol: 'empleado',
         puesto: body.puesto?.trim() || null,
         area: body.area?.trim() || null,
         fecha_ingreso: body.fecha_ingreso || null,
