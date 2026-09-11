@@ -15,6 +15,10 @@ export interface RateLimitOptions {
   windowMs: number
   // Tipo de key para identificar al solicitante
   keyType: 'user' | 'ip' | 'empresa'
+  // Si la RPC de rate limit falla: false (default) permite la request (fail-open),
+  // true la rechaza (fail-closed). Usar true en endpoints de auth para que un
+  // fallo de la tabla no abra la puerta a fuerza bruta.
+  failClosed?: boolean
 }
 
 export interface RateLimitContext {
@@ -67,8 +71,17 @@ export async function checkRateLimit(
   })
 
   if (error) {
-    // Si falla el rate limiting, no bloquear el request (fail open)
     console.warn('[withRateLimit] Error al verificar rate limit:', error.message)
+    if (options.failClosed) {
+      // Endpoints sensibles (auth): si no podemos garantizar el límite, rechazar
+      const response = ApiError.tooManyRequests(
+        'Servicio de límite de solicitudes no disponible. Intentá nuevamente en unos momentos.',
+        requestId
+      )
+      response.headers.set('Retry-After', '30')
+      return response
+    }
+    // Resto: fail-open para no tirar abajo la app por un fallo transitorio del check
     return null
   }
 
@@ -91,13 +104,13 @@ export async function checkRateLimit(
 
 // Constantes de configuración por ruta (para uso en withHandler)
 export const RATE_LIMITS = {
-  // Auth
-  login:    { max: 10,  windowMs: 15 * 60 * 1000, keyType: 'ip'     } as RateLimitOptions,
-  register: { max: 5,   windowMs: 60 * 60 * 1000, keyType: 'ip'     } as RateLimitOptions,
+  // Auth — fail-closed: un fallo del check no debe habilitar fuerza bruta
+  login:    { max: 10,  windowMs: 15 * 60 * 1000, keyType: 'ip', failClosed: true } as RateLimitOptions,
+  register: { max: 5,   windowMs: 60 * 60 * 1000, keyType: 'ip', failClosed: true } as RateLimitOptions,
   // Admin
   crearEmpleado: { max: 20, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
   reporte:       { max: 10, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
-  passwords:     { max: 15, windowMs: 60 * 60 * 1000, keyType: 'user' } as RateLimitOptions,
+  passwords:     { max: 15, windowMs: 60 * 60 * 1000, keyType: 'user', failClosed: true } as RateLimitOptions,
   // API pública v1 (keyType 'empresa': la cuota es compartida por todas las keys de la empresa)
   apiV1Read:     { max: 300, windowMs: 60 * 60 * 1000, keyType: 'empresa' } as RateLimitOptions,
   apiV1Write:    { max: 60,  windowMs: 60 * 60 * 1000, keyType: 'empresa' } as RateLimitOptions,
