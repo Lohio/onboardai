@@ -49,7 +49,10 @@ async function firmarRol(rol: UserRole, userId: string): Promise<string> {
 
 async function verificarRolCookie(valor: string, userId: string): Promise<UserRole | null> {
   if (!COOKIE_SECRET) {
-    return esRolValido(valor) ? valor : null
+    // Fail-closed: sin secret no se puede verificar la firma, así que NUNCA
+    // confiar en la cookie (un proxy podría setear onboard_rol=dev). Se
+    // devuelve null para forzar la consulta del rol a la base.
+    return null
   }
   const sep = valor.lastIndexOf(':')
   if (sep === -1) return null
