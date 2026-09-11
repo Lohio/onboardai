@@ -11,6 +11,7 @@ import { Step1Empresa } from '@/components/admin/setup/Step1Empresa'
 import { Step2Cultura } from '@/components/admin/setup/Step2Cultura'
 import { Step3Contacto } from '@/components/admin/setup/Step3Contacto'
 import { Step4Empleado } from '@/components/admin/setup/Step4Empleado'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Datos compartidos entre pasos
@@ -59,7 +60,7 @@ export default function SetupPage() {
   const cargarDatos = useCallback(async () => {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: usuario, error } = await supabase

@@ -12,6 +12,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { useLanguage } from '@/components/LanguageProvider'
 import { cn } from '@/lib/utils'
 import type { OrgNodo } from '@/types'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ── Tipos locales ──────────────────────────────────────────────────────────
 
@@ -163,9 +164,7 @@ export default function OrganigramaAdminPage() {
     async function init() {
       try {
         const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) return
 
         const { data: adminData } = await supabase

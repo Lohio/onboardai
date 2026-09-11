@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 interface Empleado {
   id:            string
@@ -25,7 +26,7 @@ export default function BienvenidaPage() {
 
   const cargar = useCallback(async () => {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUsuarioSesion(supabase)
     if (!user) { setLoading(false); return }
 
     const { data: yo } = await supabase

@@ -12,6 +12,7 @@ import { ContenidoModal } from '@/components/admin/ContenidoModal'
 import { estadoBloque, infoBloque } from '@/lib/conocimiento'
 import type { ContenidoBloque, TipoContenido } from '@/types'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Constantes: módulos y bloques del producto
@@ -193,9 +194,7 @@ export default function ConocimientoPage() {
     async function init() {
       try {
         const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) return
 
         const { data: adminData } = await supabase

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -266,7 +267,7 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
     async function verificarTourEnSupabase() {
       try {
         const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) {
           // Sin sesión: usar solo localStorage
           timerRef.current = setTimeout(() => setActivo(true), delay)
@@ -414,7 +415,7 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
     // Persistir en Supabase de forma asíncrona (no bloquea la UI)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (user) {
         await supabase
           .from('usuarios')

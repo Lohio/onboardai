@@ -22,6 +22,7 @@ import { TabEdicion } from '@/components/admin/empleado-detalle/TabEdicion'
 import { TabRol } from '@/components/admin/empleado-detalle/TabRol'
 import { TabProgreso } from '@/components/admin/empleado-detalle/TabProgreso'
 import { TabPlan } from '@/components/admin/empleado-detalle/TabPlan'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Skeleton
@@ -114,7 +115,7 @@ export default function EmpleadoDetallePage() {
   const cargarDatos = useCallback(async () => {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: adminData } = await supabase

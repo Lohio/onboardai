@@ -14,6 +14,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -335,7 +336,7 @@ export default function EmpresaDetallePage() {
       const supabase = createClient()
 
       // Verificar sesión y rol dev
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: ud } = await supabase

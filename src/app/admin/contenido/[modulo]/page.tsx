@@ -23,6 +23,7 @@ import { EliminarBloqueModal } from '@/components/admin/EliminarBloqueModal'
 import toast from 'react-hot-toast'
 import type { BloqueContenido } from '@/components/admin/BloqueContenidoForm'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -172,7 +173,7 @@ export default function ModuloContenidoPage() {
       try {
         const supabase = createClient()
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) { router.push('/auth/login'); return }
 
         const { data: perfil } = await supabase

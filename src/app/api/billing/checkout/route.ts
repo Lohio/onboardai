@@ -8,6 +8,7 @@ import { ApiError } from '@/lib/errors'
 import { getStripe, STRIPE_PRICES } from '@/lib/stripe'
 import { getMPPreference } from '@/lib/mercadopago-server'
 import { PLANES } from '@/lib/billing'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 export const POST = withHandler(
   {
@@ -40,7 +41,7 @@ export const POST = withHandler(
 
       if (!customerId) {
         // ctx.user no incluye email — lo obtenemos del usuario auth de la sesión
-        const { data: { user: authUser } } = await supabase.auth.getUser()
+        const authUser = await getUsuarioSesion(supabase)
 
         const customer = await stripe.customers.create({
           email: authUser?.email,

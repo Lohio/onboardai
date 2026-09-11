@@ -11,6 +11,7 @@ import {
 import { createClient } from '@/lib/supabase'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Navegación
@@ -129,7 +130,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
     async function init() {
       try {
         const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) { router.push('/auth/login'); return }
 
         const { data: userData } = await supabase

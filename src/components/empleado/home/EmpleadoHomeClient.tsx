@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { cargarHomeEmpleado, type DatosBaseEmpleado, type DatosHomeEmpleado } from '@/lib/homeEmpleado'
 import type { EstadoModulos } from '@/lib/progreso'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -622,7 +623,7 @@ export function EmpleadoHomeClient({ datosIniciales, errorInicial = false }: Emp
     setError(false)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) return
 
       const datos = await cargarHomeEmpleado(supabase, user.id)

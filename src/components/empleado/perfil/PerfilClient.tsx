@@ -21,6 +21,7 @@ import ProductTour from '@/components/empleado/ProductTour'
 import { cargarPerfilEmpleado } from '@/lib/perfilEmpleado'
 import type { DatosPerfilEmpleado, EstadoModulos, EncuestaPulsoResumen, PerfilPasswords } from '@/lib/perfilEmpleado'
 import type { Usuario, MiembroEquipo, Acceso } from '@/types'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Props (datos iniciales cargados server-side)
@@ -221,9 +222,7 @@ export function PerfilClient({ datosIniciales, errorInicial = false }: PerfilCli
     try {
       const supabase = createClient()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) throw new Error('No autenticado')
 
       // Passwords descifradas server-side vía endpoint dedicado

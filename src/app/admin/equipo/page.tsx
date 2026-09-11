@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Portal } from '@/components/shared/Portal'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -493,7 +494,7 @@ export default function EquipoPage() {
   const cargarEmpleados = useCallback(async () => {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) return
 
       const { data: admin } = await supabase

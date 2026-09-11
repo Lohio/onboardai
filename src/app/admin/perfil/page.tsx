@@ -7,6 +7,7 @@ import { User, Phone, Mail, CheckCircle, ArrowLeft, Lock, Camera, Eye, EyeOff, S
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 const PHONE_STORAGE_KEY = 'heero_admin_phone'
 
@@ -30,7 +31,7 @@ export default function AdminPerfilPage() {
   const cargarDatos = useCallback(async () => {
     const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUsuarioSesion(supabase)
     if (!user) { router.push('/auth/login'); return }
 
     setUserId(user.id)

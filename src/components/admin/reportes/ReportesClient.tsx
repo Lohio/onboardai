@@ -16,6 +16,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { useLanguage } from '@/components/LanguageProvider'
 import { cargarReportesAdmin, datosReportesVacios } from '@/lib/reportesAdmin'
 import type { EmpleadoReporte, DatosReportesAdmin, FranjaKey } from '@/lib/reportesAdmin'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Variantes de animación
@@ -282,7 +283,7 @@ export function ReportesClient({ empresaId, datosIniciales, errorInicial }: Repo
       const supabase = createClient()
 
       // Verificar sesión y obtener empresa_id
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: perfil } = await supabase

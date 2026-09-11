@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { useLanguage } from '@/components/LanguageProvider'
 import { LANGS, LANG_FLAGS, LANG_LABELS } from '@/lib/i18n'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Opciones estándar de herramienta
@@ -104,7 +105,7 @@ export default function ConfiguracionPage() {
   const cargarDatos = useCallback(async () => {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: adminData } = await supabase

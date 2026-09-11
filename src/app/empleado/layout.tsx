@@ -15,6 +15,7 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { SettingsDropdown } from '@/components/shared/SettingsDropdown'
 import { useLanguage } from '@/components/LanguageProvider'
 import { cn } from '@/lib/utils'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Configuración de módulos
@@ -101,9 +102,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const cargarProgreso = useCallback(async () => {
     const supabase = createClient()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getUsuarioSesion(supabase)
 
     if (!user) {
       router.push('/auth/login')

@@ -19,6 +19,7 @@ import { CapaEmpresaPanel } from '@/components/admin/contenido/CapaEmpresaPanel'
 import { CapaBloquePanel } from '@/components/admin/contenido/CapaBloquePanel'
 import { CapaEmpleadoPanel } from '@/components/admin/contenido/CapaEmpleadoPanel'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Componente principal
@@ -86,7 +87,7 @@ export default function ContenidoPage() {
       try {
         const supabase = createClient()
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
         if (!user) { router.push('/auth/login'); return }
 
         const { data: perfil } = await supabase

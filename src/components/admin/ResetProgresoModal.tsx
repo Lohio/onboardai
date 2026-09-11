@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase'
 import { Portal } from '@/components/shared/Portal'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -76,7 +77,7 @@ export function ResetProgresoModal({
       const supabase = createClient()
 
       // Doble check: verificar que el usuario actual tiene permisos
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { toast.error(t('adminCore.noSession')); return }
 
       const { data: adminData } = await supabase

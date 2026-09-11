@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -105,7 +106,7 @@ export function BloqueContenidoForm({
       const supabase = createClient()
 
       // Verificar que el usuario sea admin o dev
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) {
         toast.error(t('adminCont.form.sesionExpirada'))
         return

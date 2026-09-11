@@ -21,6 +21,7 @@ import { useContext } from 'react'
 import { ThemeContext } from '@/components/ThemeProvider'
 import { useLanguage } from '@/components/LanguageProvider'
 import type { PlanId, ProveedorPago } from '@/types'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─── Estado de suscripción desde API ─────────────────────────────────────────
 
@@ -440,7 +441,7 @@ export default function SuscripcionPage() {
     const sinUso: UsoIAMes = { consultas: 0, input_tokens: 0, output_tokens: 0 }
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { setUso(sinUso); return }
 
       const { data: perfil } = await supabase

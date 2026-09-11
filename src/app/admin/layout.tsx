@@ -27,6 +27,7 @@ import type { PlanId } from '@/types'
 import AdminProductTour from '@/components/AdminProductTour'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos locales
@@ -533,9 +534,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const supabase = createClient()
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const user = await getUsuarioSesion(supabase)
 
         if (!user) {
           router.push('/auth/login')

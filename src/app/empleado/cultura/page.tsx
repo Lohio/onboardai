@@ -16,6 +16,7 @@ import type { BloqueKey } from '@/components/empleado/cultura/types'
 import { BLOQUES_ORDEN, BLOQUES_CONFIG, PREGUNTAS } from '@/components/empleado/cultura/helpers'
 import { BloqueCard } from '@/components/empleado/cultura/BloqueCard'
 import { OrgBloqueCard } from '@/components/empleado/cultura/OrgBloqueCard'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Skeleton
@@ -105,7 +106,7 @@ export default function CulturaPage() {
     setHasError(false)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) return
       setUserId(user.id)
 

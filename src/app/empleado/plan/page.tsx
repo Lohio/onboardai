@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { calcularFaseActual, calcularDiaOnboarding, calcularProgresoPlanGlobal } from '@/lib/progreso'
 import { FASES_CONFIG } from '@/lib/plan'
 import type { PlanFase, PlanItem } from '@/types'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─── Configuración de fases ────────────────────────────────────────────────────
 
@@ -192,7 +193,7 @@ export default function PlanPage() {
     setHasError(false)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) return
       setUserId(user.id)
 

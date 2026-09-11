@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { useLanguage } from '@/components/LanguageProvider'
 import { cargarEncuestasAdmin } from '@/lib/encuestasAdmin'
 import type { EncuestaRow, DatosEncuestasAdmin } from '@/lib/encuestasAdmin'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -171,7 +172,7 @@ export function EncuestasClient({ empresaId, rol, datosIniciales, errorInicial }
     try {
       const supabase = createClient()
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: admin } = await supabase

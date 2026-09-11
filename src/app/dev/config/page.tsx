@@ -13,6 +13,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -410,7 +411,7 @@ export default function ConfigPage() {
       const supabase = createClient()
 
       // Verificar sesión y rol
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { router.push('/auth/login'); return }
 
       const { data: perfil } = await supabase
@@ -497,7 +498,7 @@ export default function ConfigPage() {
       const supabase = createClient()
 
       // Doble check de permisos en cliente
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) { toast.error(t('dev.sinSesion')); return }
 
       const { data: perfil } = await supabase

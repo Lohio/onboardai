@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { createClient } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -202,7 +203,7 @@ export default function AsistentePage() {
 
   const cargarUsuario = useCallback(async () => {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUsuarioSesion(supabase)
     if (!user) return
     const { data } = await supabase
       .from('usuarios')

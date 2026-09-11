@@ -24,6 +24,7 @@ import { TabRol } from '@/components/empleado/rol/TabRol'
 import { TabEquipo } from '@/components/empleado/rol/TabEquipo'
 import { TabHerramientas } from '@/components/empleado/rol/TabHerramientas'
 import { TabTareas } from '@/components/empleado/rol/TabTareas'
+import { getUsuarioSesion } from '@/lib/authSesion'
 
 // ─────────────────────────────────────────────
 // Página principal
@@ -74,7 +75,7 @@ export default function RolPage() {
     setError(null)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUsuarioSesion(supabase)
       if (!user) throw new Error('No autenticado')
 
       const { data: usuario, error: uErr } = await supabase
@@ -167,7 +168,7 @@ export default function RolPage() {
   const toggleTarea = useCallback(async (id: string, completada: boolean) => {
     if (togglingIds.has(id)) return
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUsuarioSesion(supabase)
     if (!user) return
 
     setTogglingIds(prev => new Set(prev).add(id))
