@@ -8,7 +8,7 @@ import { ApiError } from '@/lib/errors'
 import { safeDecrypt } from '@/lib/encryption'
 
 export const GET = withHandler(
-  { auth: 'session', rol: 'empleado' },
+  { auth: 'session', rol: 'empleado', verificarUsuario: true },
   async ({ supabase, user }) => {
     const { data, error } = await supabase
       .from('usuarios')

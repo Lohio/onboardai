@@ -15,6 +15,7 @@ export const POST = withHandler(
     auth: 'session',
     rol: 'admin',
     schema: checkoutSchema,
+    verificarUsuario: true,
   },
   async ({ body, supabase, user, requestId }) => {
     const { plan, proveedor } = body

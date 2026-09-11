@@ -38,6 +38,10 @@ interface HandlerOptions<TBody = unknown> {
   cors?: boolean
   // Configuración de rate limiting (DB-based, compatible con Vercel serverless)
   rateLimit?: RateLimitOptions
+  // Para operaciones sensibles (descifrar credenciales, borrar usuarios, billing):
+  // verificar la sesión con getUser() (round-trip a Supabase Auth que detecta
+  // revocación) en vez del getClaims() local. Solo aplica con auth: 'session'.
+  verificarUsuario?: boolean
 }
 
 // ─────────────────────────────────────────────
@@ -74,7 +78,14 @@ export function withHandler<TBody = unknown>(
       let user: ApiContext<TBody>['user'] = null
 
       if (options.auth === 'session') {
-        const authUser = await getUsuarioSesion(supabase)
+        // Rutas sensibles: getUser() valida la sesión contra Supabase Auth
+        // (detecta revocación); el resto usa la verificación local getClaims().
+        const authUser = options.verificarUsuario
+          ? await (async () => {
+              const { data } = await supabase.auth.getUser()
+              return data.user ? { id: data.user.id, email: data.user.email } : null
+            })()
+          : await getUsuarioSesion(supabase)
 
         if (!authUser) {
           status = 401

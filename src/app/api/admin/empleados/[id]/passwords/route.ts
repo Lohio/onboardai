@@ -9,7 +9,7 @@ import { ApiError } from '@/lib/errors'
 import { safeDecrypt } from '@/lib/encryption'
 
 export const GET = withHandler(
-  { auth: 'session', rol: ['admin', 'dev'], bodyType: 'none', rateLimit: RATE_LIMITS.passwords },
+  { auth: 'session', rol: ['admin', 'dev'], bodyType: 'none', rateLimit: RATE_LIMITS.passwords, verificarUsuario: true },
   async ({ supabase, user, params, requestId }) => {
     const { id } = params
 

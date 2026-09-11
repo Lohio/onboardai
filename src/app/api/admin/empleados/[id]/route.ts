@@ -87,6 +87,7 @@ export const DELETE = withHandler(
     auth: 'session',
     rol: ['admin', 'dev'],
     bodyType: 'none',
+    verificarUsuario: true,
   },
   async ({ supabase, user, params }) => {
     const { id } = params
