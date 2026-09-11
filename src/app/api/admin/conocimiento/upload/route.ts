@@ -28,12 +28,20 @@ const MAX_BYTES: Record<string, number> = {
 
 /** Máximo de caracteres de texto extraído que se persiste por archivo */
 const MAX_TEXTO_EXTRAIDO = 50_000
+// Tope del archivo de entrada para extraer texto. Un DOCX es un ZIP: uno muy
+// grande puede descomprimir a gigabytes (zip bomb) y agotar memoria en mammoth.
+// Los documentos de onboarding legítimos están muy por debajo de esto.
+const MAX_BYTES_EXTRACCION = 15_000_000
 
 /**
  * Extrae el texto de PDFs y DOCX para que el contenido nutra al agente IA.
  * Best-effort: si falla, el archivo se sube igual y se retorna null.
  */
 async function extraerTexto(buffer: Buffer, ext: string): Promise<string | null> {
+  if (buffer.length > MAX_BYTES_EXTRACCION) {
+    console.warn('[upload/conocimiento] Archivo demasiado grande para extraer texto, se omite:', buffer.length)
+    return null
+  }
   try {
     if (ext === 'pdf') {
       const { extractText, getDocumentProxy } = await import('unpdf')
