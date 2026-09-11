@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
+
+// Sin suscripción real: solo distingue server (false) de cliente hidratado (true)
+const subscribeNoop = () => () => {}
 
 /**
  * Renderiza sus hijos directamente en document.body via portal.
@@ -9,12 +12,7 @@ import { createPortal } from 'react-dom'
  * confinen position:fixed de modales al área de contenido en vez del viewport.
  */
 export function Portal({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
-  }, [])
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false)
 
   if (!mounted) return null
   return createPortal(children, document.body)

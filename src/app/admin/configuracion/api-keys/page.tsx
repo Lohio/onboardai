@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 // Tipos locales
 // ─────────────────────────────────────────────
 
-interface KeyListItem extends Omit<ApiKeyRecord, 'empresa_id'> {}
+type KeyListItem = Omit<ApiKeyRecord, 'empresa_id'>
 
 type ExpiresOption = 'never' | '30' | '90' | '365'
 

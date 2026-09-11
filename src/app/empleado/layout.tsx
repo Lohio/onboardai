@@ -201,8 +201,11 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     .map(p => p[0].toUpperCase())
     .join('')
 
-  // Re-evalúa al cambiar de ruta
+  // Re-evalúa al cambiar de ruta.
+  // Falso positivo de la regla: todos los setState de cargarProgreso ocurren
+  // después de un await (respuesta de Supabase), nunca de forma sincrónica.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void cargarProgreso()
   }, [cargarProgreso, pathname])
 

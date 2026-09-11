@@ -45,6 +45,8 @@ export function CapaEmpleadoPanel({ empresaId }: { empresaId: string }) {
     setLoading(false)
   }, [empresaId])
 
+  // Falso positivo de la regla: los setState de cargarEmpleados ocurren tras un await
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void cargarEmpleados() }, [cargarEmpleados])
 
   const guardarNotas = async (id: string) => {

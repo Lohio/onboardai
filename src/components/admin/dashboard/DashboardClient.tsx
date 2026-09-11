@@ -220,11 +220,14 @@ export function DashboardClient({ empresaId, datosIniciales }: DashboardClientPr
   const totalPaginas = Math.max(1, Math.ceil(empleadosFiltrados.length / ITEMS_PER_PAGE))
   const empleadosPagina = empleadosFiltrados.slice((pagina - 1) * ITEMS_PER_PAGE, pagina * ITEMS_PER_PAGE)
 
-  // Reset página al cambiar filtros
-  useEffect(() => { setPagina(1) }, [busqueda, filtroEstado, filtroArea, sort])
-
+  // Cualquier cambio de filtro u orden vuelve a la página 1. Se hace en el
+  // handler y no en un efecto para no disparar un render extra en cascada.
+  const cambiarBusqueda = (v: string) => { setBusqueda(v); setPagina(1) }
+  const cambiarFiltroArea = (a: string) => { setFiltroArea(a); setPagina(1) }
+  const cambiarFiltroEstado = (f: FiltroEstado) => { setFiltroEstado(f); setPagina(1) }
   const handleSort = (key: SortKey) => {
     setSort(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }))
+    setPagina(1)
   }
 
   // ── Métricas ──
@@ -298,14 +301,14 @@ export function DashboardClient({ empresaId, datosIniciales }: DashboardClientPr
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
               <input
                 value={busqueda}
-                onChange={e => setBusqueda(e.target.value)}
+                onChange={e => cambiarBusqueda(e.target.value)}
                 placeholder="Buscar por nombre, puesto o área..."
                 className="w-full pl-9 pr-3 py-2 rounded-lg text-sm bg-white/[0.04] border border-white/[0.08]
                   text-white/80 placeholder:text-white/25 focus:outline-none focus:border-[#0EA5E9]/40
                   focus:bg-white/[0.06] transition-all duration-150"
               />
               {busqueda && (
-                <button onClick={() => setBusqueda('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white/30 hover:text-white/70">
+                <button onClick={() => cambiarBusqueda('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white/30 hover:text-white/70">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -331,7 +334,7 @@ export function DashboardClient({ empresaId, datosIniciales }: DashboardClientPr
                     {['todas', ...areas].map(a => (
                       <button
                         key={a}
-                        onClick={() => { setFiltroArea(a); setShowAreaFilter(false) }}
+                        onClick={() => { cambiarFiltroArea(a); setShowAreaFilter(false) }}
                         className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors
                           ${filtroArea === a ? 'text-[#38BDF8] bg-[#0EA5E9]/10' : 'text-white/55 hover:text-white/90 hover:bg-white/[0.04]'}`}
                       >
@@ -356,7 +359,7 @@ export function DashboardClient({ empresaId, datosIniciales }: DashboardClientPr
               <button
                 key={f.key}
                 data-active={filtroEstado === f.key}
-                onClick={() => setFiltroEstado(f.key)}
+                onClick={() => cambiarFiltroEstado(f.key)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-all duration-150
                   ${filtroEstado === f.key
                     ? f.key === 'todos'

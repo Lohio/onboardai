@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useSyncExternalStore } from 'react'
+import { crearSuscripcionLocal } from '@/lib/suscripcionLocal'
 
 export type Theme = 'theme-dark' | 'theme-light' | 'theme-gray'
 
@@ -10,6 +11,9 @@ const DEFAULT: Theme = 'theme-dark'
 function storageKey(section: string) {
   return `onboard_theme_${section}`
 }
+
+// Avisa a los ThemeProvider montados cuando applyTheme escribe localStorage
+const store = crearSuscripcionLocal()
 
 // Context expone sección, tema actual y setter reactivo
 export const ThemeContext = createContext<{
@@ -39,6 +43,7 @@ export function applyTheme(theme: Theme, section: string) {
   THEMES.forEach(t => html.classList.remove(t))
   html.classList.add(theme)
   localStorage.setItem(storageKey(section), theme)
+  store.notify()
 }
 
 // Fuerza tema oscuro (para auth/login)
@@ -55,17 +60,21 @@ export function ThemeProvider({
   children: React.ReactNode
   section: string
 }) {
-  const [currentTheme, setCurrentThemeState] = useState<Theme>(DEFAULT)
+  // Tema leído de localStorage al hidratar (en el server: DEFAULT, como antes).
+  // useSyncExternalStore evita el setState-en-efecto que disparaba un render extra.
+  const currentTheme = useSyncExternalStore(
+    store.subscribe,
+    () => getStoredTheme(section),
+    () => DEFAULT,
+  )
 
+  // Aplica la clase al <html> al montar y cuando cambia el tema o la sección
   useEffect(() => {
-    const theme = getStoredTheme(section)
-    setCurrentThemeState(theme)
-    applyTheme(theme, section)
-  }, [section])
+    applyTheme(currentTheme, section)
+  }, [currentTheme, section])
 
   function setTheme(theme: Theme) {
     applyTheme(theme, section)
-    setCurrentThemeState(theme)
   }
 
   return (

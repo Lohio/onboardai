@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react'
 import { type Lang, type TranslationMap, LANGS } from '@/lib/i18n'
 import es from '@/lib/i18n/es'
+import { crearSuscripcionLocal } from '@/lib/suscripcionLocal'
 
 const STORAGE_KEY = 'onboard_lang'
 const DEFAULT: Lang = 'es'
@@ -14,6 +15,16 @@ const LOADERS: Record<Exclude<Lang, 'es'>, () => Promise<{ default: TranslationM
   fr: () => import('@/lib/i18n/fr'),
   pt: () => import('@/lib/i18n/pt'),
 }
+
+// Idioma persistido en localStorage, expuesto como store para useSyncExternalStore
+const store = crearSuscripcionLocal()
+
+function leerIdiomaGuardado(): Lang {
+  const stored = localStorage.getItem(STORAGE_KEY) as Lang | null
+  return stored && LANGS.includes(stored) ? stored : DEFAULT
+}
+
+const idiomaServidor = () => DEFAULT
 
 interface LanguageContextValue {
   lang: Lang
@@ -32,7 +43,8 @@ export function useLanguage() {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(DEFAULT)
+  // Idioma leído de localStorage al hidratar (en el server: español, como antes)
+  const lang = useSyncExternalStore(store.subscribe, leerIdiomaGuardado, idiomaServidor)
   const [dicts, setDicts] = useState<Partial<Record<Lang, TranslationMap>>>({ es })
 
   const cargarIdioma = useCallback((l: Lang) => {
@@ -42,18 +54,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       .catch((err: unknown) => console.warn('[i18n] No se pudo cargar el idioma', l, err))
   }, [])
 
+  // Descarga el diccionario del idioma activo (al hidratar con uno guardado y al cambiarlo)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Lang | null
-    if (stored && LANGS.includes(stored)) {
-      setLangState(stored)
-      cargarIdioma(stored)
-    }
-  }, [cargarIdioma])
+    cargarIdioma(lang)
+  }, [lang, cargarIdioma])
 
   function setLang(l: Lang) {
-    setLangState(l)
     localStorage.setItem(STORAGE_KEY, l)
-    cargarIdioma(l)
+    store.notify()
   }
 
   // Mientras carga un idioma no-es se muestra español, nunca keys crudas

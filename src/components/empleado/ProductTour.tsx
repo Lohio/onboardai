@@ -241,7 +241,6 @@ function TooltipContenido({
 export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string }) {
   const router = useRouter()
 
-  const [mounted,       setMounted      ] = useState(false)
   const [activo,        setActivo       ] = useState(false)
   const [pasoActual,    setPasoActual   ] = useState(0)
   const [spotlight,     setSpotlight    ] = useState<SpotlightRect | null>(null)
@@ -249,13 +248,11 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Hidratar solo en cliente ──────────────────────────────────
-  useEffect(() => { setMounted(true) }, [])
-
   // ── Iniciar tour si no fue completado (Supabase + localStorage fallback) ──
+  // Corre solo en el cliente (los efectos no se ejecutan en SSR), y el
+  // render devuelve null hasta que `activo` sea true, así que no hace falta
+  // un estado `mounted` para evitar desajustes de hidratación.
   useEffect(() => {
-    if (!mounted) return
-
     // Fallback rápido: si localStorage ya lo tiene, no mostrar
     if (localStorage.getItem(CLAVE_TOUR_LS)) return
 
@@ -299,7 +296,7 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [mounted])
+  }, [])
 
   // ── Calcular spotlight y posición del tooltip ─────────────────
   const calcularPosiciones = useCallback(() => {
@@ -396,11 +393,14 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
   useEffect(() => {
     if (!activo) return
 
-    calcularPosiciones()
+    // Medir el DOM en el próximo frame (ya pintado) en vez de setear estado
+    // de forma sincrónica dentro del efecto, que dispara un render en cascada
+    const raf = requestAnimationFrame(calcularPosiciones)
 
     window.addEventListener('resize',  calcularPosiciones)
     window.addEventListener('scroll',  calcularPosiciones)
     return () => {
+      cancelAnimationFrame(raf)
       window.removeEventListener('resize', calcularPosiciones)
       window.removeEventListener('scroll', calcularPosiciones)
     }
@@ -439,7 +439,7 @@ export default function ProductTour({ nombreEmpleado }: { nombreEmpleado: string
     completarTour()
   }, [completarTour])
 
-  if (!mounted || !activo) return null
+  if (!activo) return null
 
   const paso       = PASOS[pasoActual]
   const esCentrado = paso.posicion === 'center'
