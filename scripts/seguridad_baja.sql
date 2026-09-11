@@ -5,21 +5,32 @@
 
 -- ── L4: los RPC de metering/cuota no deben ser invocables por el cliente ──
 -- Son SECURITY DEFINER y el servidor los llama SIEMPRE con service-role.
--- PostgREST los expone a `authenticated` por defecto: un empleado podía
--- llamar reservar_consulta_ia(su_empresa, p_limite) vía REST para inflar y
--- agotar la cuota mensual de sus compañeros (DoS intra-tenant), ya que
--- `p_limite` lo controla el caller. Revocar EXECUTE a authenticated/anon;
--- service_role conserva el acceso (no se ve afectado por REVOKE).
-REVOKE EXECUTE ON FUNCTION reservar_consulta_ia(uuid, integer)              FROM authenticated, anon;
-REVOKE EXECUTE ON FUNCTION registrar_uso_ia(uuid, uuid, text, text, integer, integer, integer, integer, boolean) FROM authenticated, anon;
-REVOKE EXECUTE ON FUNCTION marcar_aviso_uso_ia(uuid, integer)              FROM authenticated, anon;
--- buscar_conocimiento también corre server-side (tool del asistente); el
--- cliente nunca la llama directo. La guarda assert_tenant_acceso ya impide
--- cross-tenant, pero cerramos igual la superficie.
-REVOKE EXECUTE ON FUNCTION buscar_conocimiento(uuid, text, integer)        FROM authenticated, anon;
--- Helpers internos de las funciones definer: tampoco necesitan exposición.
-REVOKE EXECUTE ON FUNCTION assert_tenant_acceso(uuid)                      FROM authenticated, anon;
-REVOKE EXECUTE ON FUNCTION es_caller_privilegiado()                        FROM authenticated, anon;
+-- OJO: en Postgres las funciones heredan EXECUTE de PUBLIC por defecto, así
+-- que revocar solo de authenticated/anon NO alcanza (siguen ejecutando vía
+-- PUBLIC). Hay que revocar de PUBLIC y volver a conceder solo a service_role.
+--
+-- Motivo: como p_limite lo controla el caller, un empleado podía llamar
+-- reservar_consulta_ia(su_empresa, p_limite) por REST para inflar y agotar
+-- la cuota mensual de sus compañeros (DoS intra-tenant).
+--
+-- NO se tocan los helpers assert_tenant_acceso / es_caller_privilegiado:
+-- el trigger proteger_columnas_* (SECURITY INVOKER) llama a
+-- es_caller_privilegiado() como el usuario autenticado, así que necesita
+-- conservar EXECUTE o rompería todo UPDATE de usuarios/empresas.
+
+REVOKE EXECUTE ON FUNCTION reservar_consulta_ia(uuid, integer)                                                        FROM PUBLIC, authenticated, anon;
+GRANT  EXECUTE ON FUNCTION reservar_consulta_ia(uuid, integer)                                                        TO service_role;
+
+REVOKE EXECUTE ON FUNCTION registrar_uso_ia(uuid, uuid, text, text, integer, integer, integer, integer, boolean)      FROM PUBLIC, authenticated, anon;
+GRANT  EXECUTE ON FUNCTION registrar_uso_ia(uuid, uuid, text, text, integer, integer, integer, integer, boolean)      TO service_role;
+
+REVOKE EXECUTE ON FUNCTION marcar_aviso_uso_ia(uuid, integer)                                                         FROM PUBLIC, authenticated, anon;
+GRANT  EXECUTE ON FUNCTION marcar_aviso_uso_ia(uuid, integer)                                                         TO service_role;
+
+-- buscar_conocimiento también corre server-side (tool del asistente, con
+-- service-role); el cliente nunca la llama directo.
+REVOKE EXECUTE ON FUNCTION buscar_conocimiento(uuid, text, integer)                                                   FROM PUBLIC, authenticated, anon;
+GRANT  EXECUTE ON FUNCTION buscar_conocimiento(uuid, text, integer)                                                   TO service_role;
 
 -- ── L5: uso_mensual_ia legible por cualquier empleado de la empresa ──
 -- La policy de SELECT solo filtraba por empresa, sin exigir rol (a diferencia
