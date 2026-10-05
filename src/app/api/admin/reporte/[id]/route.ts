@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { anthropic } from '@/lib/claude'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
@@ -131,7 +132,8 @@ Extensión: 300-400 palabras. Idioma: español rioplatense. Tono: profesional pe
 
   // 5. Streamear respuesta
   const encoder = new TextEncoder()
-  const supabaseRef = supabase!
+  // Metering con service-role (los RPC no son invocables por authenticated)
+  const metering = createServiceClient()
   const adminId = user!.id
   const empresaIdRef = user!.empresaId
   const stream = new ReadableStream({
@@ -155,7 +157,7 @@ Extensión: 300-400 palabras. Idioma: español rioplatense. Tono: profesional pe
         // Metering: registrar consumo (no consume cuota de consultas)
         const finalMsg = await msgStream.finalMessage()
         await registrarUsoIA({
-          supabase: supabaseRef,
+          supabase: metering,
           empresaId: empresaIdRef,
           usuarioId: adminId,
           fuente: 'reporte',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { streamChat } from '@/lib/claude'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { agenteSchema } from '@/lib/schemas/empleado'
@@ -42,8 +43,11 @@ export const POST = withHandler(
     const empresa = Array.isArray(usuario.empresas) ? usuario.empresas[0] : usuario.empresas
 
     // ── Cuota mensual de consultas IA (por empresa, según plan) ───
-    // Reserva atómica: DEBE ocurrir antes de llamar a Claude
-    const cuota = await reservarConsultaIA(supabase!, usuario.empresa_id, empresa?.plan)
+    // Reserva atómica: DEBE ocurrir antes de llamar a Claude.
+    // Los RPC de metering solo son invocables con service-role (ver
+    // scripts/seguridad_baja.sql). El empresa_id viene del perfil del usuario.
+    const metering = createServiceClient()
+    const cuota = await reservarConsultaIA(metering, usuario.empresa_id, empresa?.plan)
     if (!cuota.permitido) {
       return new NextResponse(MENSAJE_CUOTA_AGOTADA, {
         headers: {
@@ -80,7 +84,6 @@ export const POST = withHandler(
     ]
 
     // Capturar referencias para uso dentro del ReadableStream
-    const supabaseRef = supabase!
     const userId = user!.id
     const empresaId = usuario.empresa_id
 
@@ -102,7 +105,7 @@ export const POST = withHandler(
           // ── Metering: registrar tokens (la consulta ya se contó en
           //    la reserva atómica) + avisos de umbral ─────────────
           await registrarUsoIA({
-            supabase: supabaseRef,
+            supabase: metering,
             empresaId,
             usuarioId: userId,
             fuente: 'agente',
@@ -114,7 +117,7 @@ export const POST = withHandler(
             cuentaConsulta: false,
           })
           notificarUmbralCuotaIA({
-            supabase: supabaseRef,
+            supabase: metering,
             empresaId,
             usadas: cuota.usadas,
             limite: cuota.limite,
