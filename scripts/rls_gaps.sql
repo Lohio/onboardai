@@ -284,7 +284,9 @@ CREATE POLICY "equipo_dev_all" ON equipo_relaciones
 -- 9. rate_limits — solo service role (sin políticas = bloqueado)
 -- ══════════════════════════════════════════════════════════════
 -- Sin políticas explícitas = solo service role accede.
--- El RPC increment_rate_limit es SECURITY DEFINER, no necesita política.
+-- El RPC increment_rate_limit es SECURITY INVOKER (scripts/rate_limits.sql):
+-- solo funciona con service-role, que es como lo llama withHandler.
+-- EXECUTE restringido a service_role en scripts/rate_limit_revoke.sql.
 
 
 -- ══════════════════════════════════════════════════════════════
