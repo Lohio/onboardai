@@ -10,6 +10,7 @@ import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { withHandler } from '@/lib/api/withHandler'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabaseService'
 import { verifyApiKey, type ApiKeyRecord } from '@/lib/api/apiKeys'
 import { checkRateLimit } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
@@ -19,6 +20,12 @@ import type { ApiContext } from '@/types/api'
 vi.mock('@/lib/supabase', () => ({
   createServerSupabaseClient: vi.fn(),
 }))
+
+vi.mock('@/lib/supabaseService', () => {
+  // Instancia única, como la fábrica real (cacheada por proceso)
+  const serviceClient = { __tipo: 'service-role' }
+  return { createServiceClient: vi.fn(() => serviceClient) }
+})
 
 vi.mock('@/lib/api/apiKeys', () => ({
   verifyApiKey: vi.fn(),
@@ -412,6 +419,20 @@ describe('withHandler — rate limiting', () => {
 
     expect(res.status).toBe(200)
     expect(mockCheckRateLimit).toHaveBeenCalledOnce()
+  })
+
+  it('llama a checkRateLimit con el cliente service-role, no con el de sesión', async () => {
+    // Con el cliente de sesión/anon el RPC falla por RLS y los endpoints
+    // fail-closed (login/register) devolverían 429 a todo el mundo
+    const route = withHandler(
+      { auth: 'none', rateLimit: { max: 10, windowMs: 60_000, keyType: 'ip', failClosed: true } },
+      handlerOk
+    )
+
+    await route(crearRequest())
+
+    const ctx = mockCheckRateLimit.mock.calls[0][1]
+    expect(ctx.supabase).toBe(createServiceClient())
   })
 })
 
