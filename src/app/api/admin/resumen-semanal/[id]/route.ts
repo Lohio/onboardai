@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { anthropic } from '@/lib/claude'
+import { createServiceClient } from '@/lib/supabaseService'
 import { withHandler } from '@/lib/api/withHandler'
 import { RATE_LIMITS } from '@/lib/api/withRateLimit'
 import { ApiError } from '@/lib/errors'
@@ -164,7 +165,8 @@ Importante:
 
     // Streaming
     const encoder = new TextEncoder()
-    const supabaseRef = supabase!
+    // Metering con service-role (los RPC no son invocables por authenticated)
+    const metering = createServiceClient()
     const adminId = user!.id
     const empresaIdRef = user!.empresaId
     const stream = new ReadableStream({
@@ -188,7 +190,7 @@ Importante:
           // Metering: registrar consumo (no consume cuota de consultas)
           const finalMsg = await msgStream.finalMessage()
           await registrarUsoIA({
-            supabase: supabaseRef,
+            supabase: metering,
             empresaId: empresaIdRef,
             usuarioId: adminId,
             fuente: 'resumen',

@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/nextjs'
 import { ZodType, ZodError } from 'zod'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabaseService'
 import { getUsuarioSesion } from '@/lib/authSesion'
 import { ApiError } from '@/lib/errors'
 import { classifyError } from '@/lib/api-error'
@@ -179,10 +180,14 @@ export function withHandler<TBody = unknown>(
           req.headers.get('x-real-ip') ??
           'unknown'
 
+        // increment_rate_limit es SECURITY INVOKER y rate_limits tiene RLS sin
+        // policies (scripts/rls_gaps.sql): con el cliente de sesión/anon el
+        // insert falla y los endpoints fail-closed (login) devolverían 429.
+        // Se llama con service-role; la key se arma server-side, no del body.
         const rateLimitResponse = await checkRateLimit(
           options.rateLimit,
           {
-            supabase,
+            supabase: createServiceClient(),
             userId,
             empresaId,
             ip,
